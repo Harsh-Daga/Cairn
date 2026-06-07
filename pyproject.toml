@@ -65,3 +65,4 @@ packages = ["cairn"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "cairn/data" = "cairn/data"
+"cairn/render/assets" = "cairn/render/assets"

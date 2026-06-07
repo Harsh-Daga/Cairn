@@ -7,7 +7,16 @@ import sys
 from pathlib import Path
 
 from cairn import __version__
-from cairn.cli import build_cmd, doctor_cmd, init_cmd, plan_cmd, status_cmd, validate_cmd
+from cairn.cli import (
+    build_cmd,
+    doctor_cmd,
+    init_cmd,
+    plan_cmd,
+    render_cmd,
+    runs_cmd,
+    status_cmd,
+    validate_cmd,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -49,6 +58,23 @@ def main(argv: list[str] | None = None) -> int:
         help="recorded=replay fixtures (default for CI); live=real APIs",
     )
     build_p.set_defaults(func=build_cmd.run)
+
+    render_p = sub.add_parser("render", help="Render provenance bundle (no tokens)")
+    render_p.add_argument("project", nargs="?", default=".", type=Path)
+    render_p.add_argument("--run", metavar="RUN_ID", default=None)
+    render_p.add_argument("-o", "--output", type=Path, default=None)
+    render_p.add_argument("--zip", action="store_true")
+    render_p.add_argument(
+        "--split",
+        action="store_true",
+        help="write data/cairn-data.json externally (requires HTTP server; not file://)",
+    )
+    render_p.set_defaults(func=render_cmd.run)
+
+    runs_p = sub.add_parser("runs", help="List recent runs (no tokens)")
+    runs_p.add_argument("project", nargs="?", default=".", type=Path)
+    runs_p.add_argument("--limit", type=int, default=20)
+    runs_p.set_defaults(func=runs_cmd.run)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

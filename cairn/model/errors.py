@@ -44,6 +44,16 @@ class OutputCollisionError(ValidationError):
 
 
 @dataclass(frozen=True)
+class ProviderError(CairnError):
+    """Provider adapter or completion failure."""
+
+
+@dataclass(frozen=True)
+class EmptyCompletionError(ProviderError):
+    """Completion returned no usable text (empty or truncated)."""
+
+
+@dataclass(frozen=True)
 class UndeclaredRefError(ValidationError):
     """Template references source/ref not declared in inputs/over."""
 

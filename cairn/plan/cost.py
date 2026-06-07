@@ -53,3 +53,21 @@ def estimate_node_cost(
         + est_out * float(price_row.get("output_per_mtok", 0)) / 1_000_000
     )
     return CostEstimate(cost=cost, unpriced=False, input_tokens=est_in, output_tokens=est_out)
+
+
+def actual_node_cost(
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    project_prices: dict[str, dict[str, Any]],
+) -> float | None:
+    """Post-run cost from token usage (R4 actuals)."""
+    prices = {**_load_builtin_prices(), **project_prices}
+    wire_model = _strip_model_prefix(model)
+    price_row = prices.get(model) or prices.get(wire_model)
+    if price_row is None:
+        return None
+    return (
+        input_tokens * float(price_row.get("input_per_mtok", 0)) / 1_000_000
+        + output_tokens * float(price_row.get("output_per_mtok", 0)) / 1_000_000
+    )

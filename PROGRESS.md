@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 1 — Core build engine  
+**Current phase:** Phase 2 — Provenance & sharing  
 **Charter:** [CHARTER.md](CHARTER.md) v1.2
 
 ## Phase 0 — Spike & decide ✅
@@ -13,102 +13,76 @@ See git history under `spike/` for deliverables.
 
 ---
 
-## Phase 1 — Core build engine
+## Phase 1 — Core build engine ✅
 
 **Goal:** Minimum tool genuinely useful to its author — production `cairn/` package.
+
+All Phase 1 exit criteria met. See git history for details.
+
+---
+
+## Phase 2 — Provenance & sharing
+
+**Goal:** Make a build legible to a stranger — full ledger, `run.json`, self-contained `render` bundle.
 
 ### Exit criteria
 
 | Criterion | Status |
 |---|---|
-| `cairn init` scaffolds a working project | Done |
-| `cairn validate` / `doctor` / `status` / `plan` / `build` | Done |
-| `cairn.toml` + Pydantic validation; Jinja prompts with YAML front matter | Done |
-| Chat steps: map / reduce / single | Done |
-| Domain model (`model/`), DAG builder (`graph/`), Planner (`plan/`) | Done |
-| Action keys per §9/R1; ADR 0005 (prompt keying), ADR 0006 (Merkle ordering) | Done |
-| SQLite Action Cache + sharded atomic CAS (R2/R14) | Done |
-| Provider layer: protocol, HTTP adapters, capability registry, credentials, retries | Done |
-| `RecordedProvider` with sha256-stable fixtures (not `hash()`) | Done |
-| Golden-hash + property tests (R17 #1–3, #8, #9, #12); doctor tests; e2e replay | Done |
-| `mypy --strict` + `ruff` clean on `cairn/` | Done |
-| Level-parallel executor (`--concurrency` actually bounds overlap) | Done |
-| O(N) incremental planning (one `plan_nodes` call per level) | Done |
-| `system_hash` in action key (ADR 0007) | Done |
-| CAS `fsync` before atomic rename (R2) | Done |
-| Output paths rendered via Jinja (not `str.replace`) | Done |
-| **Validation gate (human):** two weeks on real corpus | **Pending** |
+| Full R14 ledger schema (`runs`, `nodes`, `tool_calls`, `cas_refs` + AC) | Done |
+| Non-destructive `user_version` migration from AC-only db | Done |
+| Executor records every build; `cairn build` prints `run_id` | Done |
+| `runs/<run_id>.json` git-diffable mirror | Done |
+| `cairn render` → self-contained `index.html` (`file://`, no fetch) | Done |
+| `cairn render --zip` / `--split` | Done |
+| `cairn runs` listing | Done |
+| Security scan: no secrets/home paths in bundle | Done |
+| Ledger boundary: no influence on action keys/plan | Done |
+| Golden tests for `run.json` and bundle JSON | Done |
+| ADR 0008 (ledger boundary), ADR 0009 (bundle format) | Done |
+| `mypy --strict` + `ruff` clean | Done |
+| **Validation gate (human):** hand bundle to 5 people; 2 unprompted installs | **Pending** |
 
-### Package layout
+### Package layout (additions)
 
 ```
 cairn/
-├── cli/           # init, validate, doctor, status, plan, build
-├── model/         # Project, Step, Node, messages, errors
-├── loader/        # cairn.toml, prompts, sources, refs
-├── graph/         # DAG builder (cycles, collisions, undeclared refs)
-├── plan/          # action_key, planner, cost
-├── cache/         # CAS + SQLite AC
-├── providers/     # capabilities, credentials, recorded, HTTP adapters
-├── executor/      # async runner, coalescing, build lock
-├── doctor/        # preflight checks
-└── data/          # prices.toml, provider fixtures
+├── ledger/        # schema, Ledger, run.json mirror
+├── render/        # bundle assembler, HTML inliner, viewer assets
+├── cache/         # AC now shares Ledger connection
+└── cli/           # render, runs
 ```
-
-### Carry-over fixes from Phase 0 review
-
-| Issue | Resolution |
-|---|---|
-| `MockProvider` used salted `hash()` | `RecordedProvider` uses `sha256` fixture keys |
-| Prompt hash double-counting | ADR 0005: template body only; behavior FM → resolved config |
-| Input-completeness | `validate` fails on undeclared `source()`/`ref()` in templates |
-| Merkle ordering undocumented | ADR 0006: sorted digests; test pinned |
-| Sync provider, no retries | Async `httpx` + R18.3 retry tables + semaphore |
-| Ad-hoc Ollama endpoint logic | Folded into `providers/capabilities.py` |
-| `pyproject.toml` spike override | Wheel ships `cairn/` only; strict typing on `cairn/` |
 
 ### ADRs
 
 | ADR | Summary |
 |-----|---------|
-| [0001](docs/adr/0001-independence-from-lattice-and-stratum.md) | No Lattice/Stratum integration |
-| [0002](docs/adr/0002-exact-action-cache-only.md) | Exact AC only |
-| [0003](docs/adr/0003-prior-art-implementation-patterns.md) | Borrow patterns, not products |
-| [0004](docs/adr/0004-provider-and-agent-connection-ergonomics.md) | R18 is connection-only |
-| [0005](docs/adr/0005-prompt-template-keying.md) | Template-body prompt hash; no double-count |
-| [0006](docs/adr/0006-merkle-input-ordering.md) | Order-independent Merkle rollup |
-| [0007](docs/adr/0007-system-prompt-keying.md) | `system_hash` in action key |
+| [0008](docs/adr/0008-ledger-append-only-provenance.md) | Ledger append-only; never cache input |
+| [0009](docs/adr/0009-self-contained-bundle.md) | Inline JSON + plain DOM; no framework |
 
-### Known limitations (Phase 1)
+### Phase 2.1 hardening (pre-commit)
 
 | Item | Status |
 |---|---|
-| `map over ref()` / `manifest()` | Deferred to Phase 3/4 — explicit `ValidationError` |
-
-### Phase 1 hardening (pre-first-commit)
-
-| Item | Status |
-|---|---|
-| Level-parallel scheduling under semaphore | Done |
-| Incremental O(N) planning | Done |
-| `system_hash` + golden re-pin | Done |
-| CAS fsync durability | Done |
-| Jinja output paths | Done |
-| Token estimate consolidation (`util/tokens.py`) | Done |
+| Escape HTML-significant chars when inlining JSON (`</script>` safe) | Done |
+| Never cache empty/truncated completions (`finish_reason`) | Done |
+| `--split` shows actionable message under `file://` | Done |
+| Structural no-network test (not substring ban on `https://`) | Done |
+| No absolute paths in bundle; secret scan on full `index.html` | Done |
+| ADR 0010 (empty-completion policy) | Done |
 
 ### Phase log
 
 | Date | Note |
 |---|---|
-| 2026-06-07 | Phase 1 core engine: CLI, TOML, DAG, planner, SQLite AC + CAS, providers, tests green. |
-| 2026-06-07 | Phase 1 hardening: concurrent executor, system_hash, CAS fsync, Jinja output paths. |
+| 2026-06-07 | Phase 2: ledger schema + migration, executor integration, run.json, render bundle, CLI, tests. |
+| 2026-06-07 | Phase 2.1: embedding escaper, empty-completion guard, split UX, render security tests. |
 
 ---
 
 ## Upcoming phases (not started)
 
-- **Phase 2** — Provenance & sharing (Ledger, `render`, `--zip`)
-- **Phase 3** — Iteration ergonomics (`diff`, selectors, `--refresh`, `--max-cost`)
+- **Phase 3** — Iteration ergonomics (`diff`, selectors, `--refresh`, `--max-cost`, `cache gc`)
 - **Phase 4** — Agent nodes & tools
 - **Phase 5** — Multi-agent & interop
 - **Phase 6** — Polish, docs, community

@@ -28,6 +28,7 @@ class ProviderCapability:
     cache_mode: CacheMode = "none"
     rate_limits: RateLimitSemantics = field(default_factory=RateLimitSemantics)
     wire_model_strip_prefixes: tuple[str, ...] = ()
+    reasoning: bool = False
 
 
 _REGISTRY: dict[str, ProviderCapability] = {}
@@ -69,6 +70,7 @@ def _register_defaults() -> None:
             supported_models=("kimi-k2.6:cloud",),
             wire_model_strip_prefixes=("ollama-cloud/", "ollama/"),
             rate_limits=RateLimitSemantics(retry_after_header="retry-after"),
+            reasoning=True,
         ),
         ProviderCapability(
             name="groq",

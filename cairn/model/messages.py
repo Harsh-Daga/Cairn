@@ -38,3 +38,4 @@ class CompletionResult:
     text: str
     usage: TokenUsage
     raw: dict[str, Any]
+    finish_reason: str | None = None

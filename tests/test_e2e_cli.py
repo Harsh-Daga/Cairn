@@ -26,7 +26,13 @@ def test_init_validate_status_build(tmp_path: Path) -> None:
     assert "summaries:alpha" in status.stdout
     build = _run("build", "--yes", "--provider-mode", "recorded", cwd=root)
     assert build.returncode == 0
+    assert "Run:" in build.stdout
     assert (root / "outputs" / "report.md").is_file()
+    assert list((root / "runs").glob("*.json"))
     second = _run("build", "--yes", "--provider-mode", "recorded", cwd=root)
     assert second.returncode == 0
     assert "tokens=0" in second.stdout
+    render = _run("render", "-o", str(root / "outputs" / "bundle"), "--zip", cwd=root)
+    assert render.returncode == 0
+    assert (root / "outputs" / "bundle" / "index.html").is_file()
+    assert (root / "outputs" / "bundle.zip").is_file()

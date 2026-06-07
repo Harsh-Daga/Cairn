@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from cairn.model.messages import CompletionRequest, CompletionResult, TextBlock, TokenUsage
+from cairn.providers.completion import ensure_usable_completion
 from cairn.util.canonical import hash_obj
 from cairn.util.tokens import estimate_tokens_from_request
 
@@ -52,14 +53,16 @@ class RecordedProvider:
         if path.is_file() and not self.record:
             data = json.loads(path.read_text(encoding="utf-8"))
             self.tokens_spent += 0
-            return CompletionResult(
+            result = CompletionResult(
                 text=str(data["text"]),
                 usage=TokenUsage(
                     input_tokens=int(data.get("input_tokens", 0)),
                     output_tokens=int(data.get("output_tokens", 0)),
                 ),
                 raw=data.get("raw", {}),
+                finish_reason=data.get("finish_reason"),
             )
+            return ensure_usable_completion(result)
         text = _deterministic_text(key)
         result = CompletionResult(
             text=text,
@@ -80,4 +83,4 @@ class RecordedProvider:
                 encoding="utf-8",
             )
         self.tokens_spent += result.usage.input_tokens + result.usage.output_tokens
-        return result
+        return ensure_usable_completion(result)

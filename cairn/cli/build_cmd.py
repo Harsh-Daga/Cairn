@@ -54,6 +54,9 @@ def run(args: argparse.Namespace) -> int:
     finally:
         cache.close()
 
+    if result.run_id:
+        print(f"Run: {result.run_id}")
+
     print(f"\n{'NODE':<24} {'STATUS':<10} {'TOKENS':>8}")
     print("-" * 46)
     for node in result.nodes:

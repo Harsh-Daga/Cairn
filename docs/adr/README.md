@@ -12,3 +12,6 @@ charter section it implements.
 | [0005](0005-prompt-template-keying.md) | Prompt template keying (no double-counting) | Accepted |
 | [0006](0006-merkle-input-ordering.md) | Merkle rollup input ordering | Accepted |
 | [0007](0007-system-prompt-keying.md) | System prompt in action key (`system_hash`) | Accepted |
+| [0008](0008-ledger-append-only-provenance.md) | Ledger is append-only provenance, never cache input | Accepted |
+| [0009](0009-self-contained-bundle.md) | Self-contained, framework-free provenance bundle | Accepted |
+| [0010](0010-empty-completion-policy.md) | Empty/truncated completions never cached | Accepted |

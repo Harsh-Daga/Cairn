@@ -1,15 +1,15 @@
 # Cairn — Project Charter & Technical Design
 
-> **A build system for LLM computation over a corpus of files — including agentic and multi-agent workflows.**
-> Declare your inputs, prompts, and the pipeline that connects them. Cairn runs the
-> pipeline, re-computing only what changed, caches every result by content, and
-> compiles a self-contained, reproducible, shareable artifact that records exactly
-> how every output — and every agent trajectory — was produced.
+> **A local-first provenance recorder and optional build system for coding-agent work.**
+> Cairn captures what Claude Code, Codex, and Cursor actually did — prompts, tools, file
+> edits — as an inferred causal DAG, and renders a self-contained, offline, shareable report.
+> When work becomes repeatable, graduate to a declarative pipeline (`cairn.toml`) with
+> content-addressed caching and reproducible builds.
 
-> *"dbt for LLM work."* Local-first. Git-native. Zero infrastructure. One binary.
+> *"Flight recorder + optional dbt for LLM work."* Local-first. Git-native. Zero infrastructure.
+> One binary.
 
-**Status:** Draft v1.2 — implementation-ready charter (adds agentic/multi-agent design; adds
-provider & agent connection ergonomics in R18, distilled from the retired Lattice project)
+**Status:** Draft v2.0 — agent-first charter (Phases 0–2 complete; Phases 3+ are capture-first)
 **License (intended):** Apache-2.0
 **Audience:** anyone who wants to build the whole thing from this document alone.
 
@@ -17,20 +17,27 @@ provider & agent connection ergonomics in R18, distilled from the retired Lattic
 
 ## 0. How to read this document
 
-This charter is the single source of truth. It is ordered so you can build top to
-bottom:
+This charter is the single source of truth. It is ordered so you can build top to bottom:
 
 1. **Why** (§1–§3) — the problem, the one core idea, and how we're positioned.
-2. **What** (§4–§7) — principles, the domain model, and the exact on-disk format.
-3. **How** (§8–§12) — architecture, the cache-key algorithm, the CLI, the flows, and the
-   agentic / multi-agent design.
+2. **What** (§4–§7) — principles, the domain model, and the on-disk layout.
+3. **How** (§8–§12) — architecture, capture integrations (Claude Code / Codex / Cursor),
+   the two-level DAG model, CLI, flows, and pipeline-mode build engine.
 4. **Build it** (§13–§19) — stack, coding rules, testing, the phase plan, risks, and
    how we know it worked.
-5. **Appendix** (§20) — a full worked example and the config schema.
-6. **Part II — Detailed Engineering Reference** (R1–R18) — the no-ambiguity implementation
-   spec: exact formats, algorithms, protocols, and edge cases for every component, plus the
-   provider & agent connection layer (R18). Build from Part II; let Part I's principles (§4)
-   govern when they conflict.
+5. **Appendix** (§20) — glossary, schema, worked examples.
+6. **Part II — Detailed Engineering Reference** (R1–R19) — the no-ambiguity implementation
+   spec: exact formats, algorithms, protocols, parsers, hook wiring, and edge cases for every
+   component. Build from Part II; let Part I's principles (§4) govern when they conflict.
+
+**Two modes, one product:**
+
+| Mode | Entry point | Primary artifact | When |
+|---|---|---|---|
+| **Capture** (default) | `cairn ingest` / `cairn watch` | Session provenance bundle | Daily agent work |
+| **Pipeline** (optional) | `cairn build` | Build outputs + bundle | Repeatable corpus tasks |
+
+Both modes share: ledger, CAS, trajectory model (R7), and `cairn render`.
 
 If a decision isn't written here, the default is: **do the boring, local, file-based,
 reversible thing.**
@@ -39,61 +46,50 @@ reversible thing.**
 
 ## 1. The Problem (and the evidence behind it)
 
-There is a recurring shape of project: *"I have a body of files, I want to run LLM
-computation over them in an iterated way, and some of the outputs are deliverables
-worth keeping and sharing."* Research synthesis, document generation, codebase
-analysis, content pipelines, knowledge-base construction, due diligence — and,
-increasingly, **agentic workflows** where one or more autonomous agents plan, call
-tools, and produce results over that same corpus.
+The dominant way people do serious work with coding agents today is **not** a repo full of
+`prompts/*.md`. They open Claude Code, Codex, or Cursor and work directly. The agent reads
+files, calls tools, edits code, and produces results — but almost nothing durable is left
+behind except git diffs and opaque JSONL logs buried in `~/.claude`, `~/.codex`, or
+`~/.cursor`.
 
-Today there are exactly two ways to do this, and both are bad:
+That creates recurring pain:
 
-- **The manual way** — paste into a chat interface N times, or kick off an agent and
-  copy its output. Unrepeatable. No record of what produced what. Editing one prompt
-  means redoing everything by hand.
-- **The code way** — write a script with a hand-rolled cache, or stand up a heavyweight
-  orchestrator (LangGraph, Dagster, Prefect, CrewAI). Now you maintain plumbing, and you
-  *still* hand-roll the "only re-run what changed" logic, because those frameworks give
-  you state snapshots for fault-tolerance, **not** content-keyed memoization that skips
-  unchanged steps.
+- **No audit trail** — "What prompt produced this change? Which tools ran? What did the agent
+  read first?"
+- **No shareable explanation** — handing someone a PR without the agent's reasoning is
+  incomplete; pasting chat logs is unusable.
+- **No causal graph** — you see a file diff, not the chain: read → reason → tool → edit.
+- **Ephemeral sessions** — compaction, new chats, and tool churn destroy context; there is no
+  portable artifact a stranger can open offline.
+- **Repeatability is manual** — when the same 5-step pattern appears across sessions, users
+  re-prompt from scratch instead of declaring a pipeline.
 
-In both cases the output is **ephemeral**: when you hand someone a result, there is no
-portable record of which inputs, which prompt, which model — and for agents, which
-tools and which trajectory — produced it.
+**This pain is real and widely felt.** claude-devtools (~3k+ stars) proves people want to
+*inspect* Claude Code sessions. Chronicle, Rewind, and agentwatch prove people want *capture*
+and replay. Langfuse/Braintrust prove teams want *observability* — but as SaaS. Nobody packages
+**local, offline, file-centric, shareable provenance with a causal DAG** across Claude Code,
+Codex, and Cursor in one tool.
 
-**This pain is real and widely felt.** The market shows a long tail of small,
-single-purpose open-source utilities solving fragments of it, plus first-hand
-practitioner accounts of the exact pains: lost context across sessions, no audit trail,
-"what was the original prompt / what did I decide / why this approach," silent quality
-regressions, and — for multi-agent systems specifically — opaque trajectories and
-cost/observability failures (a large share of agentic pilots fail on infrastructure and
-observability, not on model quality). People keep building crappy partial versions of
-this for themselves.
-
-**This pain is *not* well-served as a single, tasteful, general tool.** The components
-exist separately; the connective tissue does not. That gap is Cairn.
+**The old Cairn thesis (build-system-first) solved a different entry point** — researchers
+with `inputs/` and `prompts/` in git. That path remains valuable as **Pipeline mode** (Phases
+1–2, built). The new default entry point is **Capture mode**: zero config, ingest what agents
+already record, render what matters.
 
 ---
 
 ## 2. The Core Idea (one paragraph, memorize it)
 
-A pipeline of LLM computations over files is a **directed acyclic graph (DAG)**: sources
-flow into prompts, prompts produce outputs, outputs feed downstream prompts. Build
-systems (Make, Bazel, dbt) have solved "recompute only the changed parts of a DAG" for
-decades, using **content-addressing**: hash the inputs of each node; if the hash is
-unchanged, reuse the cached output. The reason this has never been cleanly applied to
-LLM work is that **an LLM call is not hermetic** — the same input can produce different
-output. **Cairn's core move is to impose hermeticity by content-addressing the
-*realized* output**: the first time a node runs, we record its output keyed by the hash
-of `(resolved prompt + model + params + upstream input hashes)`. On every subsequent
-build, if that key is unchanged, we reuse the realized output verbatim. You opt into
-re-rolling explicitly. This converts "I ran an LLM once" into a **reproducible, cacheable,
-auditable, shareable artifact**. The same move extends, unchanged, from a single
-completion to **an entire agent trajectory** (§12) — which is the thing no existing tool
-packages.
+Agent work is a **directed acyclic graph (DAG)** at two levels. **Micro graph (default):** each
+coding-agent session is a sequence of events — user prompts, model turns, tool calls, file
+reads/writes — with causal edges. Cairn **infers** this graph from agent transcripts and hooks,
+stores it in a local ledger + CAS, and renders a **portable provenance bundle** anyone can
+open offline. **Macro graph (optional):** when work is repeatable, declare a `cairn.toml`
+pipeline; Cairn runs a content-addressed build DAG (dbt-style) over prompts and files, pinning
+realized outputs and trajectories. The bridge: both levels use the same **trajectory model**
+(R7), the same ledger, and the same bundle renderer. Capture records what happened; Pipeline
+replays what should happen — and Capture can **graduate** into Pipeline when patterns stabilize.
 
-Everything else in Cairn is in service of that idea or reuses something that already
-exists.
+Everything else in Cairn serves capture, rendering, or optional pipeline execution.
 
 ---
 
@@ -103,37 +99,31 @@ Honest map of the neighborhood. **We do not rebuild owned territory.**
 
 | Tool / category | What it nails | Why it isn't Cairn |
 |---|---|---|
-| **dbt** | The *shape*: CLI, `ref()`-driven DAG, materializations, incremental builds, tests, lineage docs, git-native. | SQL-and-warehouse only. We borrow the shape wholesale and retarget it at files + prompts + model/agent calls. |
-| **Bazel / Nix** | The *engine*: Merkle-DAG, action cache + content-addressable store, hermetic reuse. | Built for deterministic compilation; no notion of prompts, models, or non-determinism. We borrow the caching model and adapt it to non-hermetic LLM/agent calls. |
-| **Dagster / DVC / Prefect** | Content-addressed asset versioning, incremental materialization, dynamic outputs. | Heavyweight (servers, Kubernetes, data-engineering worldview). Not LLM-native. Not zero-infra. Not a single binary. Not aimed at a writer/researcher/analyst. |
-| **promptfoo** | Local-first, single version-controlled config, content-cached, only-external-call-is-the-model. | *Evaluation*-focused (test prompts against assertions), not *production* of a corpus of deliverable artifacts over a DAG. Validates our ergonomics; confirms the gap. |
-| **LangGraph / CrewAI / AutoGen / ADK** | *Agent runtimes*: execute the agent loop, manage in-flight state, implement supervisor/swarm/handoff topologies. | They *run* agents; they don't make agent runs reproducible, content-addressed, cached, or shareable. Cairn **wraps and composes** them (§12), it does not replace them. |
-| **MCP / A2A (Linux Foundation AAIF)** | The interop standards: MCP = agent↔tools; A2A = agent↔agent. | These are *protocols*, not a build tool. Cairn *speaks* them rather than inventing its own (§12.8). |
-| **Latitude / Braintrust / PromptLayer** | Prompt versioning, collaboration, eval, deploy-as-endpoint. | SaaS platforms; the unit is a deployed prompt/endpoint, not a reproducible build artifact over your own files. |
-| **Elicit** | Reproducible, auditable, *shareable-with-anyone* research process — exactly our provenance artifact. | Locked to the literature-review vertical. We generalize the capability. |
-| **llm-context / llmcxt / PromptMage / CONTEXT.md, etc.** | Real signal that the pain exists; people build these by hand. | Fragmentary, single-feature, no DAG, no caching, no provenance, no shareable artifact. |
+| **claude-devtools** | Desktop inspection of Claude Code JSONL; search, stats, cost. | Electron app; Claude-only; no portable HTML bundle; no file-centric causal graph; no Codex/Cursor. |
+| **Chronicle / Rewind** | Claude Code hooks; SQLite; time-travel restore. | Undo-focused; not shareable provenance; single runtime. |
+| **Codex hooks** | Lifecycle hooks; `rollout-*.jsonl` transcripts. | Logging framework; no unified cross-agent ledger or bundle. |
+| **Cursor agent-transcripts** | Per-workspace JSONL under `~/.cursor/projects/`. | IDE-internal; fragmented storage; no causal graph product. |
+| **Langfuse / Braintrust** | Team cloud traces, evals, dashboards. | SaaS; not local-first; not offline `file://` bundles. |
+| **dbt** | `ref()`-driven DAG, incremental builds, lineage. | SQL-only. Cairn **borrows the shape** for Pipeline mode. |
+| **promptfoo** | Local eval, content-cached model calls. | Evaluation, not session capture or deliverable builds. |
+| **LangGraph / CrewAI** | Agent runtimes, orchestration. | They *run* agents; Cairn *records* and optionally *builds*. |
 
 **What Cairn reuses and never builds:**
 
-- **git** — for versioning, history, snapshots, branching, and human collaboration. The
-  whole Cairn project is plain text files; git *is* the collaboration layer in v1.
-- **Model provider APIs / SDKs** — for inference. We wrap them behind a thin adapter.
-- **Agent runtimes & coding agents** (Claude Code, Codex, LangGraph, CrewAI, external
-  A2A agents) — a Cairn node can *invoke* an agent; we never build an agent runtime.
-- **MCP** — for giving agent nodes tools; **A2A** — for invoking external agents.
-- **Jinja2** — for prompt templating (same proven choice as dbt and promptfoo).
-- **Dagster (optional, later)** — as a heavy-duty execution backend for users who
-  outgrow the built-in local runner. Default is our own runner.
+- **git** — versioning, blame, PR context. Sessions complement `git log`, not replace it.
+- **Claude Code / Codex / Cursor** — the agent runtimes. Cairn does not replace them.
+- **Agent transcript formats** — we parse them; we do not fork them.
+- **Hooks APIs** — Claude Code hooks, Codex hooks; Cairn installs capture hooks only.
+- **Jinja2** — Pipeline-mode prompt templating.
+- **MCP / A2A** — Pipeline-mode agent nodes (later phases).
 
 **What Cairn builds (the glue nobody has unified):**
 
-1. A minimal, readable, git-native **project format** for "a corpus + a prompt library +
-   a pipeline + outputs," including agent and dynamic steps.
-2. A **content-addressed, LLM-native, zero-infra build engine** that recomputes only
-   what changed — and pins non-deterministic completions *and agent trajectories*.
-3. A **diff/inspect** experience — "make + git diff for inference."
-4. A **self-contained, reproducible, shareable provenance artifact** — including full,
-   recursive agent/sub-agent trajectories — as a first-class build output.
+1. **Cross-agent ingest** — parsers + normalizers for Claude Code, Codex, Cursor → one trajectory model.
+2. **Micro DAG linker** — causal + data edges from events; file-centric index.
+3. **Provenance bundle** — self-contained HTML (`file://`), file-first navigation + graph view.
+4. **Optional pipeline engine** — `cairn.toml`, AC, CAS, `cairn build` (Phases 1–2, complete).
+5. **Graduation path** — session → suggested pipeline (later).
 
 ---
 
@@ -141,35 +131,27 @@ Honest map of the neighborhood. **We do not rebuild owned territory.**
 
 These are non-negotiable. Every design decision is checked against them.
 
-1. **Local-first, zero-infra.** Cairn runs on a laptop with no server, no database, no
-   container, no account. The only network calls are to model providers, MCP tools, and
-   (optionally) external A2A agents. If a feature requires standing up infrastructure, it
-   does not belong in the core.
-2. **Everything is plain text in a git repo.** Inputs, prompts, config, and the run
-   ledger are human-readable files. No hidden binary state that git can't diff.
-3. **Content-addressed and reproducible by default.** Same inputs ⇒ same cached output
-   (or trajectory), every time, until the user explicitly asks to re-roll. Determinism is
-   the default; non-determinism is opt-in and visible.
-4. **Do one thing well; compose, don't absorb.** Cairn is a build tool. It is not an
-   editor, a notebook, an eval platform, a vector DB, an agent runtime, or a SaaS. It
-   shells out to those; it doesn't reimplement them.
-5. **The DAG is inferred, never hand-maintained.** Like dbt's `ref()`, dependencies are
-   declared by reference at the point of use. Users never maintain a separate graph file.
-6. **No lock-in, fully reversible.** Outputs are normal files. The cache is a normal
-   directory. Deleting Cairn leaves you with all your inputs, prompts, and outputs intact.
-7. **Boring technology.** Prefer mature, well-understood tools (Jinja2, SQLite, SHA-256,
-   git, MCP, A2A). Novelty budget is spent only on the core idea (§2), not infrastructure.
-8. **Fail loud, fail cheap.** Validate the whole project before spending a single token.
-   Always show what *would* run and the estimated cost before running it. Agent budgets
-   and iteration caps are mandatory, not optional.
-9. **Taste: a 5-line project should take 5 minutes.** The smallest useful project must be
-   tiny. Complexity (including agents) is opt-in and layered, never front-loaded.
-10. **Provenance is not a feature, it's the product.** Every output carries its full
-    lineage — including, for agents, the complete recursive trajectory. If we ever have to
-    choose between a slick output and a traceable one, we choose traceable.
-11. **Prefer a step to an agent.** If a unit of work is deterministic, it's a step, not an
-    agent. Agents are reserved for genuinely autonomous work, because they cost more and
-    are harder to reproduce. Cairn nudges users toward plain steps.
+1. **Local-first, zero-infra.** No server, no account. Network calls only to model providers
+   when **invoking** Pipeline mode — never required for Capture mode.
+2. **Capture fails open; build fails loud.** Ingest hooks **must never block** the agent
+   (exit 0 always). Pipeline `validate`/`doctor` block spend before tokens.
+3. **Provenance is the product.** Every session and build output must be traceable to prompts,
+   tools, models, and file snapshots. If we choose between slick output and traceable, choose
+   traceable (Principle #10, unchanged).
+4. **Do one thing well; compose, don't absorb.** Cairn is not an agent runtime, editor, or
+   SaaS. It records and optionally builds.
+5. **The DAG is inferred, never hand-maintained** — for Capture (from events) and Pipeline
+   (from `ref()`/`source()`).
+6. **No lock-in, fully reversible.** Delete Cairn; keep your repo, agent logs, and git history.
+7. **Boring technology.** Python, SQLite, SHA-256, vanilla JS, hooks subprocesses.
+8. **Zero-config capture.** `cairn ingest` from a git repo should work with no `cairn.toml`.
+9. **Taste: value in 5 minutes.** Install → ingest last session → render → open HTML.
+10. **CAS is internal infrastructure**, not the user-facing product story. Users care about
+    bundles and file lineage, not cache keys.
+11. **Prefer a step to an agent** — in Pipeline mode. In Capture mode, agents are the reality;
+    Cairn documents them honestly.
+12. **Multi-runtime from day one of Capture.** Claude Code, Codex, and Cursor are peers, not
+    afterthoughts.
 
 ---
 
@@ -177,221 +159,233 @@ These are non-negotiable. Every design decision is checked against them.
 
 Learn these nouns; the whole system is built from them.
 
-- **Project** — a directory containing a `cairn.toml`, sources, prompts, and (generated)
-  outputs. The unit of versioning. One project = one git repo (typically).
-- **Source** — an input file or set of files. Read but never modified by Cairn.
-- **Prompt** — a reusable Jinja2 template with variables and a small front-matter header.
-- **Step** — the fundamental build unit. *Take these inputs, render this prompt over them,
-  call this model/agent with these params, produce these outputs.* Analogue of a dbt model
-  or a Bazel action. A step has a **kind**: `chat` (a model completion), `agent` (an
-  autonomous agent run), or is marked `dynamic` (emits child work at runtime, §12.7).
-- **`ref()` / `source()`** — functions usable inside input declarations and prompt
-  templates. They build the DAG.
-- **Map vs. Reduce** — fan-out (one output per input item) vs. fan-in (one output over all
-  inputs). These are also the *parallel* multi-agent pattern at the graph level.
-- **Materialization** — how a step's output is treated: `cached` (default: realize once,
-  reuse until inputs change), `volatile` (re-run every build), `ephemeral` (computed, not
-  persisted, inlined downstream).
-- **Agent node** — a step with `kind = "agent"`: an LLM-in-a-loop with tools and a budget,
-  possibly delegating to sub-agents. Opaque to the build graph; its realized **trajectory**
-  is pinned and content-addressed like any other output (§12).
-- **Tool** — a capability an agent node may use, provided via **MCP**. Classified `pure`
-  (read-only) or `effectful` (mutates the world). Drives caching safety (§12.5).
-- **Sub-agent** — an agent invoked by another agent (delegation). Its trajectory nests
-  inside the parent's trajectory in provenance.
-- **Trajectory** — the full recorded sequence of an agent run: reasoning steps, tool calls
-  (args + results), sub-agent delegations. The agent analogue of an "output."
-- **Manifest** — the runtime-emitted list of child work items from a `dynamic` step. Itself
-  a pinned, content-addressed artifact (§12.7).
-- **Budget** — hard caps on an agent node: max tokens, max iterations, max wall-clock.
-  Enforced by Cairn to prevent runaways.
-- **Agent Card / A2A backend** — the capability descriptor of an external agent Cairn can
-  delegate to over A2A (§12.8).
-- **Artifact** — a persisted output blob, stored content-addressed in the CAS.
-- **Run** — one invocation of `cairn build`. Recorded in the **Ledger**.
-- **Ledger** — append-only record (SQLite + per-run `run.json`) of every run: input
-  hashes, output hashes, model, params, tools, trajectories, token counts, cost, times.
-- **Action Cache (AC)** — maps a node's **action key** → the **content hash** of its
-  realized output/trajectory.
-- **Content-Addressable Store (CAS)** — maps a content hash → the blob.
-- **Provenance Bundle** — the shareable compiled artifact: a self-contained static site
-  showing every output and its full lineage, including recursive agent trajectories.
+### 5.1 Shared
+
+- **Project** — a directory Cairn is scoped to. Typically a git repo root. May or may not
+  contain `cairn.toml`.
+- **Session** — one continuous agent conversation (Claude `sessionId`, Codex rollout id,
+  Cursor transcript id). The Capture-mode unit of work.
+- **Event** — one normalized row in the micro DAG: `user_prompt`, `assistant_message`,
+  `tool_call`, `tool_result`, `file_snapshot`, `sub_agent`, `session_start`, `session_end`,
+  `error`, etc. (R7, R19).
+- **Trajectory** — ordered `events[]` for one session or one Pipeline agent node. Stored as
+  a CAS blob + normalized SQLite rows.
+- **Micro graph** — DAG inferred from session events (causal order + data dependencies).
+- **Macro graph** — DAG of Pipeline `steps` from `cairn.toml` (optional).
+- **Ledger** — append-only SQLite + per-run/session JSON mirrors.
+- **CAS** — content-addressable blob store (file snapshots, large tool args/results,
+  trajectory JSON).
+- **Provenance bundle** — self-contained static HTML report (`cairn render`).
+- **Run** — one `cairn build` (Pipeline) **or** one ingested session (Capture). Distinguished
+  by `runs.kind`: `"build"` | `"capture"`.
+
+### 5.2 Capture-specific
+
+- **Source** — agent runtime identifier: `claude-code` | `codex` | `cursor`.
+- **External id** — runtime's session id (e.g. Claude `sessionId`, Codex rollout uuid).
+- **File artifact** — a repo-relative path touched in a session, with optional
+  `before_hash` / `after_hash` from hook snapshots.
+- **Ingest** — batch or streaming import from JSONL / hooks → ledger.
+- **Watch** — install and manage capture hooks in agent config.
+
+### 5.3 Pipeline-specific (unchanged from v1.2)
+
+- **Source (pipeline)** — input file set declared in `cairn.toml`.
+- **Prompt** — Jinja2 template in `prompts/`.
+- **Step** — build unit: `chat` | `agent` | `dynamic`.
+- **`ref()` / `source()`** — DAG dependency declarations.
+- **Action Cache (AC)** — action key → output hash (Pipeline only; never fed by ingest).
+- **Map / Reduce** — fan-out / fan-in step patterns.
+- **Agent node** — Pipeline step with `kind = "agent"` and MCP/A2A/builtin backend.
+- **Manifest** — dynamic step's runtime child work-set.
+- **Budget** — hard caps on Pipeline agent nodes.
 
 ---
 
-## 6. The Project Format (the on-disk convention)
+## 6. The Project Format (on-disk layout)
 
-This is the load-bearing invention. It must be minimal, readable, and obvious.
-
-### 6.1 Directory layout
+### 6.1 Capture-first layout (default — no `cairn.toml` required)
 
 ```
-my-project/
-├── cairn.toml              # project config + step definitions
-├── inputs/                 # your sources (read-only to Cairn)
-├── prompts/                # reusable prompt templates (Jinja2)
-├── agents/                 # (optional) agent policies/system prompts + tool decls
-├── outputs/                # GENERATED — human-readable results
-│   └── bundle/             #   GENERATED — the shareable provenance bundle
-└── .cairn/                 # GENERATED — internal state (git-ignored)
-    ├── cache/              #   CAS: blobs by hash
-    ├── ledger.db           #   SQLite run ledger
-    └── runs/               #   one run.json per build
+my-repo/                          # any git project you work on with agents
+├── src/ ...                      # normal repo files (agents edit these)
+└── .cairn/                       # GENERATED — gitignored
+    ├── ledger.db                 # sessions + events + build runs + tool_calls
+    ├── cache/cas/<aa>/<hash>     # blobs: trajectories, snapshots, tool payloads
+    ├── sessions/<session_id>.json  # human-readable session mirror
+    └── watch/                    # hook install state, last ingest cursors
 ```
 
-Rules: `inputs/`, `prompts/`, `agents/` are authored by humans. `outputs/` and `.cairn/`
-are generated. Commit `outputs/` (so diffs show in PRs); never commit `.cairn/cache`.
+Optional output location for bundles (committed or gitignored per team preference):
 
-### 6.2 `cairn.toml` (chat steps)
-
-```toml
-[project]
-name = "research-synthesis"
-version = "0.1.0"
-
-[defaults]
-model  = "claude-sonnet-4-6"
-params = { temperature = 0.0, max_tokens = 4000 }
-
-[sources.notes]
-include = ["inputs/notes/**/*.md"]
-
-[sources.spec]
-include = ["inputs/spec.md"]
-
-# MAP: one summary per note file.
-[steps.summaries]
-prompt          = "prompts/summarize.md"
-over            = "source('notes')"
-output          = "outputs/summaries/{{ item.stem }}.md"
-materialization = "cached"
-
-# REDUCE: one synthesis across all summaries.
-[steps.synthesis]
-prompt          = "prompts/synthesize.md"
-inputs          = ["ref('summaries')", "source('spec')"]
-output          = "outputs/synthesis.md"
-materialization = "cached"
+```
+outputs/bundle/                   # `cairn render` default
+├── index.html
+└── assets/
 ```
 
-The DAG is **inferred** from `over` / `inputs`. (Agent and dynamic steps are in §12.)
+### 6.2 Pipeline layout (optional — when work is repeatable)
 
-### 6.3 A prompt template (`prompts/summarize.md`)
-
-```markdown
----
-description: Summarize a single source document into 5 bullet points.
----
-You are a precise research assistant. Summarize the document below into at most
-five bullet points, preserving any numbers and named entities verbatim.
-
-<document path="{{ item.path }}">
-{{ item.content }}
-</document>
+```
+my-pipeline/
+├── cairn.toml
+├── inputs/
+├── prompts/
+├── agents/                       # optional agent policies
+├── outputs/                      # GENERATED build artifacts
+│   └── bundle/
+└── .cairn/                       # shared ledger + CAS (both modes use same store)
 ```
 
-Templating is Jinja2. Variables: `item` (map steps), `source(name)`, `ref(step)`, plus
-project `vars`. Binding rules are specified in §20.2.
+### 6.3 Coexistence rules
+
+- One `.cairn/` per project root. Capture sessions and build runs live in the same
+  `ledger.db`, distinguished by `runs.kind`.
+- **Invariant (ADR 0008):** ingest events never influence action keys or AC entries.
+- `cairn.toml` is optional. `cairn init` scaffolds Pipeline layout; `cairn watch install`
+  scaffolds Capture hooks only.
+
+### 6.4 `cairn.toml` (Pipeline mode — unchanged schema, see §20.3)
+
+Pipeline config is identical to v1.2. It is **not** required for Capture.
 
 ---
 
-## 7. Worked Example (end to end, in plain English)
+## 7. Worked Examples (end to end)
 
-1. `cairn init` scaffolds the layout.
-2. You drop 20 transcripts in `inputs/notes/` and write the prompts.
-3. `cairn build` parses config + prompts, builds the DAG, computes an action key per node,
-   shows a plan and a **cost estimate**, you confirm, and it executes in dependency order,
-   storing outputs in the CAS, writing readable files to `outputs/`, recording the run.
-4. You edit a prompt. `cairn status` reports exactly which nodes are stale and the cost to
-   rebuild. `cairn build` recomputes only those.
-5. `cairn diff` shows how outputs changed. `cairn render` produces `outputs/bundle/` — a
-   self-contained site where clicking any output reveals its full lineage. You send the
-   folder to a collaborator who has never installed Cairn; they can audit every step.
+### 7.1 Capture-first (primary user journey)
 
-That experience — `make` for a corpus of prompts, ending in a shareable provenance
-artifact — is the whole product. §12 extends it to agents without changing the feel.
+1. Developer works in Claude Code on `~/my-repo` (no Cairn awareness).
+2. `cairn ingest` scans `~/.claude/projects/-Users-harshdaga-my-repo/*.jsonl` (path slug
+   algorithm in R19.2), parses unseen sessions, writes to `my-repo/.cairn/ledger.db`.
+3. `cairn sessions` lists: time, source, tools, files touched, tokens, git branch.
+4. `cairn render --session <id>` → `outputs/bundle/index.html`.
+5. Reviewer opens `file://` HTML offline: **Files** tab shows `src/auth.ts` → timeline of
+   prompts/tools/edits; **Graph** tab shows causal DAG; **Timeline** shows total order.
+6. `cairn render --zip` → attach to PR.
+
+### 7.2 Live capture (richer file snapshots)
+
+1. `cairn watch install --source claude-code` merges hooks into `.claude/settings.local.json`.
+2. `PreToolUse` on `Edit|Write` captures **before** file hash; `PostToolUse` captures **after**.
+3. On `Stop`, session is finalized; optional `cairn watch --auto-render`.
+4. Same bundle as 7.1, but file diffs are exact CAS snapshots, not inferred from git.
+
+### 7.3 Multi-runtime same repo
+
+1. Morning: Cursor session on `my-repo` → `cairn ingest --source cursor`.
+2. Afternoon: Codex session → `cairn ingest --source codex`.
+3. `cairn sessions` shows both; `cairn render` can bundle one or `--all-since 1d`.
+
+### 7.4 Pipeline mode (graduation — later phase)
+
+1. User notices repeated pattern across sessions.
+2. `cairn init` → edit `cairn.toml` + `prompts/`.
+3. `cairn build` → macro DAG, AC, `outputs/`.
+4. `cairn render --run <build_run_id>` → build lineage bundle (step DAG view).
+5. Capture sessions and build runs coexist in one ledger; renderer picks view by target.
 
 ---
 
 ## 8. Architecture
 
-### 8.1 Component overview
+### 8.1 Layer diagram (end to end)
 
 ```
-   cairn.toml ──┐        ┌──────────────────────────────────────┐
-   prompts/   ──┼──────► │   Parser+Loader → DAG Builder →        │
-   inputs/    ──┘        │   Planner (hash/diff/cost) →           │
-   agents/    ──────────►│   Executor (scheduler) →               │
-                         │     ├─ Provider Adapter → model API     │
-                         │     ├─ Agent Backend → MCP tools / A2A   │
-                         │     └─ Cache (AC + CAS)                  │
-                         │   → Ledger + Renderer → outputs/, bundle/│
-                         └──────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│ AGENT RUNTIMES (external)                                                │
+│  Claude Code          Codex CLI/TUI           Cursor IDE                 │
+│  ~/.claude/projects/  ~/.codex/sessions/      ~/.cursor/projects/.../  │
+└────────────┬──────────────────┬──────────────────────┬────────────────┘
+             │ JSONL (batch)     │ JSONL (batch)         │ JSONL (batch)
+             │ Hooks (live)      │ Hooks (live)          │ (hooks: future)
+             ▼                   ▼                       ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ cairn/ingest/                                                            │
+│  parsers/claude_code.py | codex.py | cursor.py                          │
+│  normalizer.py → R7 Trajectory                                          │
+│  graph/session_graph.py → micro DAG (nodes + edges)                     │
+│  hook_cmd.py ← stdin JSON from agent hooks                              │
+└────────────┬────────────────────────────────────────────────────────────┘
+             ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ledger/ + cache/cas                                                      │
+│  runs (kind=capture|build) | events | file_artifacts | tool_calls       │
+└────────────┬────────────────────────────────────────────────────────────┘
+             │
+     ┌───────┴────────┐
+     ▼                ▼
+┌─────────────┐  ┌──────────────────────────────────────────────────────┐
+│ render/     │  │ PIPELINE (optional) — Phases 1–2 built                 │
+│ bundle v2   │  │ loader → graph/builder → plan → executor → providers  │
+│ Files|Graph │  │ AC + action keys (never fed by ingest)                 │
+│ Timeline    │  └──────────────────────────────────────────────────────┘
+└─────────────┘
 ```
 
 ### 8.2 Components
 
-- **Parser + Loader** — reads/validates `cairn.toml`, loads prompts + agent policies,
-  resolves source globs. Pure, side-effect-free. Produces a typed `Project`.
-- **DAG Builder** — resolves `over`/`inputs`/`ref()`/`source()` into a node graph (map
-  steps expand per item; dynamic steps create a placeholder resolved at runtime). Detects
-  cycles, missing refs, dangling outputs.
-- **Planner** — computes each node's **action key** (§9), checks the AC, classifies nodes
-  as `cached-hit` / `stale` / `new`, and produces a **work list** + **cost estimate**.
-  Pure and unit-testable with a mocked cache.
-- **Executor / Scheduler** — runs the work list in topological order with bounded
-  concurrency, retries, rate-limit handling, a global cost ceiling, and per-agent budget
-  enforcement. Calls Provider Adapters and Agent Backends. Writes to CAS + Ledger.
-- **Provider Adapter** — thin interface wrapping each *model* backend (the only place that
-  talks to a completion API). Swappable; testable via a `RecordedProvider` (§15).
-- **Agent Backend** — thin interface wrapping each *agent* runtime: built-in loop, an
-  external A2A agent, or a wrapped local runtime (LangGraph/CrewAI/CLI). Hosts MCP tools.
-  Testable via a `RecordedAgent` that replays a captured trajectory (§15).
-- **Cache** — Action Cache (key→hash) + CAS (hash→blob) on the local filesystem.
-- **Ledger** — SQLite + per-run `run.json`. The provenance backbone.
-- **Renderer** — reads Ledger + CAS, emits the Provenance Bundle (static site), including
-  recursive trajectory views for agent nodes.
+| Component | Capture mode | Pipeline mode |
+|---|---|---|
+| `ingest/` | **Primary** — parsers, hooks, watch | Unused |
+| `ledger/` | sessions, events, file_artifacts | + build runs, nodes, tool_calls |
+| `cache/cas.py` | trajectory + snapshot blobs | + step outputs |
+| `cache/action_cache.py` | **Unused** | AC lookups |
+| `graph/session_graph.py` | Infer micro DAG | Unused |
+| `graph/builder.py` | Unused | Macro DAG from `cairn.toml` |
+| `plan/` | Unused | action keys, cost |
+| `executor/` | Unused | parallel build |
+| `providers/` | Observe model from transcripts | Invoke HTTP APIs |
+| `render/` | Session bundle v2 | Build bundle v1 (same shell) |
+| `cli/` | `ingest`, `watch`, `sessions`, `render` | `build`, `plan`, `status`, … |
 
-### 8.3 The adapter interfaces (stable contracts)
+### 8.3 Adapter interfaces (stable contracts)
+
+**Provider (Pipeline invoke + Capture observe):**
 
 ```python
-class Provider(Protocol):                  # model completions
+class Provider(Protocol):                  # model completions — Pipeline only
     name: str
     def complete(self, request: CompletionRequest) -> CompletionResult: ...
-    def estimate_tokens(self, request: CompletionRequest) -> int: ...
 
-class AgentBackend(Protocol):              # autonomous agent runs
-    name: str
-    def run(self, task: AgentTask) -> AgentResult: ...   # returns outputs + full trajectory
-    def estimate(self, task: AgentTask) -> CostEstimate: ...
-
-@dataclass(frozen=True)
-class AgentTask:
-    goal: str                      # rendered instruction/policy
-    inputs: list[InputRef]         # files/refs the agent may read
-    tools: list[ToolSpec]          # MCP tool specs (id + version + purity)
-    sub_agents: list[AgentSpec]    # delegation targets
+class ObservedUsage(TypedDict):            # Capture only — parsed from transcripts
     model: str
-    params: dict
-    budget: Budget                 # max_tokens / max_iterations / max_seconds
-
-@dataclass(frozen=True)
-class AgentResult:
-    outputs: dict[str, bytes]      # produced/changed files keyed by path
-    trajectory: Trajectory         # full recorded run (for cache + provenance)
     input_tokens: int
     output_tokens: int
+    cost: float | None
 ```
 
-Built-in adapters in v1: a generic **HTTP chat** Provider; in later phases a **built-in
-agent loop** AgentBackend, an **A2A** AgentBackend, and a **CLI-agent** AgentBackend.
-New backends implement the Protocol — nothing else changes.
+Capture **never** calls `Provider.complete()`. It extracts `ObservedUsage` from transcript
+lines via `ingest/usage.py`.
+
+**Agent backends (Pipeline only — Phase 8+):** unchanged `AgentBackend` protocol from v1.2.
+External agents (Claude Code, Codex, Cursor) are **not** invoked by Cairn in Capture mode;
+they are **observed** via ingest.
+
+### 8.4 Ingest writer (normative)
+
+All ingest paths append to the ledger through one module: `ingest/writer.py`.
+
+```
+append_event(session_id, seq, event_type, payload) → None
+snapshot_file(session_id, path_rel, op, before_hash?, after_hash?) → None
+finish_session(session_id, status, totals) → writes sessions/<id>.json
+```
+
+- **Idempotency:** re-ingesting the same `external_id` is a no-op (compare source + external_id).
+- **Concurrency:** hook handlers and `cairn ingest` serialize writes via SQLite WAL +
+  `BEGIN IMMEDIATE` on session rows.
+- **Secrets:** scrub env vars, API keys, and bearer tokens before CAS write (R16).
 
 ---
 
-## 9. The Cache-Key Algorithm (specified precisely)
+## 9. The Cache-Key Algorithm (Pipeline mode only)
 
-This is the heart. Get it exactly right.
+> **Capture mode does not use action keys or the Action Cache.** Ingest writes trajectories
+> and snapshots to the ledger/CAS for provenance only (ADR 0008). Everything below applies to
+> `cairn build` only.
+
+This is the heart of Pipeline mode. Get it exactly right.
 
 For a node `N`, the **action key** is:
 
@@ -441,216 +435,346 @@ else:
   sub-agent definitions — because changing an agent's available tools can change its
   output, so it must invalidate the cache.
 
-**Side-effect safety (agent-specific, see §12.5):** an agent node whose tools are all
+**Side-effect safety (agent-specific, see §12.6):** an agent node whose tools are all
 `pure` is safe to cache. An agent node with any `effectful` tool may **not** be silently
-served from cache (replaying wouldn't re-perform the side effect); it must be declared
-`volatile`, or the user must explicitly accept caching with a loud warning.
+served from cache; it must be declared `volatile`, or the user must explicitly accept
+caching with a loud warning.
 
-**Why this is correct:** the key captures *every* input that could change the output
-(prompt/policy, model, params, tools, sub-agents, budget, and the transitive closure of
-input bytes). Anything not in the key must not affect the output — the hermeticity
-contract, made true by pinning.
+**Bridge (future):** `cairn replay --session <id>` may pin a captured trajectory for
+Pipeline agent steps — out of scope until Phase 8.
 
 ---
 
 ## 10. Command Surface (the CLI)
 
-Small, predictable, composable. Every command is safe to run repeatedly.
+### 10.1 Capture commands (hero path)
 
 | Command | What it does |
 |---|---|
-| `cairn init [dir]` | Scaffold a new project (layout + example). |
-| `cairn validate` | Parse + type-check config, prompts, agent/tool decls; resolve the DAG. **Spends no tokens.** Runs in CI. |
-| `cairn doctor` | Preflight environment check (no tokens): resolved provider credentials present, base URLs/models recognized, declared MCP servers reachable, declared CLI agents on PATH. Fail-loud before any spend (R18). |
-| `cairn status` | Per-node `cached`/`stale`/`new` + total estimated cost (incl. agent budget ceilings). No tokens spent. |
-| `cairn plan` | Like `status` but prints execution order and rendered prompts/policies. |
-| `cairn build [selector]` | Execute the work list. `--dry-run`, `--refresh`, `--max-cost`, `--concurrency`, `--yes`. Confirms above a cost threshold. Enforces agent budgets. |
-| `cairn diff [selector]` | Show how outputs/trajectories changed versus the previous run. |
-| `cairn render [--out dir] [--zip]` | Build the Provenance Bundle (incl. recursive agent trajectory views). |
-| `cairn trace <node>` | Print/inspect a single agent node's full trajectory (tools, sub-agents). |
-| `cairn test` | Run declared assertions over outputs (§15). |
-| `cairn cache (status\|gc\|clear)` | Inspect, GC, or clear the local cache. |
-| `cairn run <prompt> [--input ...]` | One-off render+run outside the DAG. |
-| `cairn docs` | Generate a static DAG/lineage view of the project. |
+| `cairn ingest [--since 7d] [--source claude-code\|codex\|cursor\|all]` | Batch-import agent transcripts for cwd's project. |
+| `cairn ingest --watch` | Tail new JSONL files (inotify/polling). |
+| `cairn watch install [--source …] [--project PATH]` | Install capture hooks (Claude Code, Codex). |
+| `cairn watch uninstall \| status` | Manage hook installation. |
+| `cairn sessions [--limit N] [--source …]` | List captured sessions. |
+| `cairn show <session_id> [--json]` | Session summary or full trajectory. |
+| `cairn graph <session_id> [--format dot\|json]` | Export micro DAG. |
+| `cairn render [--session ID\|--run ID] [-o dir] [--zip] [--split]` | **Hero** — offline provenance bundle. |
+| `cairn doctor` | Check ingest paths reachable, hooks installed, disk space. |
 
-**Selectors** (dbt-style): `cairn build summaries`, `cairn build +critique` (upstream),
-`cairn build summaries+` (downstream), `cairn build tag:report`.
+### 10.2 Pipeline commands (retained — Phases 1–2 built)
+
+| Command | What it does |
+|---|---|
+| `cairn init [dir]` | Scaffold Pipeline project (`cairn.toml`, prompts, inputs). |
+| `cairn validate` | Parse config; resolve macro DAG. No tokens. |
+| `cairn status` / `cairn plan` | Cache state + cost estimate. |
+| `cairn build [selector]` | Execute pipeline. |
+| `cairn runs` | List build runs (`kind=build`). |
+| `cairn diff` / `cairn trace` / `cairn cache` | Phase 7+ pipeline ergonomics. |
+| `cairn run <prompt>` | One-off completion outside DAG. |
+
+### 10.3 Global flags
+
+`--project PATH` — override project root (default: git root from cwd).
+`--json` — machine-readable output where supported.
 
 ---
 
 ## 11. Key Flows (step by step)
 
-**Cold build.** `validate` → DAG → Planner marks all `new` → show plan + cost → confirm →
-Executor runs level by level → CAS + Ledger → `outputs/` written.
+### 11.1 Capture batch ingest (Claude Code)
 
-**Incremental rebuild.** Edit a file/prompt → `status` recomputes keys → only changed keys
-are `stale` → `build` runs just those → downstream keys change automatically → the cascade
-halts where a regenerated output is byte-identical (content-addressing gives this for free).
+1. Resolve project root `P` = git root of cwd.
+2. Compute Claude project slug: `P.as_posix().replace("/", "-")` with leading `-` →
+   e.g. `/Users/harshdaga/cairn` → `-Users-harshdaga-cairn`.
+3. Glob `~/.claude/projects/<slug>/*.jsonl`.
+4. For each file: read `sessionId` from first line; skip if `(source=claude-code, external_id)` exists.
+5. Parse lines (R19.3): build `events[]` in `seq` order; link `parentUuid` chain.
+6. For each `tool_use` / `tool_result` pair: insert `tool_calls` row.
+7. For `Edit|Write|MultiEdit` tools: extract `file_path` from args; record `file_artifact`.
+8. Store trajectory JSON in CAS; insert `runs` row (`kind=capture`).
+9. Write `.cairn/sessions/<session_id>.json`.
 
-**Diff.** `diff` reads the last two runs from the Ledger, fetches both blobs from the CAS,
-renders unified diffs per output (and trajectory diffs for agent nodes).
+### 11.2 Capture live hooks (Claude Code)
 
-**Render & share.** `render` walks the latest run, pulls every output and its lineage,
-emits a self-contained static site (plain HTML + minimal vanilla JS). `--zip` for one file.
+Hook handler: `cairn hook --event <name>` (installed per R19.4).
 
-**Agentic flows** are specified in §12.
+| Hook event | Cairn action |
+|---|---|
+| `SessionStart` | `begin_session(source=claude-code, cwd, git_commit, external_id=sessionId)` |
+| `UserPromptSubmit` | `append_event(user_prompt)` — hash + inline if < 64 KiB |
+| `PreToolUse` matcher `Edit\|Write\|MultiEdit` | Read file → CAS `before_hash`; `append_event(tool_call, pending)` |
+| `PostToolUse` | `append_event(tool_result)`; snapshot `after_hash`; update `file_artifacts` |
+| `PostToolUse` matcher `Bash` | `tool_call` with command hash only (no env expansion in bundle) |
+| `SubagentStart` / `SubagentStop` | `sub_agent` event; link child session if `sessionId` known |
+| `Stop` | `finish_session(status=completed)` |
+
+**Contract:** hook command always `exit 0`. On internal error: log to `~/.cairn/hook-errors.log`, still exit 0.
+
+### 11.3 Capture batch ingest (Codex)
+
+1. Glob `~/.codex/sessions/**/rollout-*.jsonl` (recursive).
+2. Filter by `session_meta.payload.cwd` matching project root `P` (prefix match).
+3. Parse line types: `session_meta`, `event_msg`, `response_item`, `turn_context` (R19.5).
+4. Map `response_item.payload.type=function_call` → `tool_call`; results from following items.
+5. Map `apply_patch` / `shell` / MCP tools per R19.5 tool table.
+6. `turn_context.payload.model` → session model; accumulate usage from `event_msg` completion events.
+
+### 11.4 Capture live hooks (Codex)
+
+Install into `~/.codex/config.toml` `[hooks]` or project `.codex/config.toml` (R19.6).
+
+| Hook event | Cairn action |
+|---|---|
+| `SessionStart` | `begin_session(source=codex, …)` — read `session_id`, `cwd` from stdin |
+| `UserPromptSubmit` | `append_event(user_prompt)` |
+| `PreToolUse` matcher `apply_patch\|Edit\|Write` | `before_hash` snapshot |
+| `PostToolUse` | `tool_result` + `after_hash` |
+| `Stop` | `finish_session` |
+
+Codex hooks require user trust via `/hooks` or `--dangerously-bypass-hook-trust` for CI.
+Cairn documents this in `cairn watch install` output.
+
+### 11.5 Capture batch ingest (Cursor)
+
+1. Compute Cursor project dir: `~/.cursor/projects/<slug>/` where slug mirrors path encoding
+   (e.g. `Users-harshdaga-cairn` for `/Users/harshdaga/cairn` — detect both `-Users-…` and
+   `Users-…` variants; R19.7).
+2. Glob `agent-transcripts/<uuid>/<uuid>.jsonl` and `agent-transcripts/<uuid>/subagents/*.jsonl`.
+3. Parse `{role, message}` lines (R19.7). `tool_use` blocks in assistant `content[]`.
+4. Parent session links child `subagents/*.jsonl` via `sub_agent` events.
+5. **Note:** Cursor does not expose stable PreToolUse hooks in v1; file snapshots are
+   **post-hoc** from tool args + optional git diff until Cursor documents hooks.
+
+### 11.6 Render & share (both modes)
+
+1. `cairn render --session <id>` loads session row + events + CAS blobs.
+2. Build `graph{nodes,edges}` via `graph/session_graph.py`.
+3. Build `files[]` index from `file_artifacts`.
+4. Embed JSON in `index.html` (`cairn_bundle_version: 2` for capture).
+5. `assets/app.js` renders Files (default) | Graph | Timeline tabs.
+
+### 11.7 Pipeline cold build (unchanged)
+
+`validate` → DAG → Planner → Executor → CAS + Ledger → `outputs/`.
 
 ---
 
-## 12. Agentic & Multi-Agent Workflows
-
-This section extends Cairn to autonomous and multi-agent work **without** turning it into
-an agent runtime or an orchestration framework.
+## 12. Agent Sources, Graph Model & Multi-Agent Design
 
 ### 12.1 Stance (read this first)
 
-Cairn is the **reproducible build substrate around agentic work**, not another
-orchestrator. It *composes* agent runtimes (built-in loop, LangGraph, CrewAI, Claude Code,
-or external A2A agents); it does not compete with them. Its contribution is exactly the
-layer where agentic systems fail today: **reproducibility, provenance, caching, and cost
-governance**.
+**Capture mode implements §12.9 (provenance) first.** Cairn is the **flight recorder** around
+Claude Code, Codex, and Cursor — not a replacement. Pipeline mode adds **reproducible builds**
+when users graduate. The two-level model (§12.2) is the architectural spine.
 
-Two honest constraints, grounded in the research, are baked into the design:
+### 12.2 The two-level model
 
-- **Most "agentic" work isn't.** If a unit of work is deterministic, it's a step, not an
-  agent (Principle #11). Sequential chains and parallel fan-out/fan-in are expressed as
-  ordinary steps/map-reduce — cached and cheap — and only genuinely autonomous work
-  becomes an agent node.
-- **Multi-agent is expensive.** It adds large token overhead and only pays off with real
-  specialization, parallelism, or critique. Cairn surfaces estimated multi-agent overhead
-  and nudges toward plain steps.
+| Level | Graph | Default? | How obtained |
+|---|---|---|---|
+| **Micro** | Session event DAG | **Yes** | Inferred from ingest |
+| **Macro** | `cairn.toml` step DAG | Optional | Declared + `ref()` |
 
-### 12.2 The two-level model (the reconciliation)
+**Micro graph edges:**
 
-Cairn separates two graphs:
+1. **Temporal:** `seq N → seq N+1`.
+2. **Causal:** `tool_call` → `tool_result` (same `tool_use_id`).
+3. **Data:** `file_snapshot(read)` → later `tool_call(write)` on same `path_rel`.
+4. **Delegation:** `sub_agent` → child session's first event.
 
-- **Macro graph (static, content-addressed):** the build DAG of steps. Sequential = a
-  chain of steps; parallel = map/reduce. These two of the five dominant multi-agent
-  patterns require **no new machinery** — they're already cached at the graph level.
-- **Micro execution (dynamic, non-deterministic):** what happens *inside* an agent node —
-  the think→act→observe loop, tool calls, sub-agent delegation. This is **opaque** to the
-  macro graph.
+**Macro graph:** unchanged from v1.2 — `graph/builder.py`, map/reduce, dynamic manifests.
 
-The bridge is §2's core move, extended: Cairn pins the **realized trajectory** of an agent
-node, content-addressed by its inputs. A re-run with unchanged inputs **replays** the
-pinned trajectory (zero tokens, zero tool calls); `--refresh` re-rolls.
+### 12.3 Claude Code integration (normative)
 
-### 12.3 The agent node
+**Transcript location:**
 
-```toml
-[steps.researcher]
-kind     = "agent"
-policy   = "agents/researcher.md"     # system prompt / instructions (Jinja2)
-inputs   = ["source('brief')"]
-output   = "outputs/research/{{ item.stem }}.md"   # or a directory for multi-file output
-model    = "claude-opus-4-8"
-params   = { temperature = 0.2 }
-tools    = ["mcp:websearch@1", "mcp:filesystem:read@1"]   # all pure → cacheable
-effects  = "pure"                     # "pure" | "effectful"
-budget   = { max_tokens = 200000, max_iterations = 30, max_seconds = 600 }
-backend  = "builtin"                  # "builtin" | "a2a:<url>" | "cli:<cmd>" | "langgraph:<entry>"
+```
+~/.claude/projects/<project_slug>/
+  <session_uuid>.jsonl          # primary transcript
+  <session_uuid>/               # optional subdir for sidechain assets
 ```
 
-The agent runs to completion within its budget; Cairn captures `(outputs, trajectory)` as
-the node's pinned, content-addressed result.
+**Project slug:** absolute cwd with `/` → `-`, e.g. `/Users/harshdaga/cairn` → `-Users-harshdaga-cairn`.
 
-### 12.4 Tools via MCP
+**Line types to parse (R19.3):**
 
-Agent nodes receive capabilities through **MCP**, the vendor-neutral tool standard.
-Cairn acts as an **MCP host** for the duration of an agent node, exposing only the
-declared tools. Tool **ids + versions are part of the cache key** (§9), because changing an
-agent's tools can change its output. Tools are declared with a **purity** (`pure` vs
-`effectful`).
+| `type` field | Maps to |
+|---|---|
+| `user` | `user_prompt` |
+| `assistant` | `assistant_message` (+ embedded `tool_use` blocks → `tool_call`) |
+| `user` with `tool_result` content | `tool_result` |
+| `system` | `error` or skip (subtype `api_error`, etc.) |
+| `attachment` | skip or `metadata` (hook noise) |
+| `file-history-snapshot` | `file_snapshot` hint |
+| `permission-mode`, `queue-operation`, `last-prompt` | skip |
 
-### 12.5 Side effects & caching safety (the part frameworks get wrong)
+**Fields preserved:** `sessionId`, `uuid`, `parentUuid`, `timestamp`, `cwd`, `gitBranch`,
+`version`, `message.model`, `message.usage`, `toolUseResult`.
 
-- **Pure-only agent nodes** (`effects = "pure"`): safe to `cache`. Replaying the pinned
-  trajectory is sound, because nothing in the world was mutated.
-- **Effectful agent nodes** (`effects = "effectful"`): a cached replay does **not**
-  re-perform the side effect. Cairn therefore refuses to silently cache them — you must set
-  `materialization = "volatile"` (always re-run) or explicitly opt into caching, and Cairn
-  emits a loud warning at `validate`/`plan` time. This is a deliberate safety stance
-  consistent with Principle #8 (fail loud).
+**Hook install target:** `.claude/settings.local.json` (project-local, gitignored) or
+`.claude/settings.json` (committed, team choice). `cairn watch install` writes:
 
-### 12.6 The five patterns, mapped to Cairn
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "cairn hook --event SessionStart" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "cairn hook --event UserPromptSubmit" }] }],
+    "PreToolUse": [{
+      "matcher": "Edit|Write|MultiEdit",
+      "hooks": [{ "type": "command", "command": "cairn hook --event PreToolUse" }]
+    }],
+    "PostToolUse": [{
+      "matcher": "Edit|Write|MultiEdit|Bash",
+      "hooks": [{ "type": "command", "command": "cairn hook --event PostToolUse" }]
+    }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "cairn hook --event Stop" }] }]
+  }
+}
+```
 
-| Pattern | How Cairn expresses it | Where it lives |
+`cairn hook` reads JSON from stdin per [Claude Code hooks reference](https://code.claude.com/docs/en/hooks).
+
+### 12.4 Codex integration (normative)
+
+**Transcript location:**
+
+```
+~/.codex/sessions/<YYYY>/<MM>/<DD>/rollout-<ISO-timestamp>-<uuid>.jsonl
+```
+
+**Session metadata:** first `session_meta` line:
+
+```json
+{
+  "type": "session_meta",
+  "payload": {
+    "id": "<uuid>",
+    "cwd": "/abs/path/to/project",
+    "originator": "codex-tui",
+    "cli_version": "…",
+    "model_provider": "openai",
+    "source": "cli"
+  }
+}
+```
+
+**Line types (R19.5):**
+
+| `type` | Maps to |
+|---|---|
+| `session_meta` | `session_start` |
+| `turn_context` | model + sandbox metadata on event |
+| `event_msg` `task_started` | turn boundary |
+| `event_msg` `task_complete` | usage totals |
+| `event_msg` `user_message` | `user_prompt` |
+| `event_msg` `error` | `error` |
+| `response_item` `message` | `assistant_message` |
+| `response_item` `function_call` | `tool_call` |
+| `response_item` `function_call_output` | `tool_result` |
+
+**Codex tool name mapping:**
+
+| Codex tool | Cairn normalized name | File tracking |
 |---|---|---|
-| **Sequential / chain** | A chain of steps via `ref()`. | Macro graph (cached). |
-| **Parallel fan-out/fan-in** | `map` step + `reduce` step. | Macro graph (cached). |
-| **Orchestrator-worker / hierarchical** | A `dynamic` agent step that emits a runtime manifest of worker items → a map over those items → a reduce (§12.7). | Macro graph, resolved at runtime (cached per item). |
-| **Handoff / routing** | A step outputs a routing decision (data); downstream steps carry a `when` predicate over it, or the route selects manifest items. | Macro graph. |
-| **Loop / critic-refiner (evaluator-optimizer)** | Preferred: a bounded sub-graph `generate → critique → revise` with `max_rounds` (each round cached + inspectable). Alternative: an opaque agent loop inside one node. Hard caps always enforced. | Either level. |
+| `apply_patch` | `edit` | parse patch paths |
+| `shell` / `exec_command` | `bash` | command hash only |
+| `read_file` / `list_dir` | `read` | `file_snapshot(read)` |
+| `mcp__*` | `mcp:<server>:<tool>` | per tool schema |
+| `multi_tool_use.parallel` | fan-out parent | child tool_call events |
 
-### 12.7 Dynamic steps (runtime-determined DAG — the hard, valuable bit)
-
-An orchestrator can't always know its workers ahead of time ("research each subtopic I
-discover"). A `dynamic` step solves this:
+**Hook install:** `~/.codex/config.toml` or `<project>/.codex/config.toml`:
 
 ```toml
-[steps.plan]
-kind    = "agent"
-dynamic = true                       # emits a manifest instead of a single output
-policy  = "agents/planner.md"
-inputs  = ["source('brief')"]
-emits   = "workers"                  # name of the child work-set this step produces
-budget  = { max_iterations = 10 }
+[features]
+hooks = true
 
-[steps.work]
-kind   = "agent"
-over   = "manifest('workers')"       # fan-out over the runtime-emitted items
-policy = "agents/worker.md"
-output = "outputs/work/{{ item.id }}.md"
+[[hooks.SessionStart]]
+matcher = "startup|resume"
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = "cairn hook --event SessionStart --source codex"
 
-[steps.report]
-prompt = "prompts/report.md"
-inputs = ["ref('work')"]
-output = "outputs/report.md"
+[[hooks.PreToolUse]]
+matcher = "apply_patch|Edit|Write"
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "cairn hook --event PreToolUse --source codex"
+
+[[hooks.PostToolUse]]
+matcher = "apply_patch|Edit|Write|Bash"
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = "cairn hook --event PostToolUse --source codex"
+
+[[hooks.UserPromptSubmit]]
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = "cairn hook --event UserPromptSubmit --source codex"
+
+[[hooks.Stop]]
+[[hooks.Stop.hooks]]
+type = "command"
+command = "cairn hook --event Stop --source codex"
 ```
 
-Mechanics: `plan` runs and emits a **manifest** (a JSON list of items, each with an `id`
-and its own inputs/params). Cairn content-addresses the manifest, then materializes each
-`work` item as a normal cached node. On rebuild: an unchanged manifest ⇒ children served
-from cache; a changed manifest ⇒ Cairn diffs it, runs only new/changed children, and
-prunes outputs of removed children. This is the Dagster-dynamic-output / Airflow
-dynamic-task-mapping idea, adapted so **caching survives the dynamic boundary** — which is
-the part nobody packages.
+Hook stdin fields used: `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `tool_name`,
+`tool_use_id`, `tool_input`, `turn_id`, `model`.
 
-### 12.8 External & heterogeneous agents via A2A
+### 12.5 Cursor integration (normative)
 
-An agent node can be backed by an **external A2A agent** (`backend = "a2a:<url>"`). Cairn
-reads the agent's **Agent Card**, delegates the task over A2A, and captures the result and
-trajectory as the node's pinned output. This lets Cairn orchestrate multi-vendor / remote
-agents at the macro-graph level while keeping its caching and provenance guarantees. Cairn
-speaks A2A **as a client/orchestrator only** — it never implements an agent runtime. A
-local runtime (LangGraph/CrewAI/Claude Code) is wrapped the same way via a CLI or library
-adapter behind the `AgentBackend` Protocol (§8.3).
+**Transcript location (observed layout):**
 
-### 12.9 Provenance for agents (the differentiator)
+```
+~/.cursor/projects/<workspace_slug>/
+  agent-transcripts/
+    <session_uuid>/
+      <session_uuid>.jsonl       # parent agent transcript
+      subagents/
+        <subagent_uuid>.jsonl    # child agent transcripts
+  agent-tools/                   # tool output blobs (optional enrichment)
+  terminals/                     # terminal state snapshots (optional enrichment)
+  mcps/                          # MCP descriptors (not parsed in v1)
+```
 
-For an agent node, the Provenance Bundle renders the **full, recursive trajectory**: each
-reasoning step, each tool call (name, arguments, result), and each sub-agent delegation
-(expandable into the sub-agent's own trajectory). Because the whole trajectory is pinned
-and content-addressed, the result is a **reproducible, offline-auditable, shareable
-multi-agent run** — something existing agent frameworks do not package, and a direct
-answer to the observability/debugging pain that sinks agentic pilots.
+**Workspace slug:** derived from workspace root path. Cairn tries, in order:
 
-### 12.10 Cost & safety governance
+1. `Users-<path-with-dashes>` (e.g. `Users-harshdaga-cairn`)
+2. `-Users-<path-with-dashes>` (Claude-style, if present)
+3. `cairn config` override `[capture.cursor] workspace_slug = "…"`
 
-- Every agent node **must** declare a `budget` (max tokens / iterations / wall-clock).
-  Cairn enforces hard caps — this is the primary defense against infinite loops and
-  runaway cost.
-- `cairn status`/`plan` show worst-case agent cost (budget ceilings) alongside cached
-  savings. `--max-cost` sets a global ceiling for the whole build.
-- Cairn flags multi-agent steps with an estimated overhead note and suggests a plain-step
-  alternative where an agent isn't warranted (Principle #11).
+**Line format:**
 
-### 12.11 What this is explicitly NOT
+```json
+{"role":"user","message":{"content":[{"type":"text","text":"…"}]}}
+{"role":"assistant","message":{"content":[
+  {"type":"text","text":"…"},
+  {"type":"tool_use","name":"Read","input":{"path":"…"}}
+]}}
+```
 
-Cairn does **not** replace LangGraph, CrewAI, AutoGen, ADK, or Claude Code; it does not
-introduce a new orchestration DSL competing with A2A; it does not run long-lived,
-always-on agents (builds are batch and reproducible). It **wraps and composes** these
-systems to add the reproducibility/provenance/caching layer. See §19 (Non-Goals).
+**Tool mapping:**
+
+| Cursor tool name | Normalized | Notes |
+|---|---|---|
+| `Read`, `Glob`, `Grep` | `read` / `search` | path from `input.path` or `input.glob_pattern` |
+| `Write`, `StrReplace`, `EditNotebook` | `edit` | path + content hash |
+| `Shell` | `bash` | command hash only |
+| `Delete` | `delete` | path |
+| `Task` | `sub_agent` | spawns subagent transcript file |
+
+**Hooks:** Cursor does not document a public hook API equivalent to Claude/Codex as of v2.0.
+Capture is **batch ingest only** for Cursor in Phase 5. Phase 6 may add Cursor hooks if/when
+documented. File snapshots use post-tool content hashes until PreToolUse is available.
+
+### 12.6 Pipeline agent nodes (deferred — Phase 8+)
+
+v1.2 §12.3–§12.11 remain normative for Pipeline mode: `kind = "agent"`, MCP host, A2A,
+dynamic manifests, budgets, side-effect safety. They are **not** the default entry point.
+
+### 12.7 What this is explicitly NOT
+
+Unchanged from v1.2 §12.11: Cairn does not replace agent runtimes, run long-lived agents,
+or compete with A2A orchestration DSLs.
 
 ---
 
@@ -658,219 +782,185 @@ systems to add the reproducibility/provenance/caching layer. See §19 (Non-Goals
 
 | Concern | Choice | Why |
 |---|---|---|
-| **Language (core)** | **Python 3.11+** | The LLM/agent ecosystem (provider SDKs, MCP SDK, A2A SDK, tokenizers, Jinja2) lives here; dbt proved Python scales to a massive OSS CLI; lowest barrier for contributors. The hot path is network I/O, not CPU. |
-| **Distribution** | `uv`/`pipx` + standalone binaries (PyInstaller) per-OS | Honors zero-infra: `uvx cairn` or a single downloaded binary. |
-| **CLI framework** | Typer (Click) + Rich | Typed commands, great help, pretty output. |
-| **Config** | TOML (`tomllib`) + Pydantic schema | Readable, typed, validated with clear errors. |
-| **Templating** | Jinja2 (sandboxed) | Battle-tested; same choice as dbt/promptfoo. |
-| **Hashing** | `hashlib.sha256` over canonical JSON | Boring, correct, fast enough. |
-| **Cache/Ledger** | Filesystem CAS + SQLite | Zero-infra, transactional, git-diffable run files. |
-| **Concurrency** | `asyncio` + bounded semaphore | Natural fit for parallel API/tool calls. |
-| **Tools** | **MCP** (official SDK) | Vendor-neutral, Linux-Foundation-governed standard. |
-| **External agents** | **A2A** (official SDK) | Vendor-neutral agent-to-agent standard. |
-| **Renderer** | Static HTML + vanilla JS | Self-contained, no build step, opens offline. |
-| **Testing** | pytest + syrupy + `RecordedProvider`/`RecordedAgent` | Deterministic tests for a non-deterministic domain (§15). |
-
-**The one debate to flag:** a single static binary favors Go/Rust. We choose Python anyway
-for ecosystem + contributor reach (the dbt precedent) and solve distribution with bundled
-binaries. **Do not** start in Rust "for performance" — network latency, not CPU, is the
-bottleneck, and Rust shrinks the contributor pool.
+| **Language** | Python 3.11+ | Ecosystem, contributor reach, Phases 1–2 already built. |
+| **Distribution** | `uv`/`pipx` + PyInstaller binaries | Zero-infra install. |
+| **CLI** | Typer + Rich | Typed commands, readable output. |
+| **Config** | TOML + Pydantic | Pipeline config; hook install metadata. |
+| **Ledger** | SQLite (WAL) | Single-writer ingest + concurrent reads. |
+| **CAS** | Filesystem sharded by hash | Large blobs, snapshots. |
+| **Renderer** | Static HTML + vanilla JS | Offline `file://`; no build step. |
+| **Ingest** | JSONL streaming parsers | Match agent native formats. |
+| **Hooks** | Subprocess (`cairn hook`) | Agent-native extension points. |
+| **Testing** | pytest + golden fixtures per source | Real transcript fixtures from three runtimes. |
 
 ---
 
 ## 14. Coding Guidelines & Conventions
 
-The codebase must stay readable enough that a newcomer can land a PR in a weekend.
-
 ```
 cairn/
-├── cli/        # Typer commands; thin, no logic
-├── model/      # Project, Step, Node, AgentTask, Trajectory dataclasses (pure data)
-├── loader/     # config + prompt + agent/tool loading & validation
-├── graph/      # DAG building, dynamic-step resolution, cycle detection, selectors
-├── plan/       # hashing, cache resolution, cost/budget estimation
-├── cache/      # AC + CAS
-├── ledger/     # SQLite + run.json
-├── providers/  # model adapters (http, recorded)
-├── agents/     # agent backends (builtin loop, a2a, cli, recorded) + MCP host
-├── execute/    # scheduler/executor + budget enforcement
-├── render/     # provenance bundle (incl. trajectory views)
-└── util/       # tiny shared helpers
+├── cli/           # Typer commands; thin
+├── ingest/        # parsers, normalizer, hook_cmd, writer, watch
+│   ├── parsers/   # claude_code.py, codex.py, cursor.py
+│   └── ...
+├── graph/
+│   ├── builder.py       # Pipeline macro DAG
+│   ├── session_graph.py # Capture micro DAG
+│   └── selectors.py
+├── model/         # Project, Step, Node, Trajectory, CaptureSession
+├── loader/        # Pipeline config + prompts
+├── plan/          # Pipeline hashing, cost
+├── cache/         # AC + CAS
+├── ledger/        # SQLite schema + migrations
+├── providers/     # HTTP adapters + observe helpers
+├── agents/        # Pipeline agent backends (Phase 8+)
+├── executor/      # Pipeline scheduler
+├── render/        # bundle v1 (build) + v2 (capture)
+└── util/
 ```
 
-**Rules**
-
-1. **Pure core, thin shell.** Logic lives in `loader/`, `graph/`, `plan/`. `cli/`,
-   `execute/`, `providers/`, `agents/` only orchestrate. The Planner must be a pure
-   function of `(Project, CacheView)`.
-2. **Types everywhere.** Full hints; `mypy --strict` in CI; Pydantic at boundaries.
-3. **One module, one responsibility.** If you can't describe it in one sentence, split it.
-4. **Errors are values with context.** Name the file, the line, what was expected, the fix.
-   No bare tracebacks reach users.
-5. **No hidden global state.** Cache, ledger, MCP host are injected, not imported.
-6. **Determinism is a test target.** Any function feeding an action key has a golden-hash
-   test that fails on unexpected change.
-7. **Formatting/linting:** `ruff` + `mypy` pre-commit and in CI. Zero-config for contributors.
-8. **Commits & PRs:** Conventional Commits; tests required; docs updated in the same PR
-   (docs-as-code). SemVer; the action-key format and `cairn.toml` schema are public
-   contracts with their own versions.
-9. **Dependencies are a liability.** Adding one requires justifying why it can't be vendored.
-10. **Public API stability:** the schema, the CLI surface, the action-key algorithm, and
-    the MCP/A2A integration points are versioned contracts; breaking them needs a major
-    version + migration note.
+**Rules:** unchanged from v1.2 (pure core, mypy strict, injected dependencies, golden hashes).
+**Additional:** ingest parsers are **pure** (bytes/JSON in → events out); only `writer.py` touches SQLite.
 
 ---
 
 ## 15. Testing & Validation Strategy
 
-Testing a non-deterministic tool: make the non-determinism injectable and recorded.
+**Capture-specific tests (required):**
 
-- **Unit tests (the bulk).** Parser, DAG builder, dynamic-step resolution, selectors, and
-  especially the **Planner and hashing** are pure and fully unit-tested. Golden-hash tests
-  assert exact action keys for fixed inputs (incl. agent tool sets).
-- **`RecordedProvider` / `RecordedAgent` (record/replay).** Record mode calls a real
-  model/agent once and saves the response/trajectory as a fixture; replay mode (CI default)
-  serves the fixture. Deterministic, offline, free end-to-end tests of build/diff/render
-  and full agent trajectories without burning tokens — the VCR pattern adapted to LLMs and
-  agents.
-- **Snapshot tests.** Rendered bundle (incl. trajectory views) and CLI output snapshotted.
-- **Property tests (the soul).** "Building twice with no changes spends zero tokens and
-  zero tool calls." "Editing one of N map inputs invalidates exactly one output." "An
-  unchanged regenerated output halts the downstream cascade." "An unchanged dynamic manifest
-  serves all children from cache." "An effectful agent node is never silently cached."
-- **End-to-end fixtures.** Example projects (research synthesis, doc generation, code
-  analysis, an orchestrator-worker research agent) run in CI under replay; they double as
-  documentation.
-- **The real-world validation gate (most important).** Automated tests prove correctness,
-  not desire. Each phase below ships to N real users in one niche and watches whether they
-  adopt a free tool. If they don't, stop and rethink.
+- **Golden transcript fixtures** — one real (redacted) JSONL per source in `tests/fixtures/ingest/`.
+- **Normalizer tests** — fixed input → exact `events[]` sequence.
+- **Idempotency** — ingest same file twice → one session row.
+- **Hook contract** — `cairn hook` always exits 0; malformed stdin → log, no raise.
+- **Graph linker** — tool_call → tool_result → file_write chain produces expected edges.
+- **Bundle v2 snapshot** — render output HTML structure stable.
+
+**Pipeline tests:** unchanged (RecordedProvider, property tests, golden action keys).
+
+**Validation gates:** per-phase human gates in §16.
 
 ---
 
 ## 16. Phase-by-Phase Build Plan
 
-Each phase has **goal**, **deliverables**, **exit criteria (technical)**, and a
-**validation gate (human)**. Don't start a phase before the previous gate passes.
+Phases 0–2 are **complete**. Do not reopen unless a regression breaks exit criteria.
 
-### Phase 0 — Spike & decide (1 week)
-- **Goal:** de-risk the core idea.
-- **Deliverables:** a throwaway script running a 3-node DAG (map + reduce + single) with
-  content-addressed caching against one real provider.
-- **Exit:** "edit one input → only the affected node re-runs" works once, by hand.
-- **Validation gate:** *you* feel the "whoa" on one of your own real tasks. If not, stop.
+### Phase 0 — Spike & decide ✅ COMPLETE
+De-risked content-addressed DAG + provider adapter.
 
-### Phase 1 — Core build engine (3–4 weeks)
-- **Goal:** the minimum tool genuinely useful to its author.
-- **Deliverables:** `init`/`validate`/`doctor`/`status`/`plan`/`build`; TOML schema; Jinja
-  rendering; map+reduce+single chat steps; AC+CAS; cost estimator; HTTP Provider;
-  the **provider capability registry** (R18.1), **credential resolver** (R18.2, zero-config for
-  standard env vars), and **per-provider retry policy tables** (R18.3); `RecordedProvider`; full
-  unit/property/golden-hash tests.
-- **Exit:** §4 principles hold; building twice spends zero tokens; one-file edits
-  invalidate exactly the right nodes; `cairn doctor` catches a missing key/model before spend;
-  `mypy --strict` + `ruff` clean.
-- **Validation gate:** *you* run all your real corpus tasks through it for two weeks and
-  stop using the manual/script way.
+### Phase 1 — Core build engine ✅ COMPLETE
+`init`/`validate`/`doctor`/`status`/`plan`/`build`; TOML; map+reduce; AC+CAS; HTTP Provider;
+R18 provider layer; RecordedProvider; tests.
 
-### Phase 2 — Provenance & sharing (2–3 weeks)
-- **Goal:** the differentiator that makes people share it.
-- **Deliverables:** Ledger; `render` (self-contained provenance bundle); `--zip`.
-- **Exit:** a non-user opens the bundle offline and traces any output to its inputs +
-  prompt + model + params.
-- **Validation gate:** hand a bundle to **5 people in one niche**; two unprompted installs
-  = a real signal.
-
-### Phase 3 — Iteration ergonomics (2 weeks)
-- **Goal:** delightful daily iteration (retention).
-- **Deliverables:** `diff`, selectors, `--refresh`, `--max-cost`, `samples = n`, `docs`.
-- **Exit:** edit → status → build → diff is fast and obvious.
-- **Validation gate:** ≥3 external people use it **weekly**, unprompted.
-
-### Phase 4 — Agent nodes & tools (3–4 weeks)
-- **Goal:** single-agent autonomy with full reproducibility (satisfies "general-purpose
-  coding agents, not just chat").
-- **Deliverables:** `kind = "agent"`; built-in agent loop; **MCP host** + tool purity;
-  budget enforcement; side-effect safety (§12.5); CLI-agent backend via the **agent profile
-  registry** (R18.4 — named backends like `claude-code`/`codex` plus the `cli:<cmd>` escape
-  hatch, invocation-only, no config mutation); `cairn doctor` extended to check agent binaries;
-  trajectory capture; trajectory views in the bundle; `cairn trace`; `RecordedAgent`.
-- **Exit:** an agent node caches, replays, diffs, and renders identically to a chat step; an
-  effectful agent is never silently cached; budgets are hard-enforced.
-- **Validation gate:** at least one external user runs an agent node over their own files and
-  shares the resulting trajectory bundle.
-
-### Phase 5 — Multi-agent & interop (3–4 weeks)
-- **Goal:** orchestrator-worker, hierarchical, handoff, and loop patterns + heterogeneous
-  agents.
-- **Deliverables:** `dynamic` steps + runtime manifests + caching across the dynamic
-  boundary (§12.7); `manifest()`/`when` predicates; **A2A** backend (external agents);
-  recursive sub-agent trajectories in provenance; an example orchestrator-worker research
-  agent; optional Dagster execution backend for heavy users; documented plugin point for
-  new Providers/AgentBackends.
-- **Exit:** an unchanged manifest serves all children from cache; an external A2A agent
-  caches/renders like a built-in one; a third-party backend can be added without touching
-  core.
-- **Validation gate:** one external contributor lands a backend/plugin PR; one user runs a
-  real multi-agent workflow and audits it via the bundle.
-
-### Phase 6 — Polish, docs, community (ongoing)
-- **Deliverables:** bundled per-OS binaries; docs site with a 5-minute quickstart + worked
-  examples (chat and agentic); published schema for editor autocomplete; contribution guide;
-  release automation.
-- **Exit:** newcomer goes install → first rendered bundle in under 10 minutes from docs alone.
-- **Validation gate:** §18 success metrics trend up over two consecutive releases.
+### Phase 2 — Provenance & sharing ✅ COMPLETE
+Ledger (R14 v2); `cairn render`; `--zip`/`--split`; `cairn runs`; build `run.json` mirrors.
 
 ---
 
-## 17. Risks & Mitigations (the honest list)
+### Phase 3 — Capture: Claude Code batch ingest (2 weeks)
+- **Goal:** zero-config value from existing Claude Code JSONL.
+- **Deliverables:**
+  - `cairn/ingest/parsers/claude_code.py` (R19.3)
+  - `ingest/normalizer.py`, `ingest/writer.py`
+  - Ledger migration v3: `runs.kind`, `events`, `file_artifacts`, `sessions` metadata
+  - `cairn ingest`, `cairn sessions`, `cairn show`
+  - Project slug resolver; git context capture
+  - Tests: golden fixture from `~/.claude/projects/.../*.jsonl` (redacted)
+- **Exit:** `cairn ingest` in a repo with Claude history → sessions listed; events queryable in SQLite.
+- **Validation gate:** *you* run ingest on 3 real projects; sessions match what you remember doing.
 
-- **"Feature, not a tool."** *Mitigation:* the provenance bundle (Phase 2) is the
-  irreducible differentiator; lead with it. If Phase 2's gate fails, the thesis is wrong.
-- **Big labs move context management upstream.** *Mitigation:* Cairn's durable value is
-  reproducibility/provenance over a corpus and over agent runs — which models managing their
-  own context do not provide. Anchor messaging there.
-- **Non-determinism / side-effects confuse users.** *Mitigation:* `status`/`diff` make
-  staleness explicit; `--refresh` is discoverable; effectful agents fail loud; docs explain
-  pinning and purity in one example each.
-- **Multi-agent cost blowups & infinite loops.** *Mitigation:* mandatory per-agent budgets,
-  hard caps, global `--max-cost`, worst-case cost shown before running, and a nudge toward
-  plain steps (Principle #11).
-- **Scope creep into an orchestration framework.** The strongest gravity. *Mitigation:* §12.11
-  and §19 are load-bearing; Cairn *wraps* runtimes (MCP/A2A/CLI backends), never reimplements
-  them. Reject PRs that add an in-house orchestration DSL or a long-lived agent runtime.
-- **Protocol churn (MCP/A2A still evolving).** *Mitigation:* isolate behind the
-  Provider/AgentBackend Protocols and the MCP host module; pin SDK versions; treat protocol
-  integration as a versioned contract.
-- **Narrow audience (terminal power users).** True. *Mitigation:* that audience is real,
-  reachable, and adopts free tools. Aim for a few thousand people who love it.
+### Phase 4 — Capture: Codex + live hooks (2 weeks)
+- **Goal:** Codex parity + real-time file snapshots for Claude and Codex.
+- **Deliverables:**
+  - `ingest/parsers/codex.py` (R19.5)
+  - `cairn hook` entrypoint (R19.8)
+  - `cairn watch install|uninstall|status` for Claude Code + Codex
+  - PreToolUse/PostToolUse file snapshots in CAS
+  - `cairn ingest --source codex`
+- **Exit:** edit file in Codex session → ingest/hooks → `file_artifacts` has before/after hashes.
+- **Validation gate:** one live Claude session + one Codex session captured without manual JSONL copy.
+
+### Phase 5 — Capture: Cursor + bundle v2 (2–3 weeks)
+- **Goal:** the differentiator — shareable offline report with file-first + graph UI.
+- **Deliverables:**
+  - `ingest/parsers/cursor.py` (R19.7); subagent linking
+  - `graph/session_graph.py`
+  - `render/` bundle `cairn_bundle_version: 2` — Files | Graph | Timeline
+  - `cairn render --session`, `cairn graph`
+  - `cairn ingest --source cursor|all`
+- **Exit:** non-user opens `index.html` via `file://` and traces a file change to prompt + tools.
+- **Validation gate:** hand bundle to **5 people**; **2 unprompted** "I'd install this" = signal.
+  (This is the real Phase 2 product gate, reframed for agent-first.)
+
+### Phase 6 — Capture hardening + session diff (2 weeks)
+- **Goal:** retention and trust.
+- **Deliverables:**
+  - Secret scrubbing in render (extend R16 tests)
+  - `cairn diff --session A B` (files changed between sessions)
+  - `cairn ingest --watch` (tail JSONL)
+  - `cairn render --zip` polish; large bundle `--split`
+  - Enrichment from `agent-tools/` blobs when present (Cursor)
+- **Exit:** daily `cairn ingest && cairn render` is < 10 s for typical sessions.
+- **Validation gate:** ≥3 external users ingest **weekly**, unprompted.
+
+### Phase 7 — Pipeline iteration ergonomics (2 weeks)
+- **Goal:** Pipeline mode daily use (old Phase 3).
+- **Deliverables:** `diff`, selectors, `--refresh`, `--max-cost`, `samples = n`, `cairn docs`, `cache gc`.
+- **Exit:** edit prompt → status → build → diff is fast.
+- **Validation gate:** ≥2 users run Pipeline mode weekly alongside capture.
+
+### Phase 8 — Pipeline agent nodes & MCP (3–4 weeks)
+- **Goal:** `kind = "agent"` with builtin loop, MCP host, budgets (old Phase 4).
+- **Deliverables:** `agents/builtin.py`, MCP host, `cairn trace`, RecordedAgent, trajectory in build bundle.
+- **Exit:** agent node caches/replays; effectful agents never silently cached.
+- **Validation gate:** external user runs agent node, shares trajectory bundle.
+
+### Phase 9 — Multi-agent & interop (3–4 weeks)
+- **Goal:** dynamic manifests, A2A, orchestrator-worker (old Phase 5).
+- **Exit:** unchanged manifest → cached children; plugin backend PR from contributor.
+
+### Phase 10 — Polish, docs, community (ongoing)
+- **Goal:** 10-minute quickstart (capture-first docs); bundled binaries; contribution guide.
+- **Exit:** newcomer: install → `cairn ingest` → render → open bundle from docs alone.
 
 ---
 
-## 18. Success Metrics (for a tool people love, not a startup)
+## 17. Risks & Mitigations
 
-Stars are vanity. Track: **weekly-active self-hosters**; unprompted "I use this daily/weekly"
-testimonials from non-authors; **external contributors** landing non-trivial PRs;
-**projects in the wild** (public repos with a `cairn.toml`); **bundles shared** (the truest
-signal — the artifact is the growth loop); and, for agentic adoption, **agent trajectory
-bundles shared**. North star: *would the median user be annoyed if Cairn disappeared
-tomorrow?*
+| Risk | Mitigation |
+|---|---|
+| Agent vendors change JSONL format | Versioned parsers; `cairn doctor` warns on parse errors; fixtures in CI. |
+| Cursor storage fragmentation | Adapter tries multiple slug patterns; config override; ingest-only until hooks exist. |
+| Hooks break agent UX | Fail-open (exit 0); `watch status` diagnostics; uninstall restores config backup. |
+| "Feature, not a tool" | Lead with bundle (Phase 5 gate); capture works without `cairn.toml`. |
+| Pipeline vs capture confusion | CLI help separates modes; docs show capture-first path. |
+| Scope creep into agent runtime | §12.7 + §19 unchanged. |
 
 ---
 
-## 19. Non-Goals (say no to these forever, in the core)
+## 18. Success Metrics
 
-- Not an **evaluation/benchmarking platform** (compose with promptfoo/Braintrust).
-- Not a **hosted SaaS**, account system, or billing.
-- Not a **real-time collaborative editor** (git is the collaboration layer).
-- Not a **vector database / RAG framework** (compose with one).
-- Not an **agent runtime or orchestration framework.** Cairn *invokes and composes* agents
-  (built-in loop, MCP tools, A2A, CLI/LangGraph/CrewAI backends) to add reproducibility,
-  provenance, and caching. It does not run long-lived agents, and it does not introduce an
-  in-house orchestration DSL competing with A2A.
-- Not a **notebook** (no live kernel; builds are batch and reproducible).
-- Not a **GUI** in the core (the provenance bundle is read-only output, not an app).
+Stars are vanity. Track:
 
-Any of these may exist *around* Cairn as separate, optional projects. None may enter core.
+- **Weekly-active capture users** (`cairn ingest` or watch hooks firing)
+- **Bundles shared** (the growth loop)
+- **Sessions rendered per user per week**
+- Unprompted "I use this to understand what the agent did"
+- Pipeline adoption (secondary): repos with `cairn.toml`
+- External parser contributions (new agent source adapters)
+
+North star: *would the median agent user be annoyed if Cairn disappeared tomorrow?*
+
+---
+
+## 19. Non-Goals (unchanged core)
+
+- Not an agent runtime or IDE plugin.
+- Not a hosted observability SaaS.
+- Not crypto-compliance tooling.
+- Not marketing CAS/cache to end users.
+- Not replacing git.
+- Not a GUI app (bundle is read-only HTML).
 
 ---
 
@@ -878,15 +968,10 @@ Any of these may exist *around* Cairn as separate, optional projects. None may e
 
 ### 20.1 Glossary
 
-*Action key* — the SHA-256 fingerprint of everything that determines a node's output.
-*CAS* — content-addressable store (hash → bytes). *AC* — action cache (key → hash).
-*Map/Reduce* — fan-out vs fan-in. *Materialization* — how an output is persisted/cached.
-*Ledger* — the run-by-run provenance record. *Bundle* — the shareable provenance artifact.
-*Pinning* — fixing a non-deterministic output/trajectory so the same key always yields the
-same bytes. *Agent node* — an autonomous LLM-in-a-loop step. *Trajectory* — an agent run's
-full recorded sequence. *Manifest* — a dynamic step's runtime-emitted child work-set.
-*Budget* — hard caps on an agent node. *MCP* — agent↔tool protocol. *A2A* — agent↔agent
-protocol. *Agent Card* — an A2A agent's capability descriptor.
+*Session* — one agent conversation (capture unit). *Event* — one step in the micro DAG.
+*Micro graph* — inferred causal DAG from a session. *Macro graph* — Pipeline step DAG.
+*Capture* — ingest mode. *Pipeline* — build mode. *Trajectory* — full event sequence (R7).
+*Bundle* — offline HTML provenance report. Other terms unchanged from v1.2.
 
 ### 20.2 Template variable binding rules
 
@@ -899,7 +984,7 @@ protocol. *Agent Card* — an A2A agent's capability descriptor.
   `id` plus its declared inputs.
 - Project-level `vars` are global. Templates render in a Jinja sandbox; no code execution.
 
-### 20.3 `cairn.toml` schema (informal)
+### 20.3 `cairn.toml` schema (informal, Pipeline mode)
 
 ```
 [project]   name (str, required), version (str)
@@ -940,28 +1025,25 @@ orchestrator that produces a child work-set. Agent steps **must** declare a `bud
 
 ### 20.4 The single sentence that defines the project
 
-> **Cairn turns a folder of files, prompts, and agents into reproducible, shareable
-> artifacts — recomputing only what changed and pinning every completion and agent
-> trajectory — a build system for LLM work.**
+> **Cairn records what coding agents did, explains it as a causal graph and file-centric
+> report you can share offline — and optionally turns repeatable work into a cached,
+> reproducible pipeline.**
 
 ---
 
-*End of charter. If you build exactly what's written here, you've built Cairn. If you're
-tempted to add something not written here, check it against §4 (Principles), §12.11, and
-§19 (Non-Goals) first — especially anything that smells like an agent runtime.*
+*End of Part I. Part II (R1–R19) follows.*
 
 ---
 ---
 
-# PART II — Detailed Engineering Reference (R1–R17)
+# PART II — Detailed Engineering Reference (R1–R19)
 
 > **No-ambiguity implementation spec.** Part I (§1–§20) gives the design, contracts, and
-> principles. Part II specifies exact formats, algorithms, protocols, and edge cases so the
-> tool can be built without further design decisions. **If Part I and Part II ever conflict,
-> Part I's principles (§4) win — record the conflict as an ADR and surface it.**
+> principles. Part II specifies exact formats, algorithms, protocols, parsers, hook wiring,
+> and edge cases so the tool can be built without further design decisions. **If Part I and
+> Part II ever conflict, Part I's principles (§4) win — record the conflict as an ADR.**
 
-All identifiers, field names, and file paths below are normative. JSON examples are
-illustrative of structure, not exhaustive.
+All identifiers, field names, and file paths below are normative.
 
 ## R1. Canonical serialization & hashing
 
@@ -989,7 +1071,10 @@ once in `util/canonical.py`; everything else calls it.
 ├── ledger.db            # SQLite: runs, nodes, action_cache (AC), tool_calls, cas_refs
 ├── cache/
 │   └── cas/<aa>/<sha256>   # CAS blobs, sharded by first 2 hex chars (git-style)
-├── runs/<run_id>.json   # human-readable per-run mirror (git-diffable provenance)
+├── sessions/<session_id>.json  # capture session mirror
+├── runs/<run_id>.json          # build run mirror
+├── watch/install.json          # hook install state
+├── watch/cursors.json          # ingest byte offsets
 ├── config.json          # local, non-committed runtime prefs (concurrency, telemetry)
 ├── lock                 # advisory build lock (flock)
 └── tmp/                 # scratch for atomic writes
@@ -1008,6 +1093,11 @@ once in `util/canonical.py`; everything else calls it.
 - **GC (`cairn cache gc`):** mark-and-sweep. Roots = CAS hashes referenced by the most recent
   `--keep-runs N` runs (default 10) plus anything currently materialized under `outputs/`.
   Sweep unreferenced blobs. AC rows whose `output_hash` is swept are deleted.
+
+
+- **Capture GC:** trajectory hashes from the last 50 capture sessions are GC roots (default; configurable).
+
+- **Capture mode** does not use action keys or AC; ingest never writes `action_cache` (ADR 0008).
 
 ## R3. Configuration, secrets & precedence
 
@@ -1080,6 +1170,9 @@ depend on streaming.
 token-bucket limiter honoring configured RPM/TPM. **Coalesce identical in-flight requests by
 action key** so duplicate work (e.g. two map items that hash identically) shares one call.
 
+
+**Capture observe path:** `ingest/usage.py` extracts token counts from Claude `message.usage`, Codex `task_complete` events, and Cursor assistant metadata when present. No `Provider.complete()` call.
+
 ## R6. The built-in agent loop — exact algorithm
 
 `agents/builtin.py` implements `AgentBackend` for `backend = "builtin"`.
@@ -1118,30 +1211,47 @@ run(task):
   no file tools output the final assistant text.
 - **Pinning:** the entire trajectory (R7) + outputs are content-addressed and pinned per §9.
 
-## R7. Trajectory data model (canonical JSON)
+## R7. Trajectory data model (canonical JSON) — v2
 
 ```
 Trajectory = {
-  version, node_id, model, params, started_at, ended_at,
-  status: "completed" | "budget_exhausted" | "failed",
-  usage: { input_tokens, output_tokens },
-  events: [ Event, ... ]
+  version: 2,
+  schema: "cairn-trajectory",
+  session_id | node_id,
+  source: "claude-code" | "codex" | "cursor" | "builtin" | "a2a" | ...,
+  external_id: string | null,
+  cwd: string,
+  git: { branch, commit, dirty: bool },
+  model: string,
+  params: object | null,          # Pipeline agent only
+  started_at, ended_at,
+  status: "completed" | "in_progress" | "budget_exhausted" | "failed",
+  usage: { input_tokens, output_tokens, cost },
+  events: [ Event, ... ],
+  graph: { nodes: [...], edges: [...] }   # optional precomputed for render
 }
+
 Event =
-  | { type:"message",     role, content:[ContentBlock] }
-  | { type:"tool_call",   tool_id, name, args, started_at }
-  | { type:"tool_result", tool_id, result_hash, is_error, ended_at, duration_ms }
-  | { type:"sub_agent",   agent_ref, trajectory_hash, status }   # nested, recursive
-  | { type:"budget_check",iter, tokens, elapsed_s }
-  | { type:"error",       message, fatal }
+  | { type:"session_start", source, cwd, git, seq }
+  | { type:"session_end",   status, totals, seq }
+  | { type:"user_prompt",   text_hash, text_inline?, prompt_id?, seq }
+  | { type:"assistant_message", model, text_hash, text_inline?, usage?, seq }
+  | { type:"tool_call",     tool_use_id, name, args_hash, args_inline?, seq }
+  | { type:"tool_result",   tool_use_id, result_hash, result_inline?, is_error, duration_ms?, seq }
+  | { type:"file_snapshot", path_rel, op:"read"|"write"|"edit", before_hash?, after_hash?, seq }
+  | { type:"sub_agent",     parent_tool_use_id, child_session_id, child_source, seq }
+  | { type:"error",         message, fatal, status_code?, seq }
+  | { type:"budget_check",  ... }           # Pipeline builtin only
+  | { type:"message",       role, content }  # legacy Pipeline compat
 ```
 
-- The trajectory is one CAS blob. **Large tool results and sub-agent trajectories are stored
-  as separate CAS blobs referenced by hash** (`result_hash`, `trajectory_hash`) to dedupe and
-  to make provenance recursive.
-- The trajectory hash participates in `ref()` resolution exactly like a normal output hash, so
-  a downstream step depending on an agent node invalidates correctly when the trajectory
-  changes.
+- `seq` is monotonic per session, assigned by `ingest/writer.py`.
+- Inline caps: 64 KiB for prompts/tool args in SQLite payload; larger → CAS hash only (R17 #14).
+- Trajectory blob stored at `trajectory_hash = sha256(canonical_json(trajectory))`.
+
+
+- **Pipeline compatibility:** builtin/MCP agent trajectories may emit legacy `message` events; capture uses v2 types above.
+- Trajectory hash participates in `ref()` for Pipeline agent nodes.
 
 ## R8. MCP integration — exact wiring
 
@@ -1255,59 +1365,147 @@ Manifest = {
   optional `--against <run|branch>` may later compare to another ledger for cross-environment
   reuse.
 
-## R14. The Ledger — SQLite schema (DDL) + run.json
+
+> **Note:** R8–R13 apply to **Pipeline mode** only. Capture mode uses R19 instead of R6/R8–R10 for runtime wiring.
+
+## R14. Ledger — SQLite schema v3
 
 ```sql
-PRAGMA user_version = 1;   -- schema_version; migrations applied on open, never destructive
+PRAGMA user_version = 3;
 
+-- Extended runs (capture + build)
 CREATE TABLE runs (
-  run_id TEXT PRIMARY KEY, started_at TEXT, ended_at TEXT, status TEXT,
-  total_cost REAL, total_input_tokens INTEGER, total_output_tokens INTEGER,
-  cairn_version TEXT, key_version INTEGER, git_commit TEXT
+  run_id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL DEFAULT 'build',  -- 'capture' | 'build'
+  source TEXT,                          -- claude-code | codex | cursor | null for build
+  external_id TEXT,                     -- agent session id
+  cwd TEXT,
+  git_branch TEXT,
+  git_commit TEXT,
+  started_at TEXT NOT NULL,
+  ended_at TEXT,
+  status TEXT NOT NULL,
+  trajectory_hash TEXT,
+  total_cost REAL,
+  total_input_tokens INTEGER,
+  total_output_tokens INTEGER,
+  cairn_version TEXT,
+  key_version INTEGER,
+  UNIQUE(source, external_id)           -- idempotent ingest
 );
+
+CREATE TABLE events (
+  run_id TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  PRIMARY KEY (run_id, seq)
+);
+
+CREATE TABLE file_artifacts (
+  run_id TEXT NOT NULL,
+  path_rel TEXT NOT NULL,
+  first_seq INTEGER NOT NULL,
+  last_seq INTEGER NOT NULL,
+  before_hash TEXT,
+  after_hash TEXT,
+  PRIMARY KEY (run_id, path_rel, last_seq)
+);
+
+-- Build tables (unchanged from v2)
 CREATE TABLE nodes (
-  run_id TEXT, node_id TEXT, step TEXT, item_id TEXT, kind TEXT,
-  action_key TEXT, output_hash TEXT, status TEXT, model TEXT, params_json TEXT,
-  input_tokens INTEGER, output_tokens INTEGER, cost REAL, duration_ms INTEGER,
-  started_at TEXT, ended_at TEXT,
+  run_id TEXT NOT NULL,
+  node_id TEXT NOT NULL,
+  step TEXT NOT NULL,
+  item_id TEXT,
+  kind TEXT NOT NULL,
+  action_key TEXT NOT NULL,
+  output_hash TEXT,
+  status TEXT NOT NULL,
+  model TEXT NOT NULL,
+  params_json TEXT NOT NULL,
+  input_tokens INTEGER NOT NULL,
+  output_tokens INTEGER NOT NULL,
+  cost REAL,
+  duration_ms INTEGER,
+  started_at TEXT NOT NULL,
+  ended_at TEXT NOT NULL,
+  rendered_prompt TEXT,
+  system_prompt TEXT,
   PRIMARY KEY (run_id, node_id)
 );
-CREATE TABLE action_cache (            -- the AC
-  action_key TEXT PRIMARY KEY, output_hash TEXT, kind TEXT,
-  created_at TEXT, last_used_at TEXT, model TEXT
+
+CREATE TABLE tool_calls (
+  run_id TEXT NOT NULL,
+  node_id TEXT NOT NULL,   -- build: node_id; capture: run_id used as node_id
+  seq INTEGER NOT NULL,
+  tool_id TEXT,
+  name TEXT,
+  args_hash TEXT,
+  result_hash TEXT,
+  is_error INTEGER,
+  duration_ms INTEGER,
+  PRIMARY KEY (run_id, node_id, seq)
 );
-CREATE TABLE tool_calls (              -- agent provenance / queryability
-  run_id TEXT, node_id TEXT, seq INTEGER, tool_id TEXT, name TEXT,
-  args_hash TEXT, result_hash TEXT, is_error INTEGER, duration_ms INTEGER
+
+CREATE TABLE action_cache (
+  action_key TEXT PRIMARY KEY,
+  output_hash TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  last_used_at TEXT NOT NULL,
+  model TEXT
 );
-CREATE TABLE cas_refs (                -- gc roots
-  output_hash TEXT, run_id TEXT, node_id TEXT
+
+CREATE TABLE cas_refs (
+  output_hash TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  node_id TEXT NOT NULL,
+  PRIMARY KEY (output_hash, run_id, node_id)
 );
 ```
 
-- **`runs/<run_id>.json`** is a human-readable mirror of one run (nodes + summary) for
-  git-diffable provenance and as the data source for `render`.
-- **Migrations:** keyed on `PRAGMA user_version`; applied on open; back up `ledger.db` before
-  any non-trivial migration.
+- **`sessions/<session_id>.json`** and **`runs/<run_id>.json`** are human-readable mirrors for
+  git-diffable provenance and as render inputs.
+- **Migrations:** keyed on `PRAGMA user_version`; applied on open; never destructive.
+- Migration v2→v3: add `runs.kind`, `source`, `external_id`, `cwd`, `trajectory_hash`; create
+  `events`, `file_artifacts`; backfill `kind='build'` for existing rows.
 
-## R15. The Provenance Bundle — structure & rendering
+## R15. Provenance Bundle — v1 (build) and v2 (capture)
 
 ```
 outputs/bundle/
-├── index.html      # self-contained: embeds ALL run + lineage + trajectory data
-├── assets/         # one css, one js — NO framework, NO build step
-└── (optional) data/  # only used when --split is passed; default is fully inlined
+├── index.html      # self-contained: embeds ALL data via <script id="cairn-data">
+├── assets/         # app.css, app.js — NO framework, NO build step
+└── (optional) data/  # --split only; default is fully inlined
 ```
 
-- **Self-contained by default:** all data is embedded in `index.html` inside
-  `<script type="application/json" id="cairn-data">…</script>`, so the file opens via `file://`
-  with no server and no network (avoids browser `fetch` restrictions on `file://`). `--zip`
-  packages the directory; `--split` writes external `data/` for very large bundles.
-- **Lineage drill-down:** every output links to its inputs (source paths + hashes, upstream
-  refs), the full prompt text, model, and params. **Agent nodes** render the recursive
-  trajectory: collapsible events, tool calls with args/results, and nested sub-agent
-  trajectories (resolved from their CAS hashes, inlined at render time).
-- Rendering is plain DOM manipulation over the embedded JSON. No localStorage/sessionStorage.
+**v1 build bundle** (`cairn_bundle_version: 1`, `kind: build`): step DAG, node lineage, prompts,
+models, params — as implemented in Phase 2. Opens via `file://` with no network (ADR 0009).
+
+**v2 capture bundle** (`cairn_bundle_version: 2`, `kind: capture`):
+
+**v2 capture bundle** (`cairn_bundle_version: 2`):
+
+```json
+{
+  "cairn_bundle_version": 2,
+  "kind": "capture",
+  "session": { "id", "source", "cwd", "git", "started_at", "model", "usage" },
+  "events": [ ... ],
+  "files": [
+    { "path_rel", "before_hash", "after_hash", "event_seqs": [12, 15, 28] }
+  ],
+  "graph": {
+    "nodes": [{ "id", "type", "label", "seq" }],
+    "edges": [{ "from", "to", "kind": "causal"|"data"|"temporal" }]
+  },
+  "blobs": { "<hash>": "<inline or truncated>" }
+}
+```
+
+Embedded in `index.html` via `embedding.py` escaper (ADR 0010). Three views: **Files** (default),
+**Graph**, **Timeline**. v1 build bundle unchanged for `kind=build`.
 
 ## R16. Security & trust model
 
@@ -1326,7 +1524,13 @@ outputs/bundle/
 - **Network egress** is limited to configured providers, declared MCP HTTP servers, and
   declared A2A endpoints. **No telemetry without explicit opt-in** (off by default).
 
-## R17. Invariants & edge-case checklist (must all hold; each gets a test)
+- **Hook handlers** run as the user; install only via `cairn watch`.
+- **Capture bundles** scrub API keys and bearer tokens.
+- **Bash tools:** redact env assignments matching `*[Kk][Ee][Yy]*=*`.
+
+## R17. Invariants & edge-case checklist
+
+**Pipeline invariants** (must all hold; each gets a test):
 
 1. Building twice with no changes spends **zero** tokens and zero tool calls.
 2. Editing one of N map inputs invalidates **exactly one** child output.
@@ -1353,7 +1557,13 @@ outputs/bundle/
     wrong answer.
 17. Tokenizer/price gaps degrade gracefully to estimates marked "unpriced", never a hard fail.
 
----
+**Capture invariants** (each gets a test):
+
+18. Ingest same `external_id` twice → one `runs` row.
+19. `cairn hook` always exits 0.
+20. Ingest never writes to `action_cache`.
+21. `render` deterministic for fixed session + CAS blobs.
+22. File paths in bundle are repo-relative, never absolute (except display links).
 
 ## R18. Provider & Agent Connection Layer (ergonomics)
 
@@ -1439,9 +1649,183 @@ attribution/influence scorer; any Redis/shared backend. Cairn stays local-first,
 content-addressed. The capability registry's cache semantics are advisory transport hints only
 and must never reach the action cache.
 
+
+**Capture vs Pipeline:** R18 profiles (`claude-code`, `codex`, `cursor`) are for Pipeline CLI-agent **invocation** (Phase 8). **Capture** uses R19 parsers — Cairn does not subprocess agents during ingest.
+
+## R19. Capture & Ingest — full specification
+
+### R19.1 Module layout
+
+```
+cairn/ingest/
+├── __init__.py
+├── writer.py           # sole SQLite mutator for capture
+├── normalizer.py       # source-specific events → R7 Event
+├── usage.py            # extract ObservedUsage from raw lines
+├── hook_cmd.py         # `cairn hook` stdin/stdout
+├── watch.py            # install/uninstall/status
+├── project_paths.py    # slug resolution, glob discovery
+└── parsers/
+    ├── claude_code.py
+    ├── codex.py
+    └── cursor.py
+```
+
+### R19.2 Project path slug algorithm
+
+```python
+def claude_project_slug(repo_root: Path) -> str:
+    return repo_root.resolve().as_posix().replace("/", "-")
+    # /Users/harshdaga/cairn → -Users-harshdaga-cairn
+
+def cursor_workspace_slug(repo_root: Path) -> list[str]:
+    p = repo_root.resolve().as_posix().strip("/")
+    candidates = [
+        p.replace("/", "-"),                          # Users-harshdaga-cairn
+        "-" + p.replace("/", "-"),                    # -Users-harshdaga-cairn
+    ]
+    return candidates
+
+def codex_sessions_glob() -> Path:
+    return Path.home() / ".codex" / "sessions"
+```
+
+`cairn ingest` accepts `--claude-project-dir`, `--cursor-workspace`, `--codex-cwd-filter` overrides.
+
+### R19.3 Claude Code parser
+
+**Input:** path to `*.jsonl`.
+
+**Algorithm:**
+
+```
+state = new ParserState()
+for line in file:
+    obj = json.loads(line)
+    match obj.get("type"):
+        case "user":
+            if tool_result blocks in content → emit tool_result events
+            else → emit user_prompt
+        case "assistant":
+            emit assistant_message from message
+            for block in content if tool_use → emit tool_call
+        case "system":
+            if subtype api_error → emit error
+        case "file-history-snapshot":
+            emit file_snapshot hint from snapshot.trackedFileBackups
+        case _:
+            skip
+    link parentUuid chain in state
+return state.events
+```
+
+**Tool arg paths:** `Edit`/`Write`/`MultiEdit` → `tool_input.file_path` or `tool_input.path`.
+
+### R19.4 Claude Code hook wiring
+
+Install merges into existing `hooks` key (backup to `.cairn/watch/claude-settings.bak`).
+
+`cairn hook --event PreToolUse`:
+
+```
+stdin  → Claude hook JSON (tool_name, tool_input, session_id, cwd, ...)
+action → if Edit|Write|MultiEdit: read file at path → CAS before_hash
+       → append_event(tool_call, seq)
+stdout → empty
+exit   → 0 always
+```
+
+### R19.5 Codex parser
+
+**Input:** `rollout-*.jsonl`.
+
+**Algorithm:**
+
+```
+on session_meta → begin_session(payload.id, payload.cwd, ...)
+on turn_context → set model, turn_id
+on event_msg task_started → turn boundary
+on event_msg user_message → user_prompt
+on response_item message role=assistant → assistant_message
+on response_item function_call → tool_call(name, args)
+on response_item function_call_output → tool_result
+on event_msg task_complete → accumulate usage
+```
+
+**apply_patch parsing:** extract paths from patch hunks; `before_hash` from disk at parse time
+if file exists (batch) or from hook snapshot (live).
+
+### R19.6 Codex hook wiring
+
+Same events as R19.4 mapping to Codex hook names. `tool_name` may be `apply_patch` — treat as
+`edit`. Install uses TOML `[[hooks.…]]` tables per R19.6 in §12.4.
+
+**Trust:** document that user must run `/hooks` → trust Cairn hooks once, or use
+`--dangerously-bypass-hook-trust` for automation.
+
+### R19.7 Cursor parser
+
+**Input:** `agent-transcripts/<uuid>/<uuid>.jsonl`.
+
+**Algorithm:**
+
+```
+for line in file:
+    obj = json.loads(line)
+    role = obj.get("role")
+    content = obj.get("message", {}).get("content", [])
+    if role == "user":
+        emit user_prompt from text blocks
+    if role == "assistant":
+        emit assistant_message from text blocks
+        for tool_use blocks → emit tool_call
+```
+
+**Subagents:** if `subagents/<id>.jsonl` exists, ingest as child session with
+`parent_session_id` and `sub_agent` link.
+
+**agent-tools/ enrichment (Phase 6):** if `agent-tools/<id>.txt` exists, map to `tool_result`
+inline by matching tool call order.
+
+### R19.8 `cairn hook` command contract
+
+```
+cairn hook --event <HookEventName> --source <claude-code|codex>
+```
+
+- Reads JSON from stdin (full hook payload).
+- Resolves project root: `cwd` from payload → `git rev-parse --show-toplevel` (fallback: cwd).
+- Opens `.cairn/ledger.db` in project; calls `writer.py`.
+- **Never** prints secrets to stdout.
+- **Always** exit 0.
+
+### R19.9 `cairn watch install` contract
+
+1. Detect sources: `--source` or all.
+2. For Claude: patch `.claude/settings.local.json` hooks (§12.3).
+3. For Codex: patch `~/.codex/config.toml` or project `.codex/config.toml` (§12.4).
+4. Write `.cairn/watch/install.json` with installed commands + backup paths.
+5. `uninstall` restores backups.
+
+### R19.10 Session graph linker (`graph/session_graph.py`)
+
+```
+Input: events[] ordered by seq
+Output: { nodes, edges }
+
+nodes = one per event (or collapsed "turn" nodes for UI)
+edges:
+  temporal: seq i → seq i+1
+  causal: tool_call.tool_use_id → tool_result.tool_use_id
+  data: file_snapshot(read) at seq a → tool_call(write) at seq b if same path_rel
+        and no intervening write
+  delegation: sub_agent → child session root event
+```
+
+Collapse policy for bundle UI: consecutive assistant_message + tool_calls within same turn
+→ single "Turn N" super-node (optional, renderer config).
+
 ---
 
-*End of Part II. Between Part I and Part II, every component of Cairn is specified end to end:
-the format, the engine, the providers, the agents, MCP/A2A interop, the executor, the cache,
-the ledger, and the shareable bundle. Build from this; deviate from nothing; when genuinely
-ambiguous, prefer Part I's principles (§4) and §19's non-goals, write an ADR, and ask.*
+*End of charter v2.0. Build exactly what's written here. When tempted to add undeclared scope,
+check §4, §12.7, and §19 first.*

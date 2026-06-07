@@ -14,6 +14,7 @@ from cairn.providers.adapters.retry_policies import (
     retry_policy_for,
 )
 from cairn.providers.capabilities import ProviderCapability, chat_endpoint, get, strip_model_prefix
+from cairn.providers.completion import ensure_usable_completion
 from cairn.providers.credentials import ResolvedCredentials, require_api_key
 from cairn.util.tokens import estimate_tokens_from_request
 
@@ -105,10 +106,12 @@ class HttpProvider:
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             if cap.api_style == "anthropic-messages":
                 key = require_api_key(self._creds, self._provider)
-                return await self._anthropic(client, endpoint, key, wire_model, request)
-            if cap.api_style == "ollama-native":
-                return await self._ollama(client, endpoint, wire_model, request)
-            return await self._openai(client, endpoint, api_key, wire_model, request)
+                result = await self._anthropic(client, endpoint, key, wire_model, request)
+            elif cap.api_style == "ollama-native":
+                result = await self._ollama(client, endpoint, wire_model, request)
+            else:
+                result = await self._openai(client, endpoint, api_key, wire_model, request)
+            return ensure_usable_completion(result)
 
     async def _openai(
         self,
@@ -130,8 +133,9 @@ class HttpProvider:
         response = await client.post(endpoint, headers=headers, json=payload)
         response.raise_for_status()
         body = response.json()
-        message = body["choices"][0]["message"]
-        content = message.get("content") or message.get("thinking") or ""
+        choice = body["choices"][0]
+        message = choice["message"]
+        content = message.get("content") or ""
         usage = body.get("usage", {})
         return CompletionResult(
             text=str(content),
@@ -140,6 +144,9 @@ class HttpProvider:
                 output_tokens=int(usage.get("completion_tokens", 0)),
             ),
             raw=body,
+            finish_reason=str(choice.get("finish_reason"))
+            if choice.get("finish_reason") is not None
+            else None,
         )
 
     async def _anthropic(
@@ -178,6 +185,9 @@ class HttpProvider:
                 output_tokens=int(usage.get("output_tokens", 0)),
             ),
             raw=body,
+            finish_reason=str(body.get("stop_reason"))
+            if body.get("stop_reason") is not None
+            else None,
         )
 
     async def _ollama(
@@ -200,7 +210,8 @@ class HttpProvider:
         response.raise_for_status()
         body = response.json()
         message = body.get("message", {})
-        content = message.get("content") or message.get("thinking") or ""
+        content = message.get("content") or ""
+        done = body.get("done_reason") or body.get("finish_reason")
         return CompletionResult(
             text=str(content),
             usage=TokenUsage(
@@ -208,4 +219,5 @@ class HttpProvider:
                 output_tokens=int(body.get("eval_count", 0)),
             ),
             raw=body,
+            finish_reason=str(done) if done is not None else None,
         )

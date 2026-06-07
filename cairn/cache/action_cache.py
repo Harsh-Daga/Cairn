@@ -1,35 +1,14 @@
-"""SQLite Action Cache (R2, R14)."""
+"""SQLite Action Cache (R2, R14) — uses a Ledger-owned connection."""
 
 from __future__ import annotations
 
 import sqlite3
 from datetime import UTC, datetime
-from pathlib import Path
-
-_SCHEMA = """
-PRAGMA user_version = 1;
-
-CREATE TABLE IF NOT EXISTS action_cache (
-  action_key TEXT PRIMARY KEY,
-  output_hash TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  last_used_at TEXT NOT NULL,
-  model TEXT
-);
-"""
 
 
 class ActionCache:
-    def __init__(self, db_path: Path) -> None:
-        self.db_path = db_path
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(db_path)
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
-
-    def close(self) -> None:
-        self._conn.close()
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self._conn = conn
 
     def get(self, action_key: str) -> str | None:
         row = self._conn.execute(
