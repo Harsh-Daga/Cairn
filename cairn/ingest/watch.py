@@ -40,18 +40,40 @@ class WatchStatus:
     hook_invocation: str | None = None
 
 
-def resolve_hook_command(event: str, source: WatchSource) -> str:
-    """Build hook command with absolute binary (agent hooks use minimal PATH)."""
-    base = resolve_hook_invocation()
-    return f"{base} hook --event {event} --source {source}"
+def resolve_cairn_executable() -> str:
+    """Absolute ``cairn`` binary or ``python -m cairn`` prefix (no shell quotes)."""
+    cairn_bin = shutil.which("cairn")
+    if cairn_bin:
+        return str(Path(cairn_bin).resolve())
+    return f"{Path(sys.executable).resolve()} -m cairn"
 
 
 def resolve_hook_invocation() -> str:
-    """Return quoted ``cairn`` or ``python -m cairn`` invocation prefix."""
-    cairn_bin = shutil.which("cairn")
-    if cairn_bin:
-        return f'"{Path(cairn_bin).resolve()}"'
-    return f'"{Path(sys.executable).resolve()}" -m cairn'
+    """Return shell-quoted ``cairn`` invocation prefix (Claude JSON hooks)."""
+    exe = resolve_cairn_executable()
+    if " " in exe:
+        return f'"{exe}"'
+    return exe
+
+
+def resolve_hook_command(event: str, source: WatchSource) -> str:
+    """Build hook command for Claude JSON hooks (minimal PATH shells)."""
+    return f"{resolve_hook_invocation()} hook --event {event} --source {source}"
+
+
+def resolve_hook_command_toml(event: str, source: WatchSource) -> str:
+    """Build hook command as a valid TOML basic string (Codex config)."""
+    exe = resolve_cairn_executable()
+    if " " in exe:
+        command = f'"{exe}" hook --event {event} --source {source}'
+    else:
+        command = f"{exe} hook --event {event} --source {source}"
+    return _toml_basic_string(command)
+
+
+def _toml_basic_string(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
 
 
 def install_watch(
@@ -181,7 +203,7 @@ def _build_codex_hooks_toml(source: WatchSource) -> str:
             lines.append(f'matcher = "{matcher}"')
         lines.append(f"[[hooks.{event}.hooks]]")
         lines.append('type = "command"')
-        lines.append(f'command = "{resolve_hook_command(event, source)}"')
+        lines.append(f"command = {resolve_hook_command_toml(event, source)}")
         lines.append("")
     return "\n".join(lines).strip()
 

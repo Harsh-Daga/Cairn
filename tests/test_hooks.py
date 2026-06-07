@@ -13,7 +13,11 @@ from unittest.mock import patch
 from cairn.ingest.hook_cmd import run_hook
 from cairn.ingest.normalizer import assign_seq
 from cairn.ingest.parsers.codex import parse_rollout_file
-from cairn.ingest.watch import resolve_hook_command, resolve_hook_invocation
+from cairn.ingest.watch import (
+    _build_codex_hooks_toml,
+    resolve_hook_command,
+    resolve_hook_invocation,
+)
 from cairn.ingest.writer import CaptureWriter
 
 FIXTURES = Path(__file__).parent / "fixtures" / "ingest"
@@ -202,11 +206,22 @@ def test_hook_edit_file_snapshots_via_stdin(tmp_path: Path) -> None:
 
 def test_hook_command_uses_absolute_path() -> None:
     invocation = resolve_hook_invocation()
-    assert invocation.startswith('"')
+    assert "/" in invocation or invocation.endswith("cairn")
     cmd = resolve_hook_command("SessionStart", "claude-code")
-    assert cmd.startswith('"')
     assert "hook --event SessionStart --source claude-code" in cmd
     assert not cmd.startswith("cairn hook")
+    assert '""' not in cmd
+
+
+def test_codex_hook_toml_commands_are_valid() -> None:
+    block = _build_codex_hooks_toml("codex")
+    assert 'command = ""/' not in block
+    assert 'command = "/' in block or 'command = "\\"' in block
+    for line in block.splitlines():
+        if line.startswith("command = "):
+            value = line.removeprefix("command = ")
+            assert value.startswith('"') and value.endswith('"')
+            assert not value.startswith('""')
 
 
 def test_codex_ingest_idempotent(tmp_path: Path) -> None:
