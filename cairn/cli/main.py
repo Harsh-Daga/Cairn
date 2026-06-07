@@ -10,10 +10,13 @@ from cairn import __version__
 from cairn.cli import (
     build_cmd,
     doctor_cmd,
+    ingest_cmd,
     init_cmd,
     plan_cmd,
     render_cmd,
     runs_cmd,
+    sessions_cmd,
+    show_cmd,
     status_cmd,
     validate_cmd,
 )
@@ -75,6 +78,31 @@ def main(argv: list[str] | None = None) -> int:
     runs_p.add_argument("project", nargs="?", default=".", type=Path)
     runs_p.add_argument("--limit", type=int, default=20)
     runs_p.set_defaults(func=runs_cmd.run)
+
+    ingest_p = sub.add_parser("ingest", help="Batch-import agent transcripts")
+    ingest_p.add_argument("project", nargs="?", default=".", type=Path)
+    ingest_p.add_argument("--since", default=None, metavar="DURATION", help="e.g. 7d, 24h")
+    ingest_p.add_argument(
+        "--source",
+        default="claude-code",
+        choices=["claude-code", "codex", "cursor", "all"],
+    )
+    ingest_p.add_argument("--claude-project-dir", type=Path, default=None)
+    ingest_p.add_argument("--json", action="store_true")
+    ingest_p.set_defaults(func=ingest_cmd.run)
+
+    sessions_p = sub.add_parser("sessions", help="List captured sessions")
+    sessions_p.add_argument("project", nargs="?", default=".", type=Path)
+    sessions_p.add_argument("--limit", type=int, default=20)
+    sessions_p.add_argument("--source", default=None)
+    sessions_p.add_argument("--json", action="store_true")
+    sessions_p.set_defaults(func=sessions_cmd.run)
+
+    show_p = sub.add_parser("show", help="Show session summary or trajectory")
+    show_p.add_argument("session_id")
+    show_p.add_argument("project", nargs="?", default=".", type=Path)
+    show_p.add_argument("--json", action="store_true")
+    show_p.set_defaults(func=show_cmd.run)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

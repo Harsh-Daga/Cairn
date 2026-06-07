@@ -103,11 +103,11 @@ class Ledger:
         self._conn.execute(
             """
             INSERT INTO runs (
-              run_id, started_at, ended_at, status,
+              run_id, kind, started_at, ended_at, status,
               total_cost, total_input_tokens, total_output_tokens,
               cairn_version, key_version, git_commit
             )
-            VALUES (?, ?, NULL, 'running', NULL, 0, 0, ?, ?, ?)
+            VALUES (?, 'build', ?, NULL, 'running', NULL, 0, 0, ?, ?, ?)
             """,
             (
                 run_id,

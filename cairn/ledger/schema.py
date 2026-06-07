@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 _ACTION_CACHE_V1 = """
 CREATE TABLE IF NOT EXISTS action_cache (
@@ -74,10 +74,62 @@ CREATE TABLE IF NOT EXISTS cas_refs (
 );
 """
 
+_CAPTURE_TABLES_V3 = """
+CREATE TABLE IF NOT EXISTS events (
+  run_id TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  PRIMARY KEY (run_id, seq)
+);
+
+CREATE TABLE IF NOT EXISTS file_artifacts (
+  run_id TEXT NOT NULL,
+  path_rel TEXT NOT NULL,
+  first_seq INTEGER NOT NULL,
+  last_seq INTEGER NOT NULL,
+  before_hash TEXT,
+  after_hash TEXT,
+  PRIMARY KEY (run_id, path_rel, last_seq)
+);
+"""
+
+_V3_RUNS_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("kind", "TEXT NOT NULL DEFAULT 'build'"),
+    ("source", "TEXT"),
+    ("external_id", "TEXT"),
+    ("cwd", "TEXT"),
+    ("git_branch", "TEXT"),
+    ("trajectory_hash", "TEXT"),
+)
+
+_V3_UNIQUE_SOURCE_EXTERNAL = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_source_external_id
+ON runs(source, external_id)
+WHERE source IS NOT NULL AND external_id IS NOT NULL;
+"""
+
 
 def _current_version(conn: sqlite3.Connection) -> int:
     row = conn.execute("PRAGMA user_version").fetchone()
     return int(row[0]) if row else 0
+
+
+def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return {str(r[1]) for r in rows}
+
+
+def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
+    existing = _table_columns(conn, "runs")
+    for col, decl in _V3_RUNS_COLUMNS:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE runs ADD COLUMN {col} {decl}")
+    conn.execute("UPDATE runs SET kind = 'build' WHERE kind IS NULL OR kind = ''")
+    conn.executescript(_CAPTURE_TABLES_V3)
+    conn.executescript(_V3_UNIQUE_SOURCE_EXTERNAL)
+    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    conn.commit()
 
 
 def migrate(conn: sqlite3.Connection) -> None:
@@ -86,13 +138,14 @@ def migrate(conn: sqlite3.Connection) -> None:
     if version == 0:
         conn.executescript(_ACTION_CACHE_V1)
         conn.executescript(_LEDGER_TABLES_V2)
-        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-        conn.commit()
+        _migrate_v2_to_v3(conn)
         return
     if version == 1:
         conn.executescript(_LEDGER_TABLES_V2)
-        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-        conn.commit()
+        _migrate_v2_to_v3(conn)
+        return
+    if version == 2:
+        _migrate_v2_to_v3(conn)
         return
     if version != SCHEMA_VERSION:
         msg = f"unsupported ledger schema version {version} (expected {SCHEMA_VERSION})"
