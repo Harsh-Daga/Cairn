@@ -213,6 +213,28 @@ def test_hook_command_uses_absolute_path() -> None:
     assert '""' not in cmd
 
 
+def test_strip_cairn_watch_preserves_hooks_state() -> None:
+    from cairn.ingest.watch import CAIRN_WATCH_BEGIN, CAIRN_WATCH_END, _strip_cairn_watch_block
+
+    content = f"""before = true
+{CAIRN_WATCH_BEGIN}
+[features]
+hooks = true
+
+[hooks.state]
+[hooks.state."/cfg:session_start:0:0"]
+trusted_hash = "sha256:abc"
+{CAIRN_WATCH_END}
+after = true
+"""
+    stripped, hooks_state = _strip_cairn_watch_block(content)
+    assert CAIRN_WATCH_BEGIN not in stripped
+    assert "before = true" in stripped
+    assert "after = true" in stripped
+    assert "[hooks.state]" in hooks_state
+    assert "trusted_hash" in hooks_state
+
+
 def test_codex_hook_toml_commands_are_valid() -> None:
     block = _build_codex_hooks_toml("codex")
     assert 'command = ""/' not in block

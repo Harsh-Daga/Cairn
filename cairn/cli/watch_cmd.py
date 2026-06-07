@@ -21,8 +21,11 @@ def run(args: argparse.Namespace) -> int:
             print(f"Hook command: {status.hook_invocation} hook --event … --source …")
         if "codex" in status.installed:
             print(
-                "Codex: trust hooks once via /hooks in the TUI, or use "
-                "--dangerously-bypass-hook-trust for automation."
+                "Codex: trust hooks once via /hooks in the TUI, then restart Codex "
+                "so SessionStart runs with hooks enabled."
+            )
+            print(
+                "Automation: --dangerously-bypass-hook-trust skips the trust prompt."
             )
         return 0
 

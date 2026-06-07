@@ -23,10 +23,10 @@ _CLAUDE_EVENTS: tuple[tuple[str, str | None], ...] = (
 )
 
 _CODEX_EVENTS: tuple[tuple[str, str | None], ...] = (
-    ("SessionStart", "startup|resume"),
+    ("SessionStart", "startup|resume|clear|compact"),
     ("UserPromptSubmit", None),
-    ("PreToolUse", "apply_patch|Edit|Write"),
-    ("PostToolUse", "apply_patch|Edit|Write|Bash"),
+    ("PreToolUse", "apply_patch|Bash|Edit|Write"),
+    ("PostToolUse", "apply_patch|Bash|Edit|Write"),
     ("Stop", None),
 )
 
@@ -221,15 +221,33 @@ def _install_claude_hooks(target: Path, *, source: WatchSource) -> None:
     target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
+def _extract_hooks_state(block: str) -> str:
+    marker = "[hooks.state]"
+    if marker not in block:
+        return ""
+    return block[block.index(marker) :].strip()
+
+
+def _strip_cairn_watch_block(content: str) -> tuple[str, str]:
+    """Remove the cairn watch block; preserve Codex ``[hooks.state]`` trust entries."""
+    if CAIRN_WATCH_BEGIN not in content:
+        return content, ""
+    before, _, rest = content.partition(CAIRN_WATCH_BEGIN)
+    middle, _, after = rest.partition(CAIRN_WATCH_END)
+    hooks_state = _extract_hooks_state(middle)
+    merged = (before.rstrip() + "\n" + after.lstrip()).strip()
+    return merged, hooks_state
+
+
 def _install_codex_hooks(target: Path, *, source: WatchSource) -> None:
     existing = target.read_text(encoding="utf-8") if target.is_file() else ""
-    if CAIRN_WATCH_BEGIN in existing:
-        before, _, after = existing.partition(CAIRN_WATCH_BEGIN)
-        _, _, after = after.partition(CAIRN_WATCH_END)
-        existing = before + after
+    existing, hooks_state = _strip_cairn_watch_block(existing)
     block = f"{CAIRN_WATCH_BEGIN}\n{_build_codex_hooks_toml(source)}\n{CAIRN_WATCH_END}\n"
+    merged = existing.rstrip() + "\n\n" + block
+    if hooks_state:
+        merged = merged.rstrip() + "\n\n" + hooks_state + "\n"
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(existing.rstrip() + "\n\n" + block, encoding="utf-8")
+    target.write_text(merged, encoding="utf-8")
 
 
 def _codex_config_path(project_root: Path) -> Path:

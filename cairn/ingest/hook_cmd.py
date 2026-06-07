@@ -29,7 +29,7 @@ def log_hook_error(message: str) -> None:
 def run_hook(*, event: str, source: str) -> int:
     """Handle one hook invocation. Always returns 0 (R19.8)."""
     try:
-        payload = _read_stdin_payload()
+        payload = _read_stdin_payload(event=event, source=source)
         if payload is None:
             return 0
         _dispatch(event, source, payload)
@@ -38,9 +38,10 @@ def run_hook(*, event: str, source: str) -> int:
     return 0
 
 
-def _read_stdin_payload() -> dict[str, Any] | None:
+def _read_stdin_payload(*, event: str, source: str) -> dict[str, Any] | None:
     raw = sys.stdin.read()
     if not raw.strip():
+        log_hook_error(f"empty stdin for {event}/{source}")
         return None
     try:
         data = json.loads(raw)
