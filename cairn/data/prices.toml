@@ -1,0 +1,14 @@
+[gpt-4o-mini]
+input_per_mtok = 0.15
+output_per_mtok = 0.60
+currency = "USD"
+
+[claude-sonnet-4-6]
+input_per_mtok = 3.0
+output_per_mtok = 15.0
+currency = "USD"
+
+[kimi-k2.6-cloud]
+input_per_mtok = 0.50
+output_per_mtok = 2.00
+currency = "USD"

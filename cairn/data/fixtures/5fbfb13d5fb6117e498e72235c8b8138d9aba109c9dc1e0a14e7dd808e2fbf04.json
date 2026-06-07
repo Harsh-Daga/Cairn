@@ -1,0 +1,8 @@
+{
+  "text": "[recorded:5fbfb13d5fb6117e] deterministic completion",
+  "input_tokens": 42,
+  "output_tokens": 17,
+  "raw": {
+    "fixture_key": "5fbfb13d5fb6117e498e72235c8b8138d9aba109c9dc1e0a14e7dd808e2fbf04"
+  }
+}

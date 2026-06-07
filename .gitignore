@@ -12,3 +12,4 @@ spike/demo/outputs/
 dist/
 build/
 .env
+cairn-validate/*

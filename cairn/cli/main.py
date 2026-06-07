@@ -1,0 +1,58 @@
+"""Cairn CLI entry point (§10)."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from cairn import __version__
+from cairn.cli import build_cmd, doctor_cmd, init_cmd, plan_cmd, status_cmd, validate_cmd
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="cairn", description="Build system for LLM work")
+    parser.add_argument("--version", action="version", version=f"cairn {__version__}")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    init_p = sub.add_parser("init", help="Scaffold a new project")
+    init_p.add_argument("dir", nargs="?", default=".", type=Path)
+    init_p.set_defaults(func=init_cmd.run)
+
+    validate_p = sub.add_parser("validate", help="Parse and validate project (no tokens)")
+    validate_p.add_argument("project", nargs="?", default=".", type=Path)
+    validate_p.set_defaults(func=validate_cmd.run)
+
+    doctor_p = sub.add_parser("doctor", help="Preflight environment checks (no tokens)")
+    doctor_p.add_argument("project", nargs="?", default=".", type=Path)
+    doctor_p.set_defaults(func=doctor_cmd.run)
+
+    status_p = sub.add_parser("status", help="Show per-node cache state and cost estimate")
+    status_p.add_argument("project", nargs="?", default=".", type=Path)
+    status_p.set_defaults(func=status_cmd.run)
+
+    plan_p = sub.add_parser("plan", help="Show execution plan with rendered prompts")
+    plan_p.add_argument("project", nargs="?", default=".", type=Path)
+    plan_p.set_defaults(func=plan_cmd.run)
+
+    build_p = sub.add_parser("build", help="Execute the work list")
+    build_p.add_argument("project", nargs="?", default=".", type=Path)
+    build_p.add_argument("--dry-run", action="store_true")
+    build_p.add_argument("--refresh", action="append", default=[], metavar="SELECTOR")
+    build_p.add_argument("--concurrency", type=int, default=4)
+    build_p.add_argument("--max-cost", type=float, default=None)
+    build_p.add_argument("--yes", "-y", action="store_true")
+    build_p.add_argument(
+        "--provider-mode",
+        choices=["recorded", "live"],
+        default="recorded",
+        help="recorded=replay fixtures (default for CI); live=real APIs",
+    )
+    build_p.set_defaults(func=build_cmd.run)
+
+    args = parser.parse_args(argv)
+    return int(args.func(args))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

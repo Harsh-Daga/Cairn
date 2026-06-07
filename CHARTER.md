@@ -686,7 +686,7 @@ The codebase must stay readable enough that a newcomer can land a PR in a weeken
 cairn/
 ├── cli/        # Typer commands; thin, no logic
 ├── model/      # Project, Step, Node, AgentTask, Trajectory dataclasses (pure data)
-├── parse/      # config + prompt + agent/tool loading & validation
+├── loader/     # config + prompt + agent/tool loading & validation
 ├── graph/      # DAG building, dynamic-step resolution, cycle detection, selectors
 ├── plan/       # hashing, cache resolution, cost/budget estimation
 ├── cache/      # AC + CAS
@@ -700,7 +700,7 @@ cairn/
 
 **Rules**
 
-1. **Pure core, thin shell.** Logic lives in `parse/`, `graph/`, `plan/`. `cli/`,
+1. **Pure core, thin shell.** Logic lives in `loader/`, `graph/`, `plan/`. `cli/`,
    `execute/`, `providers/`, `agents/` only orchestrate. The Planner must be a pure
    function of `(Project, CacheView)`.
 2. **Types everywhere.** Full hints; `mypy --strict` in CI; Pydantic at boundaries.
