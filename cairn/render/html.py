@@ -10,26 +10,37 @@ from pathlib import Path
 from typing import Any
 
 from cairn.render.bundle import bundle_payload_from_project
+from cairn.render.capture_bundle import capture_bundle_from_project
 from cairn.render.embedding import escape_json_for_html_embedding
 from cairn.util.canonical import canonical_json
 
 _ASSETS_PKG = "cairn.render.assets"
 
 
-def _html_shell(payload_json: str) -> str:
+def _html_shell(payload_json: str, *, capture: bool = False) -> str:
+    title = "Cairn Capture" if capture else "Cairn Provenance"
+    body_class = " capture-mode" if capture else ""
+    tabs = ""
+    if capture:
+        tabs = """
+  <nav class="view-tabs" id="view-tabs" aria-label="Views">
+    <button type="button" class="tab-btn active" data-view="files">Files</button>
+    <button type="button" class="tab-btn" data-view="graph">Graph</button>
+    <button type="button" class="tab-btn" data-view="timeline">Timeline</button>
+  </nav>"""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cairn Provenance</title>
+  <title>{title}</title>
   <link rel="stylesheet" href="assets/app.css">
 </head>
-<body>
+<body class="{body_class.strip()}">
   <header class="banner">
-    <h1>Cairn Provenance</h1>
+    <h1>{title}</h1>
     <p id="run-summary"></p>
-  </header>
+  </header>{tabs}
   <div class="layout">
     <nav id="node-list" class="sidebar" aria-label="Nodes"></nav>
     <main id="node-detail" class="detail"></main>
@@ -77,7 +88,38 @@ def render_bundle(
         embedded = escape_json_for_html_embedding(canonical_json(payload))
 
     index_path = output_dir / "index.html"
-    index_path.write_text(_html_shell(embedded), encoding="utf-8")
+    index_path.write_text(_html_shell(embedded, capture=False), encoding="utf-8")
+    _copy_assets(output_dir)
+    return index_path
+
+
+def render_capture_bundle(
+    project_root: Path,
+    session_id: str,
+    output_dir: Path,
+    *,
+    split: bool = False,
+    inline_cap: int = 64 * 1024,
+) -> Path:
+    payload = capture_bundle_from_project(
+        project_root,
+        session_id,
+        inline_cap=inline_cap,
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if split:
+        data_dir = output_dir / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        data_path = data_dir / "cairn-data.json"
+        data_path.write_text(canonical_json(payload) + "\n", encoding="utf-8")
+        stub = json.dumps({"data_path": "data/cairn-data.json"}, sort_keys=True)
+        embedded = escape_json_for_html_embedding(stub)
+    else:
+        embedded = escape_json_for_html_embedding(canonical_json(payload))
+
+    index_path = output_dir / "index.html"
+    index_path.write_text(_html_shell(embedded, capture=True), encoding="utf-8")
     _copy_assets(output_dir)
     return index_path
 

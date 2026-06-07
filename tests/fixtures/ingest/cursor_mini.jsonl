@@ -1,0 +1,2 @@
+{"role":"user","message":{"content":[{"type":"text","text":"<user_query>\nFix the cursor parser test\n</user_query>"}]}}
+{"role":"assistant","message":{"content":[{"type":"text","text":"I will edit the file."},{"type":"tool_use","name":"StrReplace","input":{"path":"/tmp/cairn-cursor-fixture/src/app.py","old_string":"before","new_string":"after"}}]}}

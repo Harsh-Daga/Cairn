@@ -14,6 +14,7 @@ def run(args: argparse.Namespace) -> int:
     root = resolve_git_root(project) or project
     since = parse_since(args.since) if args.since else None
     claude_dir = args.claude_project_dir.resolve() if args.claude_project_dir else None
+    cursor_dir = args.cursor_workspace.resolve() if args.cursor_workspace else None
 
     try:
         reports = run_ingest(
@@ -21,6 +22,7 @@ def run(args: argparse.Namespace) -> int:
             source=args.source,
             since=since,
             claude_project_dir=claude_dir,
+            cursor_workspace=cursor_dir,
         )
     except ValueError as exc:
         print(f"error: {exc}")

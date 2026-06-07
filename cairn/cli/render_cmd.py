@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from cairn.render.html import render_bundle, zip_bundle
+from cairn.render.html import render_bundle, render_capture_bundle, zip_bundle
 
 
 def run(args: argparse.Namespace) -> int:
@@ -13,12 +13,24 @@ def run(args: argparse.Namespace) -> int:
     if out is None:
         out = project_root / "outputs" / "bundle"
 
-    index = render_bundle(
-        project_root,
-        out,
-        run_id=args.run,
-        split=args.split,
-    )
+    if args.run and args.session:
+        print("error: use either --run or --session, not both")
+        return 1
+
+    if args.session:
+        index = render_capture_bundle(
+            project_root,
+            args.session,
+            out,
+            split=args.split,
+        )
+    else:
+        index = render_bundle(
+            project_root,
+            out,
+            run_id=args.run,
+            split=args.split,
+        )
     print(f"Bundle: {index}")
 
     if args.zip:

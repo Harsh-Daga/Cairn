@@ -14,6 +14,8 @@ from cairn.cache.cas import ContentAddressableStore
 from cairn.ingest.normalizer import assign_seq
 from cairn.ingest.parsers.claude_code import ParsedClaudeSession, ToolCallDraft
 from cairn.ingest.parsers.codex import ParsedCodexSession
+from cairn.ingest.parsers.cursor import ParsedCursorSession
+from cairn.ingest.parsers.hermes import ParsedHermesSession
 from cairn.ingest.project_paths import path_rel_to_repo, try_git_branch, try_git_commit
 from cairn.ingest.usage import ObservedUsage, extract_usage_dict
 from cairn.ledger.ledger import new_run_id
@@ -107,6 +109,71 @@ class CaptureWriter:
             file_artifacts=parsed.file_artifacts,
             usage=parsed.usage.usage,
         )
+
+    def ingest_hermes_session(self, parsed: ParsedHermesSession) -> IngestResult:
+        return self._ingest_session(
+            source="hermes",
+            external_id=parsed.external_id,
+            cwd=parsed.cwd,
+            git_branch=None,
+            started_at=parsed.started_at,
+            ended_at=parsed.ended_at,
+            model=parsed.model,
+            events=parsed.events,
+            tool_calls=parsed.tool_calls,
+            file_artifacts=parsed.file_artifacts,
+            usage=parsed.usage.usage,
+        )
+
+    def ingest_cursor_session(self, parsed: ParsedCursorSession) -> IngestResult:
+        events = list(parsed.events)
+        for link in parsed.sub_agent_links:
+            events.append(
+                {
+                    "type": "sub_agent",
+                    "parent_tool_use_id": link["parent_tool_use_id"],
+                    "child_session_id": link["child_session_id"],
+                    "child_source": link["child_source"],
+                }
+            )
+        return self._ingest_session(
+            source="cursor",
+            external_id=parsed.external_id,
+            cwd=parsed.cwd,
+            git_branch=None,
+            started_at=parsed.started_at,
+            ended_at=parsed.ended_at,
+            model=parsed.model,
+            events=events,
+            tool_calls=parsed.tool_calls,
+            file_artifacts=parsed.file_artifacts,
+            usage=parsed.usage.usage,
+        )
+
+    def load_file_artifacts(self, run_id: str) -> list[dict[str, Any]]:
+        rows = self._conn.execute(
+            """
+            SELECT path_rel, first_seq, last_seq, before_hash, after_hash
+            FROM file_artifacts
+            WHERE run_id = ?
+            ORDER BY first_seq, path_rel
+            """,
+            (run_id,),
+        ).fetchall()
+        return [
+            {
+                "path_rel": str(row["path_rel"]),
+                "first_seq": int(row["first_seq"]),
+                "last_seq": int(row["last_seq"]),
+                "before_hash": row["before_hash"],
+                "after_hash": row["after_hash"],
+                "event_seqs": _artifact_event_seqs(
+                    int(row["first_seq"]),
+                    int(row["last_seq"]),
+                ),
+            }
+            for row in rows
+        ]
 
     def begin_session(
         self,
@@ -559,6 +626,12 @@ class CaptureWriter:
         if raw is None:
             return None
         return cast(dict[str, Any], json.loads(raw.decode("utf-8")))
+
+
+def _artifact_event_seqs(first_seq: int, last_seq: int) -> list[int]:
+    if first_seq == last_seq:
+        return [first_seq]
+    return [first_seq, last_seq]
 
 
 def _strip_hints(events: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+
+_HERMES_PATH_RE = re.compile(r"(/[\w./-]+)")
 
 
 def claude_project_slug(repo_root: Path) -> str:
@@ -106,6 +109,33 @@ def parse_since(value: str) -> datetime:
 def claude_subagent_external_id(transcript_path: Path, parent_session_id: str) -> str:
     """Distinct external id for sidechain subagent transcripts (§12.3)."""
     return f"{parent_session_id}#subagent:{transcript_path.stem}"
+
+
+def cursor_subagent_external_id(transcript_path: Path, parent_session_id: str) -> str:
+    """Distinct external id for Cursor subagent transcripts (§12.5)."""
+    return f"{parent_session_id}#subagent:{transcript_path.stem}"
+
+
+def cursor_projects_root() -> Path:
+    return Path.home() / ".cursor" / "projects"
+
+
+def hermes_sessions_root() -> Path:
+    return Path.home() / ".hermes" / "sessions"
+
+
+def resolve_cursor_workspace(
+    repo_root: Path,
+    *,
+    cursor_workspace: Path | None = None,
+) -> Path | None:
+    if cursor_workspace is not None and cursor_workspace.is_dir():
+        return cursor_workspace.resolve()
+    for slug in cursor_workspace_slugs(repo_root):
+        candidate = cursor_projects_root() / slug
+        if candidate.is_dir():
+            return candidate.resolve()
+    return None
 
 
 def _paths_from_sessions_index(base: Path) -> list[Path]:
@@ -225,6 +255,138 @@ def discover_claude_jsonl(
     for path in sorted(base.rglob("*.jsonl")):
         add(path)
 
+    return ordered
+
+
+def discover_cursor_transcripts(
+    repo_root: Path,
+    *,
+    cursor_workspace: Path | None = None,
+    since: datetime | None = None,
+) -> list[tuple[Path, str | None]]:
+    """Discover Cursor parent and subagent transcript paths.
+
+    Returns ``(path, parent_session_id)`` where parent id is ``None`` for parents.
+    """
+    base = resolve_cursor_workspace(repo_root, cursor_workspace=cursor_workspace)
+    if base is None:
+        return []
+    transcripts_dir = base / "agent-transcripts"
+    if not transcripts_dir.is_dir():
+        return []
+
+    ordered: list[tuple[Path, str | None]] = []
+    seen: set[Path] = set()
+
+    def add(path: Path, parent_id: str | None) -> None:
+        resolved = path.resolve()
+        if resolved in seen or not resolved.is_file():
+            return
+        if since is not None and resolved.stat().st_mtime < since.timestamp():
+            return
+        seen.add(resolved)
+        ordered.append((resolved, parent_id))
+
+    for session_dir in sorted(transcripts_dir.iterdir()):
+        if not session_dir.is_dir():
+            continue
+        session_id = session_dir.name
+        parent_path = session_dir / f"{session_id}.jsonl"
+        if parent_path.is_file():
+            add(parent_path, None)
+        subagents = session_dir / "subagents"
+        if subagents.is_dir():
+            for sub_path in sorted(subagents.glob("*.jsonl")):
+                add(sub_path, session_id)
+
+    return ordered
+
+
+def _path_under_project(path_str: str, project_root: Path) -> bool:
+    try:
+        Path(path_str).resolve().relative_to(project_root.resolve())
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def _hermes_message_paths(message: dict[str, object]) -> list[str]:
+    paths: list[str] = []
+    content = message.get("content")
+    if isinstance(content, str):
+        paths.extend(_HERMES_PATH_RE.findall(content))
+    tool_calls = message.get("tool_calls")
+    if isinstance(tool_calls, list):
+        for call in tool_calls:
+            if not isinstance(call, dict):
+                continue
+            fn = call.get("function")
+            if not isinstance(fn, dict):
+                continue
+            raw_args = fn.get("arguments")
+            if isinstance(raw_args, str):
+                try:
+                    args = json.loads(raw_args)
+                except json.JSONDecodeError:
+                    paths.extend(_HERMES_PATH_RE.findall(raw_args))
+                else:
+                    if isinstance(args, dict):
+                        for key in ("path", "file_path", "file", "target", "directory"):
+                            val = args.get(key)
+                            if isinstance(val, str) and val.startswith("/"):
+                                paths.append(val)
+                        command = args.get("command")
+                        if isinstance(command, str):
+                            paths.extend(_HERMES_PATH_RE.findall(command))
+    return paths
+
+
+def hermes_session_matches_project(path: Path, project_root: Path) -> bool:
+    """True when a Hermes session references paths under ``project_root`` (§12.5.1)."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(data, dict):
+        return False
+    project_posix = project_root.resolve().as_posix()
+    messages = data.get("messages")
+    if not isinstance(messages, list):
+        return False
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        for path_str in _hermes_message_paths(message):
+            if _path_under_project(path_str, project_root):
+                return True
+        content = message.get("content")
+        if isinstance(content, str) and project_posix in content:
+            return True
+    return False
+
+
+def discover_hermes_sessions(
+    repo_root: Path,
+    *,
+    since: datetime | None = None,
+) -> list[Path]:
+    """Glob Hermes ``session_*.json`` files that match the project (§11.5.1)."""
+    root = hermes_sessions_root()
+    if not root.is_dir():
+        return []
+    project = repo_root.resolve()
+    ordered: list[Path] = []
+    seen: set[Path] = set()
+    for path in sorted(root.glob("session_*.json")):
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        if not hermes_session_matches_project(resolved, project):
+            continue
+        if since is not None and resolved.stat().st_mtime < since.timestamp():
+            continue
+        seen.add(resolved)
+        ordered.append(resolved)
     return ordered
 
 

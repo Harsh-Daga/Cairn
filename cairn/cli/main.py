@@ -10,6 +10,7 @@ from cairn import __version__
 from cairn.cli import (
     build_cmd,
     doctor_cmd,
+    graph_cmd,
     hook_cmd,
     ingest_cmd,
     init_cmd,
@@ -67,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     render_p = sub.add_parser("render", help="Render provenance bundle (no tokens)")
     render_p.add_argument("project", nargs="?", default=".", type=Path)
     render_p.add_argument("--run", metavar="RUN_ID", default=None)
+    render_p.add_argument("--session", metavar="SESSION_ID", default=None)
     render_p.add_argument("-o", "--output", type=Path, default=None)
     render_p.add_argument("--zip", action="store_true")
     render_p.add_argument(
@@ -87,11 +89,18 @@ def main(argv: list[str] | None = None) -> int:
     ingest_p.add_argument(
         "--source",
         default="claude-code",
-        choices=["claude-code", "codex", "cursor", "all"],
+        choices=["claude-code", "codex", "cursor", "hermes", "all"],
     )
     ingest_p.add_argument("--claude-project-dir", type=Path, default=None)
+    ingest_p.add_argument("--cursor-workspace", type=Path, default=None)
     ingest_p.add_argument("--json", action="store_true")
     ingest_p.set_defaults(func=ingest_cmd.run)
+
+    graph_p = sub.add_parser("graph", help="Export capture session graph")
+    graph_p.add_argument("session_id")
+    graph_p.add_argument("project", nargs="?", default=".", type=Path)
+    graph_p.add_argument("--format", choices=["json", "dot"], default="json")
+    graph_p.set_defaults(func=graph_cmd.run)
 
     sessions_p = sub.add_parser("sessions", help="List captured sessions")
     sessions_p.add_argument("project", nargs="?", default=".", type=Path)

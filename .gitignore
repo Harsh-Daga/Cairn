@@ -8,6 +8,7 @@ uv.lock
 .cairn/
 spike/demo/.cairn/
 spike/demo/outputs/
+outputs/
 *.egg-info/
 dist/
 build/
