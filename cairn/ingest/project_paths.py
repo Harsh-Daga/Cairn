@@ -131,6 +131,64 @@ def _paths_from_sessions_index(base: Path) -> list[Path]:
     return paths
 
 
+def read_codex_session_cwd(path: Path) -> str | None:
+    """Read ``cwd`` from the first ``session_meta`` line in a Codex rollout."""
+    try:
+        with path.open(encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                obj = json.loads(stripped)
+                if obj.get("type") != "session_meta":
+                    continue
+                payload = obj.get("payload")
+                if isinstance(payload, dict):
+                    cwd = payload.get("cwd")
+                    return str(cwd) if isinstance(cwd, str) else None
+                break
+    except (OSError, json.JSONDecodeError):
+        return None
+    return None
+
+
+def codex_cwd_matches_project(project_root: Path, session_cwd: str) -> bool:
+    """True when Codex session cwd is under ``project_root`` (§11.3)."""
+    project = project_root.resolve()
+    session = Path(session_cwd).resolve()
+    try:
+        session.relative_to(project)
+        return True
+    except ValueError:
+        return session == project
+
+
+def discover_codex_rollouts(
+    repo_root: Path,
+    *,
+    since: datetime | None = None,
+) -> list[Path]:
+    """Glob Codex ``rollout-*.jsonl`` files whose session cwd matches the project."""
+    root = codex_sessions_root()
+    if not root.is_dir():
+        return []
+    project = repo_root.resolve()
+    ordered: list[Path] = []
+    seen: set[Path] = set()
+    for path in sorted(root.rglob("rollout-*.jsonl")):
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        cwd = read_codex_session_cwd(resolved)
+        if cwd is None or not codex_cwd_matches_project(project, cwd):
+            continue
+        if since is not None and resolved.stat().st_mtime < since.timestamp():
+            continue
+        seen.add(resolved)
+        ordered.append(resolved)
+    return ordered
+
+
 def discover_claude_jsonl(
     repo_root: Path,
     *,

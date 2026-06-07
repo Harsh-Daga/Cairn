@@ -84,12 +84,13 @@ cairn/
 
 | Criterion | Status |
 |---|---|
-| `ingest/parsers/codex.py` (R19.5) | Pending |
-| `cairn hook` entrypoint (R19.8) | Pending |
-| `cairn watch install\|uninstall\|status` | Pending |
-| PreToolUse/PostToolUse file snapshots in CAS | Pending |
-| `cairn ingest --source codex` | Pending |
-| Codex golden fixture + hook tests | Pending |
+| `ingest/parsers/codex.py` (R19.5) | Done |
+| `cairn hook` entrypoint (R19.8) | Done |
+| `cairn watch install\|uninstall\|status` | Done |
+| PreToolUse/PostToolUse file snapshots in CAS | Done |
+| `cairn ingest --source codex` | Done |
+| Codex golden fixture + hook tests | Done |
+| `pytest` / `mypy --strict` / `ruff` clean | Done |
 | **Validation gate (human):** live Claude + Codex session via hooks | **Pending** |
 
 ---

@@ -13,10 +13,12 @@ from cairn import __version__
 from cairn.cache.cas import ContentAddressableStore
 from cairn.ingest.normalizer import assign_seq
 from cairn.ingest.parsers.claude_code import ParsedClaudeSession, ToolCallDraft
-from cairn.ingest.project_paths import try_git_branch, try_git_commit
+from cairn.ingest.parsers.codex import ParsedCodexSession
+from cairn.ingest.project_paths import path_rel_to_repo, try_git_branch, try_git_commit
+from cairn.ingest.usage import ObservedUsage, extract_usage_dict
 from cairn.ledger.ledger import new_run_id
 from cairn.ledger.schema import migrate
-from cairn.util.canonical import CAIRN_KEY_VERSION, canonical_json, hash_obj
+from cairn.util.canonical import CAIRN_KEY_VERSION, canonical_json, hash_bytes, hash_obj
 
 
 @dataclass(frozen=True)
@@ -90,6 +92,240 @@ class CaptureWriter:
             file_artifacts=parsed.file_artifacts,
             usage=parsed.usage.usage,
         )
+
+    def ingest_codex_session(self, parsed: ParsedCodexSession) -> IngestResult:
+        return self._ingest_session(
+            source="codex",
+            external_id=parsed.external_id,
+            cwd=parsed.cwd,
+            git_branch=None,
+            started_at=parsed.started_at,
+            ended_at=parsed.ended_at,
+            model=parsed.model,
+            events=parsed.events,
+            tool_calls=parsed.tool_calls,
+            file_artifacts=parsed.file_artifacts,
+            usage=parsed.usage.usage,
+        )
+
+    def begin_session(
+        self,
+        *,
+        source: str,
+        external_id: str,
+        cwd: str | None,
+    ) -> str:
+        """Open or resume a live capture session (§11.2)."""
+        existing = self._conn.execute(
+            """
+            SELECT run_id, status FROM runs
+            WHERE source = ? AND external_id = ?
+            """,
+            (source, external_id),
+        ).fetchone()
+        if existing is not None:
+            return str(existing["run_id"])
+
+        run_id = new_run_id()
+        now = datetime.now(UTC).isoformat()
+        git_commit = try_git_commit(self.project_root)
+        branch = try_git_branch(self.project_root)
+        self._conn.execute(
+            """
+            INSERT INTO runs (
+              run_id, kind, source, external_id, cwd, git_branch, git_commit,
+              started_at, ended_at, status, trajectory_hash,
+              total_cost, total_input_tokens, total_output_tokens,
+              cairn_version, key_version
+            )
+            VALUES (?, 'capture', ?, ?, ?, ?, ?, ?, NULL, 'in_progress', NULL,
+                    NULL, 0, 0, ?, ?)
+            """,
+            (
+                run_id,
+                source,
+                external_id,
+                cwd,
+                branch,
+                git_commit,
+                now,
+                __version__,
+                CAIRN_KEY_VERSION,
+            ),
+        )
+        self._conn.commit()
+        return run_id
+
+    def append_event(self, run_id: str, event: dict[str, Any]) -> int:
+        """Append one event with the next monotonic ``seq``."""
+        row = self._conn.execute(
+            "SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM events WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+        seq = int(row["n"]) if row else 1
+        payload = dict(event)
+        payload["seq"] = seq
+        payload.pop("line_no", None)
+        self._conn.execute(
+            """
+            INSERT INTO events (run_id, seq, event_type, payload_json)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                seq,
+                str(payload["type"]),
+                json.dumps(payload, sort_keys=True, separators=(",", ":")),
+            ),
+        )
+        self._conn.commit()
+        return seq
+
+    def finish_session(self, run_id: str, *, status: str = "completed") -> None:
+        """Finalize a live session and refresh trajectory mirror."""
+        now = datetime.now(UTC).isoformat()
+        events = self.load_events(run_id)
+        row = self._conn.execute(
+            "SELECT external_id, source, cwd, git_branch, git_commit FROM runs WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+        if row is None:
+            return
+        external_id = str(row["external_id"])
+        source = str(row["source"])
+        cwd = str(row["cwd"]) if row["cwd"] else str(self.project_root)
+        usage = ObservedUsage()
+        model = "unknown"
+        for event in events:
+            if event.get("type") == "assistant_message":
+                model = str(event.get("model", model))
+                raw_usage = event.get("usage")
+                if isinstance(raw_usage, dict):
+                    usage.add(extract_usage_dict(raw_usage))
+        run_row = self._conn.execute(
+            "SELECT started_at FROM runs WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+        started_at = str(run_row["started_at"]) if run_row else now
+        trajectory = _build_trajectory(
+            session_id=external_id,
+            source=source,
+            external_id=external_id,
+            cwd=cwd,
+            git_branch=str(row["git_branch"]) if row["git_branch"] else None,
+            git_commit=str(row["git_commit"]) if row["git_commit"] else None,
+            model=model,
+            started_at=started_at,
+            ended_at=now,
+            status=status,
+            usage=usage,
+            events=events,
+        )
+        trajectory_hash = hash_obj(trajectory)
+        self.cas.put(canonical_json(trajectory).encode("utf-8"))
+        self._conn.execute(
+            """
+            UPDATE runs
+            SET ended_at = ?, status = ?, trajectory_hash = ?,
+                total_input_tokens = ?, total_output_tokens = ?, total_cost = ?
+            WHERE run_id = ?
+            """,
+            (
+                now,
+                status,
+                trajectory_hash,
+                usage.input_tokens,
+                usage.output_tokens,
+                usage.cost,
+                run_id,
+            ),
+        )
+        self._conn.commit()
+        self._write_session_mirror(external_id, trajectory)
+
+    def record_file_before(
+        self,
+        run_id: str,
+        path_rel: str,
+        before_hash: str,
+        seq: int,
+    ) -> None:
+        self._conn.execute(
+            """
+            INSERT INTO file_artifacts (
+              run_id, path_rel, first_seq, last_seq, before_hash, after_hash
+            )
+            VALUES (?, ?, ?, ?, ?, NULL)
+            ON CONFLICT(run_id, path_rel, last_seq) DO UPDATE SET
+              before_hash = excluded.before_hash,
+              first_seq = excluded.first_seq
+            """,
+            (run_id, path_rel, seq, seq, before_hash),
+        )
+        self._conn.commit()
+
+    def record_file_after(
+        self,
+        run_id: str,
+        path_rel: str,
+        after_hash: str,
+        seq: int,
+    ) -> None:
+        row = self._conn.execute(
+            """
+            SELECT rowid, first_seq, before_hash FROM file_artifacts
+            WHERE run_id = ? AND path_rel = ?
+            ORDER BY last_seq DESC LIMIT 1
+            """,
+            (run_id, path_rel),
+        ).fetchone()
+        if row is None:
+            self._conn.execute(
+                """
+                INSERT INTO file_artifacts (
+                  run_id, path_rel, first_seq, last_seq, before_hash, after_hash
+                )
+                VALUES (?, ?, ?, ?, NULL, ?)
+                """,
+                (run_id, path_rel, seq, seq, after_hash),
+            )
+        else:
+            self._conn.execute(
+                """
+                UPDATE file_artifacts
+                SET after_hash = ?, last_seq = ?
+                WHERE rowid = ?
+                """,
+                (after_hash, seq, int(row["rowid"])),
+            )
+        self._conn.commit()
+
+    def has_tool_call(self, run_id: str, tool_use_id: str) -> bool:
+        row = self._conn.execute(
+            """
+            SELECT 1 FROM events
+            WHERE run_id = ? AND event_type = 'tool_call'
+              AND json_extract(payload_json, '$.tool_use_id') = ?
+            LIMIT 1
+            """,
+            (run_id, tool_use_id),
+        ).fetchone()
+        return row is not None
+
+    def snapshot_file_hash(self, file_path: str, cwd: str | None) -> str | None:
+        """Read file bytes and return CAS hash, or None if missing."""
+        path = Path(file_path)
+        if not path.is_absolute() and cwd:
+            path = Path(cwd) / path
+        if not path.is_file():
+            return None
+        return hash_bytes(path.read_bytes())
+
+    def rel_path(self, file_path: str, cwd: str | None) -> str | None:
+        path = Path(file_path)
+        if not path.is_absolute():
+            path = (Path(cwd) if cwd else self.project_root) / path
+        return path_rel_to_repo(self.project_root, str(path.resolve()))
 
     def _ingest_session(
         self,

@@ -10,6 +10,7 @@ from cairn import __version__
 from cairn.cli import (
     build_cmd,
     doctor_cmd,
+    hook_cmd,
     ingest_cmd,
     init_cmd,
     plan_cmd,
@@ -19,6 +20,7 @@ from cairn.cli import (
     show_cmd,
     status_cmd,
     validate_cmd,
+    watch_cmd,
 )
 
 
@@ -103,6 +105,28 @@ def main(argv: list[str] | None = None) -> int:
     show_p.add_argument("project", nargs="?", default=".", type=Path)
     show_p.add_argument("--json", action="store_true")
     show_p.set_defaults(func=show_cmd.run)
+
+    hook_p = sub.add_parser("hook", help="Capture hook handler (internal)")
+    hook_p.add_argument("--event", required=True)
+    hook_p.add_argument(
+        "--source",
+        required=True,
+        choices=["claude-code", "codex"],
+    )
+    hook_p.set_defaults(func=hook_cmd.run)
+
+    watch_p = sub.add_parser("watch", help="Install capture hooks")
+    watch_sub = watch_p.add_subparsers(dest="watch_command", required=True)
+    watch_install = watch_sub.add_parser("install", help="Install hooks")
+    watch_install.add_argument("project", nargs="?", default=".", type=Path)
+    watch_install.add_argument("--source", default="all")
+    watch_install.set_defaults(func=watch_cmd.run)
+    watch_uninstall = watch_sub.add_parser("uninstall", help="Uninstall hooks")
+    watch_uninstall.add_argument("project", nargs="?", default=".", type=Path)
+    watch_uninstall.set_defaults(func=watch_cmd.run)
+    watch_status_p = watch_sub.add_parser("status", help="Show hook install status")
+    watch_status_p.add_argument("project", nargs="?", default=".", type=Path)
+    watch_status_p.set_defaults(func=watch_cmd.run)
 
     args = parser.parse_args(argv)
     return int(args.func(args))
