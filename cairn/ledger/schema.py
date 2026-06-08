@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 _ACTION_CACHE_V1 = """
 CREATE TABLE IF NOT EXISTS action_cache (
@@ -161,6 +161,31 @@ CREATE INDEX IF NOT EXISTS idx_lineage_to ON lineage_edges(to_id);
 CREATE INDEX IF NOT EXISTS idx_lineage_run ON lineage_edges(run_id);
 """
 
+_V5_TABLES = """
+CREATE TABLE IF NOT EXISTS prompt_registry (
+  name TEXT NOT NULL,
+  version TEXT NOT NULL,
+  path_rel TEXT NOT NULL,
+  content_hash TEXT NOT NULL,
+  body_cas_hash TEXT NOT NULL,
+  model_override TEXT,
+  params_json TEXT NOT NULL DEFAULT '{}',
+  description TEXT,
+  created_at TEXT NOT NULL,
+  deprecated INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (name, version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_registry_name ON prompt_registry(name);
+
+CREATE TABLE IF NOT EXISTS prompt_refs (
+  workflow_ref TEXT NOT NULL,
+  prompt_name TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  PRIMARY KEY (workflow_ref, prompt_name)
+);
+"""
+
 
 def _current_version(conn: sqlite3.Connection) -> int:
     row = conn.execute("PRAGMA user_version").fetchone()
@@ -190,6 +215,12 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
         if col not in existing:
             conn.execute(f"ALTER TABLE runs ADD COLUMN {col} {decl}")
     conn.executescript(_V4_TABLES)
+    conn.execute("PRAGMA user_version = 4")
+    conn.commit()
+
+
+def _migrate_v4_to_v5(conn: sqlite3.Connection) -> None:
+    conn.executescript(_V5_TABLES)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
@@ -211,6 +242,9 @@ def migrate(conn: sqlite3.Connection) -> None:
         version = _current_version(conn)
     if version == 3:
         _migrate_v3_to_v4(conn)
+        version = _current_version(conn)
+    if version == 4:
+        _migrate_v4_to_v5(conn)
         return
     if version != SCHEMA_VERSION:
         msg = f"unsupported ledger schema version {version} (expected {SCHEMA_VERSION})"

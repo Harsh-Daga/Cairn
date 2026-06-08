@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 5 — Project Context System ✅; Phase 6 next  
+**Current phase:** Phase 6 — Prompt Registry ✅; Phase 7 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -15,7 +15,8 @@
 | 3 | Domain Model | ✅ `model/session.py`, `artifact.py`, `workflow.py` + tests |
 | 4 | Storage Layer | ✅ ledger schema v4, `ledger/storage.py` + tests |
 | 5 | Project Context System | ✅ `cairn/context/`, `cairn context` CLI + tests |
-| 6–22 | See CHARTER.md §20 | 🔲 Planned |
+| 6 | Prompt Registry | ✅ `cairn/prompts/`, schema v5, `cairn prompt` CLI + tests |
+| 7–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -42,3 +43,4 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 3 | Domain models: Session, Artifact, WorkflowDef + 8 tests |
 | 2026-06-09 | 4 | Ledger schema v4: artifacts, context_assets, workflow_runs, lineage_edges |
 | 2026-06-09 | 5 | Context registry: scan/list/show, ledger-backed index |
+| 2026-06-09 | 6 | Prompt registry: versioned prompts in CAS + `cairn prompt sync` |

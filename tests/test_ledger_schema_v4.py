@@ -29,8 +29,8 @@ def _v3_db(path: Path) -> None:
     conn.close()
 
 
-def test_schema_version_is_four() -> None:
-    assert SCHEMA_VERSION == 4
+def test_schema_version_is_five() -> None:
+    assert SCHEMA_VERSION == 5
 
 
 def test_migrate_v3_to_v4_adds_tables(tmp_path: Path) -> None:
@@ -40,7 +40,7 @@ def test_migrate_v3_to_v4_adds_tables(tmp_path: Path) -> None:
     conn.row_factory = sqlite3.Row
     migrate(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 4
+    assert version == 5
     tables = {
         r[0]
         for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
@@ -53,6 +53,11 @@ def test_migrate_v3_to_v4_adds_tables(tmp_path: Path) -> None:
     } <= tables
     runs_cols = {r[1] for r in conn.execute("PRAGMA table_info(runs)").fetchall()}
     assert {"workflow_ref", "context_digest"} <= runs_cols
+    tables = {
+        r[0]
+        for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    }
+    assert {"prompt_registry", "prompt_refs"} <= tables
     conn.close()
 
 

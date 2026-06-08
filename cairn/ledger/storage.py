@@ -260,3 +260,148 @@ def _row_to_lineage_edge(row: sqlite3.Row) -> LineageEdge:
         metadata=metadata,
     )
 
+
+@dataclass(frozen=True)
+class PromptRecord:
+    name: str
+    version: str
+    path_rel: str
+    content_hash: str
+    body_cas_hash: str
+    model_override: str | None
+    params: dict[str, object]
+    description: str | None
+    created_at: str
+    deprecated: bool
+
+    @property
+    def prompt_ref(self) -> str:
+        return f"{self.name}@{self.version}"
+
+
+def register_prompt(
+    conn: sqlite3.Connection,
+    *,
+    name: str,
+    version: str,
+    path_rel: str,
+    content_hash: str,
+    body_cas_hash: str,
+    model_override: str | None = None,
+    params: dict[str, object] | None = None,
+    description: str | None = None,
+) -> PromptRecord:
+    now = _now()
+    conn.execute(
+        """
+        INSERT INTO prompt_registry (
+          name, version, path_rel, content_hash, body_cas_hash,
+          model_override, params_json, description, created_at, deprecated
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+        """,
+        (
+            name,
+            version,
+            path_rel,
+            content_hash,
+            body_cas_hash,
+            model_override,
+            json.dumps(params or {}),
+            description,
+            now,
+        ),
+    )
+    conn.commit()
+    return PromptRecord(
+        name=name,
+        version=version,
+        path_rel=path_rel,
+        content_hash=content_hash,
+        body_cas_hash=body_cas_hash,
+        model_override=model_override,
+        params=params or {},
+        description=description,
+        created_at=now,
+        deprecated=False,
+    )
+
+
+def get_prompt(
+    conn: sqlite3.Connection,
+    name: str,
+    version: str | None = None,
+) -> PromptRecord | None:
+    if version is None:
+        row = conn.execute(
+            """
+            SELECT name, version, path_rel, content_hash, body_cas_hash,
+                   model_override, params_json, description, created_at, deprecated
+            FROM prompt_registry
+            WHERE name = ?
+            ORDER BY version DESC
+            LIMIT 1
+            """,
+            (name,),
+        ).fetchone()
+    else:
+        row = conn.execute(
+            """
+            SELECT name, version, path_rel, content_hash, body_cas_hash,
+                   model_override, params_json, description, created_at, deprecated
+            FROM prompt_registry WHERE name = ? AND version = ?
+            """,
+            (name, version),
+        ).fetchone()
+    if row is None:
+        return None
+    return _row_to_prompt(row)
+
+
+def list_prompts(conn: sqlite3.Connection) -> list[PromptRecord]:
+    rows = conn.execute(
+        """
+        SELECT name, version, path_rel, content_hash, body_cas_hash,
+               model_override, params_json, description, created_at, deprecated
+        FROM prompt_registry
+        ORDER BY name, version
+        """
+    ).fetchall()
+    return [_row_to_prompt(row) for row in rows]
+
+
+def link_prompt_ref(
+    conn: sqlite3.Connection,
+    *,
+    workflow_ref: str,
+    prompt_name: str,
+    prompt_version: str,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO prompt_refs (workflow_ref, prompt_name, prompt_version)
+        VALUES (?, ?, ?)
+        ON CONFLICT(workflow_ref, prompt_name) DO UPDATE SET
+          prompt_version = excluded.prompt_version
+        """,
+        (workflow_ref, prompt_name, prompt_version),
+    )
+    conn.commit()
+
+
+def _row_to_prompt(row: sqlite3.Row) -> PromptRecord:
+    params_raw = json.loads(str(row["params_json"]))
+    params = params_raw if isinstance(params_raw, dict) else {}
+    return PromptRecord(
+        name=str(row["name"]),
+        version=str(row["version"]),
+        path_rel=str(row["path_rel"]),
+        content_hash=str(row["content_hash"]),
+        body_cas_hash=str(row["body_cas_hash"]),
+        model_override=str(row["model_override"]) if row["model_override"] is not None else None,
+        params={str(k): v for k, v in params.items()},
+        description=str(row["description"]) if row["description"] is not None else None,
+        created_at=str(row["created_at"]),
+        deprecated=bool(row["deprecated"]),
+    )
+

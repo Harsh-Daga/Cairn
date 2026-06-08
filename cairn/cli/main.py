@@ -16,6 +16,7 @@ from cairn.cli import (
     ingest_cmd,
     init_cmd,
     plan_cmd,
+    prompt_cmd,
     render_cmd,
     runs_cmd,
     sessions_cmd,
@@ -153,6 +154,27 @@ def main(argv: list[str] | None = None) -> int:
     context_show.add_argument("project", nargs="?", default=".", type=Path)
     context_show.add_argument("--json", action="store_true")
     context_show.set_defaults(func=context_cmd.run)
+
+    prompt_p = sub.add_parser("prompt", help="Prompt library and versions")
+    prompt_sub = prompt_p.add_subparsers(dest="prompt_command", required=True)
+    prompt_sync = prompt_sub.add_parser("sync", help="Register prompt versions from prompts/")
+    prompt_sync.add_argument("project", nargs="?", default=".", type=Path)
+    prompt_sync.add_argument("--json", action="store_true")
+    prompt_sync.set_defaults(func=prompt_cmd.run)
+    prompt_list = prompt_sub.add_parser("list", help="List registered prompts")
+    prompt_list.add_argument("project", nargs="?", default=".", type=Path)
+    prompt_list.add_argument("--json", action="store_true")
+    prompt_list.set_defaults(func=prompt_cmd.run)
+    prompt_show = prompt_sub.add_parser("show", help="Show a prompt version")
+    prompt_show.add_argument("ref")
+    prompt_show.add_argument("project", nargs="?", default=".", type=Path)
+    prompt_show.add_argument("--json", action="store_true")
+    prompt_show.set_defaults(func=prompt_cmd.run)
+    prompt_diff = prompt_sub.add_parser("diff", help="Diff two prompt versions")
+    prompt_diff.add_argument("left")
+    prompt_diff.add_argument("right")
+    prompt_diff.add_argument("project", nargs="?", default=".", type=Path)
+    prompt_diff.set_defaults(func=prompt_cmd.run)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

@@ -18,8 +18,8 @@ FIXTURES = Path(__file__).parent / "fixtures" / "ingest"
 CLAUDE_FIXTURE = FIXTURES / "claude_code_mini.jsonl"
 
 
-def test_schema_version_is_four() -> None:
-    assert SCHEMA_VERSION == 4
+def test_schema_version_is_five() -> None:
+    assert SCHEMA_VERSION == 5
 
 
 def test_migrate_legacy_db_adds_capture_and_storage_tables(tmp_path: Path) -> None:
@@ -28,7 +28,7 @@ def test_migrate_legacy_db_adds_capture_and_storage_tables(tmp_path: Path) -> No
     conn = sqlite3.connect(db)
     migrate(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 4
+    assert version == 5
     cols = {r[1] for r in conn.execute("PRAGMA table_info(runs)").fetchall()}
     assert {"kind", "source", "external_id", "trajectory_hash"} <= cols
     tables = {
