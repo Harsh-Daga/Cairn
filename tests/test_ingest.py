@@ -18,17 +18,17 @@ FIXTURES = Path(__file__).parent / "fixtures" / "ingest"
 CLAUDE_FIXTURE = FIXTURES / "claude_code_mini.jsonl"
 
 
-def test_schema_version_is_three() -> None:
-    assert SCHEMA_VERSION == 3
+def test_schema_version_is_four() -> None:
+    assert SCHEMA_VERSION == 4
 
 
-def test_migrate_v2_to_v3_adds_capture_tables(tmp_path: Path) -> None:
+def test_migrate_legacy_db_adds_capture_and_storage_tables(tmp_path: Path) -> None:
     db = tmp_path / "ledger.db"
     _legacy_ac_only_db(db)
     conn = sqlite3.connect(db)
     migrate(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 3
+    assert version == 4
     cols = {r[1] for r in conn.execute("PRAGMA table_info(runs)").fetchall()}
     assert {"kind", "source", "external_id", "trajectory_hash"} <= cols
     tables = {
@@ -37,7 +37,7 @@ def test_migrate_v2_to_v3_adds_capture_tables(tmp_path: Path) -> None:
             "SELECT name FROM sqlite_master WHERE type='table'"
         ).fetchall()
     }
-    assert {"events", "file_artifacts"} <= tables
+    assert {"events", "file_artifacts", "artifacts", "context_assets"} <= tables
     kind = conn.execute("SELECT kind FROM runs").fetchall()
     assert not kind
     conn.close()

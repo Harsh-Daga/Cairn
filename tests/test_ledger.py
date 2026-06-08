@@ -36,8 +36,8 @@ def _legacy_ac_only_db(path: Path) -> None:
     conn.close()
 
 
-def test_schema_version_is_three() -> None:
-    assert SCHEMA_VERSION == 3
+def test_schema_version_is_four() -> None:
+    assert SCHEMA_VERSION == 4
 
 
 def test_migrate_from_ac_only_preserves_rows(tmp_path: Path) -> None:
@@ -46,7 +46,7 @@ def test_migrate_from_ac_only_preserves_rows(tmp_path: Path) -> None:
     conn = sqlite3.connect(db)
     migrate(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 3
+    assert version == 4
     row = conn.execute(
         "SELECT output_hash FROM action_cache WHERE action_key = 'legacy-key'"
     ).fetchone()
@@ -65,6 +65,10 @@ def test_migrate_from_ac_only_preserves_rows(tmp_path: Path) -> None:
         "action_cache",
         "events",
         "file_artifacts",
+        "context_assets",
+        "artifacts",
+        "workflow_runs",
+        "lineage_edges",
     } <= tables
     conn.close()
 

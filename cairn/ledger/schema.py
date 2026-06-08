@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 _ACTION_CACHE_V1 = """
 CREATE TABLE IF NOT EXISTS action_cache (
@@ -109,6 +109,58 @@ ON runs(source, external_id)
 WHERE source IS NOT NULL AND external_id IS NOT NULL;
 """
 
+_V4_RUNS_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("workflow_ref", "TEXT"),
+    ("context_digest", "TEXT"),
+)
+
+_V4_TABLES = """
+CREATE TABLE IF NOT EXISTS context_assets (
+  path_rel TEXT PRIMARY KEY,
+  content_hash TEXT NOT NULL,
+  mime TEXT,
+  git_blob TEXT,
+  tags_json TEXT NOT NULL DEFAULT '[]',
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS artifacts (
+  content_hash TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  path_rel TEXT,
+  mime TEXT,
+  run_id TEXT,
+  session_id TEXT,
+  size_bytes INTEGER,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_artifacts_run_id ON artifacts(run_id);
+CREATE INDEX IF NOT EXISTS idx_artifacts_session_id ON artifacts(session_id);
+
+CREATE TABLE IF NOT EXISTS workflow_runs (
+  run_id TEXT PRIMARY KEY,
+  workflow_ref TEXT NOT NULL,
+  context_digest TEXT NOT NULL,
+  git_commit TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS lineage_edges (
+  edge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  relation TEXT NOT NULL,
+  from_id TEXT NOT NULL,
+  to_id TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  run_id TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_lineage_from ON lineage_edges(from_id);
+CREATE INDEX IF NOT EXISTS idx_lineage_to ON lineage_edges(to_id);
+CREATE INDEX IF NOT EXISTS idx_lineage_run ON lineage_edges(run_id);
+"""
+
 
 def _current_version(conn: sqlite3.Connection) -> int:
     row = conn.execute("PRAGMA user_version").fetchone()
@@ -128,6 +180,16 @@ def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
     conn.execute("UPDATE runs SET kind = 'build' WHERE kind IS NULL OR kind = ''")
     conn.executescript(_CAPTURE_TABLES_V3)
     conn.executescript(_V3_UNIQUE_SOURCE_EXTERNAL)
+    conn.execute("PRAGMA user_version = 3")
+    conn.commit()
+
+
+def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
+    existing = _table_columns(conn, "runs")
+    for col, decl in _V4_RUNS_COLUMNS:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE runs ADD COLUMN {col} {decl}")
+    conn.executescript(_V4_TABLES)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
@@ -139,13 +201,16 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.executescript(_ACTION_CACHE_V1)
         conn.executescript(_LEDGER_TABLES_V2)
         _migrate_v2_to_v3(conn)
-        return
+        version = _current_version(conn)
     if version == 1:
         conn.executescript(_LEDGER_TABLES_V2)
         _migrate_v2_to_v3(conn)
-        return
+        version = _current_version(conn)
     if version == 2:
         _migrate_v2_to_v3(conn)
+        version = _current_version(conn)
+    if version == 3:
+        _migrate_v3_to_v4(conn)
         return
     if version != SCHEMA_VERSION:
         msg = f"unsupported ledger schema version {version} (expected {SCHEMA_VERSION})"
