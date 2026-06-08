@@ -28,6 +28,12 @@ def _html_shell(payload_json: str, *, capture: bool = False) -> str:
     <button type="button" class="tab-btn" data-view="graph">Graph</button>
     <button type="button" class="tab-btn" data-view="timeline">Timeline</button>
   </nav>"""
+    capture_header = ""
+    capture_scripts = ""
+    if capture:
+        capture_header = '\n  <div id="session-header" class="session-header"></div>'
+        capture_scripts = '\n  <script src="assets/capture.js"></script>'
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,13 +45,13 @@ def _html_shell(payload_json: str, *, capture: bool = False) -> str:
 <body class="{body_class.strip()}">
   <header class="banner">
     <h1>{title}</h1>
-    <p id="run-summary"></p>
+    <p id="run-summary"></p>{capture_header}
   </header>{tabs}
   <div class="layout">
     <nav id="node-list" class="sidebar" aria-label="Nodes"></nav>
     <main id="node-detail" class="detail"></main>
   </div>
-  <script type="application/json" id="cairn-data">{payload_json}</script>
+  <script type="application/json" id="cairn-data">{payload_json}</script>{capture_scripts}
   <script src="assets/app.js"></script>
 </body>
 </html>
@@ -56,7 +62,7 @@ def _copy_assets(dest: Path) -> None:
     assets_dir = dest / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
     pkg = resources.files(_ASSETS_PKG)
-    for name in ("app.css", "app.js"):
+    for name in ("app.css", "app.js", "capture.js"):
         src = pkg / name
         with resources.as_file(src) as src_path:
             shutil.copyfile(src_path, assets_dir / name)

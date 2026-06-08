@@ -1,1366 +1,685 @@
 # Cairn — Project Charter & Technical Design
 
-> **A local-first provenance recorder and optional build system for coding-agent work.**
-> Cairn captures what Claude Code, Codex, Cursor, and Hermes actually did — prompts, tools, file
-> edits — as an inferred causal DAG, and renders a self-contained, offline, shareable report.
-> When work becomes repeatable, graduate to a declarative pipeline (`cairn.toml`) with
-> content-addressed caching and reproducible builds.
+> **The definitive open-source inference workspace for AI agents and direct LLM/provider workflows.**
+>
+> Cairn unifies project context, workflows, agent capture, provider execution, artifacts, and
+> explainable reports — connected through lineage. Local-first by default. Git-native. One binary.
 
-> *"Flight recorder + optional dbt for LLM work."* Local-first. Git-native. Zero infrastructure.
-> One binary.
-
-**Status:** Draft v2.0 — agent-first charter (Phases 0–2 complete; Phases 3+ are capture-first)
-**License (intended):** Apache-2.0
-**Audience:** anyone who wants to build the whole thing from this document alone.
+**Status:** v3.0 — inference workspace charter (Phases 0–1 complete; implementation in progress)  
+**License:** Apache-2.0  
+**Audience:** contributors, integrators, and users building on Cairn without reading source first.
 
 ---
 
 ## 0. How to read this document
 
-This charter is the single source of truth. It is ordered so you can build top to bottom:
+| Section | Contents |
+|---------|----------|
+| §1–§3 | Problem, core idea, positioning |
+| §4 | Design principles |
+| §5–§6 | Domain model and on-disk layout |
+| §7 | Worked examples |
+| §8–§14 | System architecture (one section per major system) |
+| §15 | Unified observability model |
+| §16 | CLI, API, SDK surfaces |
+| §17–§18 | Testing and security |
+| §19 | 22-phase build plan with exit criteria |
+| §20 | Success metrics and non-goals |
+| Part II (R1–R19) | Normative implementation spec (formats, algorithms, parsers) |
 
-1. **Why** (§1–§3) — the problem, the one core idea, and how we're positioned.
-2. **What** (§4–§7) — principles, the domain model, and the on-disk layout.
-3. **How** (§8–§12) — architecture, capture integrations (Claude Code / Codex / Cursor / Hermes),
-   the two-level DAG model, CLI, flows, live capture, report design, and pipeline-mode build engine.
-4. **Build it** (§13–§19) — stack, coding rules, testing, the phase plan, risks, and
-   how we know it worked.
-5. **Appendix** (§20) — glossary, schema, worked examples.
-6. **Part II — Detailed Engineering Reference** (R1–R19) — the no-ambiguity implementation
-   spec: exact formats, algorithms, protocols, parsers, hook wiring, and edge cases for every
-   component. Build from Part II; let Part I's principles (§4) govern when they conflict.
+**Three execution surfaces, one observability model:**
 
-**Two modes, one product:**
+| Surface | Entry | Primary artifact |
+|---------|-------|------------------|
+| **Capture** | `cairn ingest` / `cairn watch` | Session provenance bundle |
+| **Pipeline** | `cairn build` | Build outputs + lineage bundle |
+| **Workspace** | `cairn live serve` / HTTP API | Live + historical inference UI |
 
-| Mode | Entry point | Primary artifact | When |
-|---|---|---|---|
-| **Capture** (default) | `cairn ingest` / `cairn watch` | Session provenance bundle | Daily agent work |
-| **Pipeline** (optional) | `cairn build` | Build outputs + bundle | Repeatable corpus tasks |
-
-Both modes share: ledger, CAS, trajectory model (R7), and `cairn render`.
-
-If a decision isn't written here, the default is: **do the boring, local, file-based,
-reversible thing.**
-
----
-
-## 1. The Problem (and the evidence behind it)
-
-The dominant way people do serious work with coding agents today is **not** a repo full of
-`prompts/*.md`. They open Claude Code, Codex, or Cursor and work directly. The agent reads
-files, calls tools, edits code, and produces results — but almost nothing durable is left
-behind except git diffs and opaque JSONL logs buried in `~/.claude`, `~/.codex`, or
-`~/.cursor`.
-
-That creates recurring pain:
-
-- **No audit trail** — "What prompt produced this change? Which tools ran? What did the agent
-  read first?"
-- **No shareable explanation** — handing someone a PR without the agent's reasoning is
-  incomplete; pasting chat logs is unusable.
-- **No causal graph** — you see a file diff, not the chain: read → reason → tool → edit.
-- **Ephemeral sessions** — compaction, new chats, and tool churn destroy context; there is no
-  portable artifact a stranger can open offline.
-- **Repeatability is manual** — when the same 5-step pattern appears across sessions, users
-  re-prompt from scratch instead of declaring a pipeline.
-
-**This pain is real and widely felt.** claude-devtools (~3k+ stars) proves people want to
-*inspect* Claude Code sessions. Chronicle, Rewind, and agentwatch prove people want *capture*
-and replay. Langfuse/Braintrust prove teams want *observability* — but as SaaS. Nobody packages
-**local, offline, file-centric, shareable provenance with a causal DAG** across Claude Code,
-Codex, and Cursor in one tool.
-
-**The old Cairn thesis (build-system-first) solved a different entry point** — researchers
-with `inputs/` and `prompts/` in git. That path remains valuable as **Pipeline mode** (Phases
-1–2, built). The new default entry point is **Capture mode**: zero config, ingest what agents
-already record, render what matters.
+Agent sessions and provider runs produce **identical report shapes**. Users do not need to know
+which runtime executed the work.
 
 ---
 
-## 2. The Core Idea (one paragraph, memorize it)
+## 1. The Problem
 
-Agent work is a **directed acyclic graph (DAG)** at two levels. **Micro graph (default):** each
-coding-agent session is a sequence of events — user prompts, model turns, tool calls, file
-reads/writes — with causal edges. Cairn **infers** this graph from agent transcripts and hooks,
-stores it in a local ledger + CAS, and renders a **portable provenance bundle** anyone can
-open offline. **Macro graph (optional):** when work is repeatable, declare a `cairn.toml`
-pipeline; Cairn runs a content-addressed build DAG (dbt-style) over prompts and files, pinning
-realized outputs and trajectories. The bridge: both levels use the same **trajectory model**
-(R7), the same ledger, and the same bundle renderer. Capture records what happened; Pipeline
-replays what should happen — and Capture can **graduate** into Pipeline when patterns stabilize.
+Developers use Claude Code, Codex, Cursor, OpenHands, and direct API calls interchangeably.
+Work spans markdown specs, source code, documents, and generated artifacts — but provenance is
+fragmented across JSONL logs, chat exports, git diffs, and SaaS dashboards.
 
-Everything else in Cairn serves capture, rendering, or optional pipeline execution.
+**Pain:**
 
----
+1. No unified audit trail across agents and providers
+2. No shareable explanation of *what happened* without pasting raw prompts
+3. No causal graph linking context → tools → artifacts → outputs
+4. No local, offline, reproducible inference workspace
+5. Repeatable workflows require re-prompting instead of versioned definitions
 
-## 3. Prior Art & Positioning (what we reuse vs. what we build)
-
-Honest map of the neighborhood. **We do not rebuild owned territory.**
-
-| Tool / category | What it nails | Why it isn't Cairn |
-|---|---|---|
-| **claude-devtools** | Desktop inspection of Claude Code JSONL; search, stats, cost. | Electron app; Claude-only; no portable HTML bundle; no file-centric causal graph; no Codex/Cursor. |
-| **Chronicle / Rewind** | Claude Code hooks; SQLite; time-travel restore. | Undo-focused; not shareable provenance; single runtime. |
-| **Codex hooks** | Lifecycle hooks; `rollout-*.jsonl` transcripts. | Logging framework; no unified cross-agent ledger or bundle. |
-| **Cursor agent-transcripts** | Per-workspace JSONL under `~/.cursor/projects/`. | IDE-internal; fragmented storage; no causal graph product. |
-| **Langfuse / Braintrust** | Team cloud traces, evals, dashboards. | SaaS; not local-first; not offline `file://` bundles. |
-| **dbt** | `ref()`-driven DAG, incremental builds, lineage. | SQL-only. Cairn **borrows the shape** for Pipeline mode. |
-| **promptfoo** | Local eval, content-cached model calls. | Evaluation, not session capture or deliverable builds. |
-| **LangGraph / CrewAI** | Agent runtimes, orchestration. | They *run* agents; Cairn *records* and optionally *builds*. |
-
-**What Cairn reuses and never builds:**
-
-- **git** — versioning, blame, PR context. Sessions complement `git log`, not replace it.
-- **Claude Code / Codex / Cursor** — the agent runtimes. Cairn does not replace them.
-- **Agent transcript formats** — we parse them; we do not fork them.
-- **Hooks APIs** — Claude Code hooks, Codex hooks; Cairn installs capture hooks only.
-- **Jinja2** — Pipeline-mode prompt templating.
-- **MCP / A2A** — Pipeline-mode agent nodes (later phases).
-
-**What Cairn builds (the glue nobody has unified):**
-
-1. **Cross-agent ingest** — parsers + normalizers for Claude Code, Codex, Cursor → one trajectory model.
-2. **Micro DAG linker** — causal + data edges from events; file-centric index.
-3. **Provenance bundle** — self-contained HTML (`file://`), file-first navigation + graph view.
-4. **Optional pipeline engine** — `cairn.toml`, AC, CAS, `cairn build` (Phases 1–2, complete).
-5. **Graduation path** — session → suggested pipeline (later).
+**Cairn solves this** as a local-first inference workspace: record, execute, explain, and share —
+with optional collaboration and VCS integration.
 
 ---
 
-## 4. Design Principles & Ground Rules
+## 2. The Core Idea
 
-These are non-negotiable. Every design decision is checked against them.
+Every inference execution is a **directed acyclic graph**:
 
-1. **Local-first, zero-infra.** No server, no account. Network calls only to model providers
-   when **invoking** Pipeline mode — never required for Capture mode.
-2. **Capture fails open; build fails loud.** Ingest hooks **must never block** the agent
-   (exit 0 always). Pipeline `validate`/`doctor` block spend before tokens.
-3. **Provenance is the product.** Every session and build output must be traceable to prompts,
-   tools, models, and file snapshots. If we choose between slick output and traceable, choose
-   traceable (Principle #10, unchanged).
-4. **Do one thing well; compose, don't absorb.** Cairn is not an agent runtime, editor, or
-   SaaS. It records and optionally builds.
-5. **The DAG is inferred, never hand-maintained** — for Capture (from events) and Pipeline
-   (from `ref()`/`source()`).
-6. **No lock-in, fully reversible.** Delete Cairn; keep your repo, agent logs, and git history.
-7. **Boring technology.** Python, SQLite, SHA-256, vanilla JS, hooks subprocesses.
-8. **Zero-config capture.** `cairn ingest` from a git repo should work with no `cairn.toml`.
-9. **Taste: value in 5 minutes.** Install → ingest last session → render → open HTML.
-10. **CAS is internal infrastructure**, not the user-facing product story. Users care about
-    bundles and file lineage, not cache keys.
-11. **Prefer a step to an agent** — in Pipeline mode. In Capture mode, agents are the reality;
-    Cairn documents them honestly.
-12. **Multi-runtime from day one of Capture.** Claude Code, Codex, Cursor, and Hermes are peers, not
-    afterthoughts.
+```
+Context → Prompt/Workflow → Execution (agent or provider) → Tool calls → Artifacts → Report
+```
+
+Cairn **infers or declares** this graph, stores it in an append-only ledger + content-addressable
+store, and renders **explainable reports** (summary, narrative, tool usage, artifact inventory,
+execution/artifact/dependency DAGs, reproducibility metadata).
+
+**Product equation:** GitHub (context + VCS) + Notion (docs + knowledge) + Build System
+(cached pipelines) + Agent Observability + Inference Workspace — unified through lineage.
 
 ---
 
-## 5. Domain Model (the vocabulary)
+## 3. Prior Art & Positioning
 
-Learn these nouns; the whole system is built from them.
+| Category | Examples | Cairn difference |
+|----------|----------|------------------|
+| Agent inspectors | claude-devtools, Chronicle | Cross-agent, offline bundles, file-centric DAG |
+| Cloud observability | Langfuse, Braintrust | Local-first, no account required |
+| Build systems | dbt, Make | LLM-native DAG with content-addressed cache |
+| Agent runtimes | LangGraph, CrewAI | Cairn records and builds; does not replace runtimes |
 
-### 5.1 Shared
+**Cairn builds:** cross-agent ingest, unified trajectory model, provenance bundles, workflow
+engine, provider framework, execution graphs, artifact registry, reporting, optional collaboration.
 
-- **Project** — a directory Cairn is scoped to. Typically a git repo root. May or may not
-  contain `cairn.toml`.
-- **Session** — one continuous agent conversation (Claude `sessionId`, Codex rollout id,
-  Cursor transcript id). The Capture-mode unit of work.
-- **Event** — one normalized row in the micro DAG: `user_prompt`, `assistant_message`,
-  `tool_call`, `tool_result`, `file_snapshot`, `sub_agent`, `session_start`, `session_end`,
-  `error`, etc. (R7, R19).
-- **Trajectory** — ordered `events[]` for one session or one Pipeline agent node. Stored as
-  a CAS blob + normalized SQLite rows.
-- **Micro graph** — DAG inferred from session events (causal order + data dependencies).
-- **Macro graph** — DAG of Pipeline `steps` from `cairn.toml` (optional).
-- **Ledger** — append-only SQLite + per-run/session JSON mirrors.
-- **CAS** — content-addressable blob store (file snapshots, large tool args/results,
-  trajectory JSON).
-- **Provenance bundle** — self-contained static HTML report (`cairn render`).
-- **Run** — one `cairn build` (Pipeline) **or** one ingested session (Capture). Distinguished
-  by `runs.kind`: `"build"` | `"capture"`.
-
-### 5.2 Capture-specific
-
-- **Source** — agent runtime identifier: `claude-code` | `codex` | `cursor`.
-- **External id** — runtime's session id (e.g. Claude `sessionId`, Codex rollout uuid).
-- **File artifact** — a repo-relative path touched in a session, with optional
-  `before_hash` / `after_hash` from hook snapshots.
-- **Ingest** — batch or streaming import from JSONL / hooks → ledger.
-- **Watch** — install and manage capture hooks in agent config.
-
-### 5.3 Pipeline-specific (unchanged from v1.2)
-
-- **Source (pipeline)** — input file set declared in `cairn.toml`.
-- **Prompt** — Jinja2 template in `prompts/`.
-- **Step** — build unit: `chat` | `agent` | `dynamic`.
-- **`ref()` / `source()`** — DAG dependency declarations.
-- **Action Cache (AC)** — action key → output hash (Pipeline only; never fed by ingest).
-- **Map / Reduce** — fan-out / fan-in step patterns.
-- **Agent node** — Pipeline step with `kind = "agent"` and MCP/A2A/builtin backend.
-- **Manifest** — dynamic step's runtime child work-set.
-- **Budget** — hard caps on Pipeline agent nodes.
+**Cairn reuses:** git, agent transcript formats, hooks APIs, Jinja2, HTTP provider APIs.
 
 ---
 
-## 6. The Project Format (on-disk layout)
+## 4. Design Principles
 
-### 6.1 Capture-first layout (default — no `cairn.toml` required)
-
-```
-my-repo/                          # any git project you work on with agents
-├── src/ ...                      # normal repo files (agents edit these)
-└── .cairn/                       # GENERATED — gitignored
-    ├── ledger.db                 # sessions + events + build runs + tool_calls
-    ├── cache/cas/<aa>/<hash>     # blobs: trajectories, snapshots, tool payloads
-    ├── sessions/<session_id>.json  # human-readable session mirror
-    └── watch/                    # hook install state, last ingest cursors
-```
-
-Optional output location for bundles (committed or gitignored per team preference):
-
-```
-outputs/bundle/                   # `cairn render` default
-├── index.html
-└── assets/
-```
-
-### 6.2 Pipeline layout (optional — when work is repeatable)
-
-```
-my-pipeline/
-├── cairn.toml
-├── inputs/
-├── prompts/
-├── agents/                       # optional agent policies
-├── outputs/                      # GENERATED build artifacts
-│   └── bundle/
-└── .cairn/                       # shared ledger + CAS (both modes use same store)
-```
-
-### 6.3 Coexistence rules
-
-- One `.cairn/` per project root. Capture sessions and build runs live in the same
-  `ledger.db`, distinguished by `runs.kind`.
-- **Invariant (ADR 0008):** ingest events never influence action keys or AC entries.
-- `cairn.toml` is optional. `cairn init` scaffolds Pipeline layout; `cairn watch install`
-  scaffolds Capture hooks only.
-
-### 6.4 `cairn.toml` (Pipeline mode — unchanged schema, see §20.3)
-
-Pipeline config is identical to v1.2. It is **not** required for Capture.
+1. **Local-first, zero-infra default** — no server required for capture, build, or offline reports
+2. **Capture fails open; build fails loud** — hooks never block agents; validate/doctor block spend
+3. **Provenance is the product** — traceability over slick output
+4. **Unified observability** — agent and provider runs share ledger, CAS, trajectory, renderer
+5. **DAG is inferred or declared** — never hand-maintained in capture; `ref()`/`source()` in pipeline
+6. **No lock-in** — delete Cairn; keep repo, logs, git history
+7. **Boring technology** — Python, SQLite, SHA-256, vanilla JS, subprocess hooks
+8. **Zero-config capture** — `cairn ingest` works without `cairn.toml`
+9. **Explainability over raw prompts** — turn cards, graphs, narratives as default
+10. **Extensible agent/provider registry** — new parsers and adapters without core changes
 
 ---
 
-## 7. Worked Examples (end to end)
+## 5. Domain Model
 
-### 7.1 Capture-first (primary user journey)
+### 5.1 Core entities
 
-1. Developer works in Claude Code on `~/my-repo` (no Cairn awareness).
-2. `cairn ingest` scans `~/.claude/projects/-Users-harshdaga-my-repo/*.jsonl` (path slug
-   algorithm in R19.2), parses unseen sessions, writes to `my-repo/.cairn/ledger.db`.
-3. `cairn sessions` lists: time, source, tools, files touched, tokens, git branch.
-4. `cairn render --session <id>` → `outputs/bundle/index.html`.
-5. Reviewer opens `file://` HTML offline: **Files** tab shows `src/auth.ts` → timeline of
-   prompts/tools/edits; **Graph** tab shows causal DAG; **Timeline** shows total order.
-6. `cairn render --zip` → attach to PR.
+| Entity | Definition |
+|--------|------------|
+| **Project** | Directory scoped to Cairn; git root; holds context, workflows, `.cairn/` store |
+| **Context asset** | Any managed input: markdown, source, document, context file, knowledge asset |
+| **Workflow** | Versioned definition: steps, prompts, context selectors, execution template |
+| **Session** | One continuous agent conversation or provider run |
+| **Event** | Normalized ledger row: prompt, message, tool_call, tool_result, file_snapshot, etc. |
+| **Trajectory** | Ordered events for one session or workflow node |
+| **Artifact** | First-class output: report, summary, generated file, code, asset (CAS-backed) |
+| **Run** | One build, capture ingest, or provider workflow execution (`runs.kind`) |
+| **Report** | Rendered explainability bundle: summary + narrative + graphs + reproducibility |
+| **Snapshot** | Point-in-time project/session state for diff and versioning |
+| **Lineage edge** | Relationship: derived_from, read, wrote, invoked, depends_on |
 
-### 7.2 Live capture (richer file snapshots)
+### 5.2 Graph types
 
-1. `cairn watch install --source claude-code` merges hooks into `.claude/settings.local.json`.
-2. `PreToolUse` on `Edit|Write` captures **before** file hash; `PostToolUse` captures **after**.
-3. On `Stop`, session is finalized; optional `cairn watch --auto-render`.
-4. Same bundle as 7.1, but file diffs are exact CAS snapshots, not inferred from git.
+| Graph | Scope | Edges |
+|-------|-------|-------|
+| **Execution graph** | Single session/run | temporal, causal, delegation |
+| **Artifact graph** | Artifacts across runs | produced_by, derived_from |
+| **Dependency graph** | Pipeline workflows | ref(), source(), map/reduce |
+| **Lineage graph** | Project-wide | unified view for reports |
 
-### 7.3 Multi-runtime same repo
+### 5.3 Agent sources (registry)
 
-1. Morning: Cursor session on `my-repo` → `cairn ingest --source cursor`.
-2. Afternoon: Codex session → `cairn ingest --source codex`.
-3. `cairn sessions` shows both; `cairn render` can bundle one or `--all-since 1d`.
+| Source ID | Batch ingest | Live hooks | Status |
+|-----------|-------------|------------|--------|
+| `claude-code` | Yes | Yes | Implemented |
+| `codex` | Yes | Yes | Implemented |
+| `cursor` | Yes | Tail watcher | Implemented |
+| `hermes` | Yes | Tail watcher | Implemented |
+| `aider` | Planned | Planned | Phase 8 |
+| `openhands` | Planned | Planned | Phase 8 |
+| `goose` | Planned | Planned | Phase 8 |
 
-### 7.4 Pipeline mode (graduation — later phase)
+### 5.4 Provider registry
 
-1. User notices repeated pattern across sessions.
-2. `cairn init` → edit `cairn.toml` + `prompts/`.
-3. `cairn build` → macro DAG, AC, `outputs/`.
-4. `cairn render --run <build_run_id>` → build lineage bundle (step DAG view).
-5. Capture sessions and build runs coexist in one ledger; renderer picks view by target.
-
-### 7.5 Live capture + live report (target journey — Phase 6)
-
-1. `cairn live install --source all` — hooks for Claude Code + Codex; tail watchers for Cursor +
-   Hermes JSONL/session files (§11.9).
-2. Developer works in any agent; events stream into `.cairn/ledger.db` as `status=in_progress`.
-3. `cairn live serve --session <external_id>` opens `http://127.0.0.1:8787` — bundle UI updates
-   within ~2 s of each tool call (no manual `ingest` / `render`).
-4. On session end: status → `completed`; optional auto-export to `outputs/bundle/` for offline
-   `file://` sharing.
-5. Reviewer sees the same report whether live or exported — session IDs, turns, graph, and file
-   lineage are identical (§11.8, R19.14).
+| Provider | Adapter | Status |
+|----------|---------|--------|
+| `openai` | HTTP OpenAI | Implemented |
+| `anthropic` | HTTP Anthropic | Implemented |
+| `ollama` / `ollama-cloud` | HTTP Ollama | Implemented |
+| `groq` | HTTP Groq | Implemented |
+| `gemini` | HTTP Google AI | Phase 9 |
+| `openrouter` | HTTP OpenRouter | Phase 9 |
+| `openai-compatible` | Generic HTTP | Implemented (fallback) |
 
 ---
 
-## 8. Architecture
-
-### 8.1 Layer diagram (end to end)
+## 6. On-Disk Layout
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ AGENT RUNTIMES (external)                                                     │
-│  Claude Code       Codex CLI/TUI      Cursor IDE        Hermes Agent         │
-│  ~/.claude/…       ~/.codex/sessions/ ~/.cursor/…       ~/.hermes/sessions/  │
-└───────┬──────────────────┬──────────────────┬──────────────────┬─────────────┘
-        │ batch + hooks    │ batch + hooks    │ batch + tail     │ batch + tail
-        ▼                  ▼                  ▼                  ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ cairn/ingest/  parsers | normalizer | hook_cmd | watch | live/ (Phase 6)     │
-│  → R7 Trajectory + graph/session_graph.py                                    │
-└────────────┬─────────────────────────────────────────────────────────────────┘
-             ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ ledger/ + cache/cas  — runs | events | file_artifacts (incl. in_progress)    │
-└────────────┬─────────────────────────────────────────────────────────────────┘
-             │
-     ┌───────┴────────────────┐
-     ▼                          ▼
-┌──────────────────┐   ┌─────────────────────────────────────────────────────┐
-│ render/          │   │ PIPELINE (optional) — Phases 1–2 built                │
-│ bundle v2 → v3   │   │ loader → graph/builder → plan → executor → providers  │
-│ offline + live   │   │ AC + action keys (never fed by ingest)                │
-└────────┬─────────┘   └─────────────────────────────────────────────────────┘
-         │
-         ▼  Phase 6: cairn live serve → SSE/poll → browser auto-refresh
+my-project/
+├── cairn.toml              # optional: project config, workflows, providers, agents
+├── context/                # or inputs/: managed context assets
+│   ├── docs/
+│   ├── src/
+│   └── knowledge/
+├── prompts/                # project prompts (links to registry)
+├── workflows/              # versioned workflow definitions (Phase 7)
+├── outputs/                # generated artifacts
+│   └── bundle/             # rendered reports
+└── .cairn/                 # GENERATED — gitignored
+    ├── ledger.db           # runs, events, artifacts, workflows, sessions
+    ├── cache/cas/<aa>/<hash>
+    ├── sessions/<id>.json
+    ├── runs/<id>.json
+    ├── snapshots/<id>/     # Phase 15
+    ├── prompts/registry/   # Phase 6
+    └── watch/              # hook state, ingest cursors
 ```
 
-### 8.2 Components
+**Coexistence:** Capture sessions, provider runs, and pipeline builds share one `ledger.db`,
+distinguished by `runs.kind`: `capture` | `build` | `provider`.
 
-| Component | Capture mode | Pipeline mode |
-|---|---|---|
-| `ingest/` | **Primary** — parsers, hooks, watch | Unused |
-| `ledger/` | sessions, events, file_artifacts | + build runs, nodes, tool_calls |
-| `cache/cas.py` | trajectory + snapshot blobs | + step outputs |
-| `cache/action_cache.py` | **Unused** | AC lookups |
-| `graph/session_graph.py` | Infer micro DAG | Unused |
-| `graph/builder.py` | Unused | Macro DAG from `cairn.toml` |
-| `plan/` | Unused | action keys, cost |
-| `executor/` | Unused | parallel build |
-| `providers/` | Observe model from transcripts | Invoke HTTP APIs |
-| `render/` | Session bundle v2 → v3 (+ live) | Build bundle v1 (same shell) |
-| `cli/` | `ingest`, `watch`, `sessions`, `render` | `build`, `plan`, `status`, … |
+**Invariant (ADR 0008):** ingest events never write action-cache entries.
 
-### 8.3 Adapter interfaces (stable contracts)
+---
 
-**Provider (Pipeline invoke + Capture observe):**
+## 7. Worked Examples
+
+### 7.1 Agent capture (zero config)
+
+```bash
+cd my-repo
+cairn ingest                    # import latest agent sessions
+cairn sessions                  # list with tokens, files, branch
+cairn render --session <id>     # offline HTML report
+```
+
+### 7.2 Direct provider workflow
+
+```bash
+cairn init my-project && cd my-project
+# edit cairn.toml workflow + prompts
+cairn validate && cairn doctor
+cairn build --yes               # provider execution
+cairn render --run <id>         # same report shape as capture
+```
+
+### 7.3 Live workspace
+
+```bash
+cairn watch install --source all
+cairn live serve                # SSE updates at localhost:8787
+# work in any agent; report updates in browser
+```
+
+### 7.4 Share and reproduce
+
+```bash
+cairn render --zip -o report.zip
+cairn snapshot create           # Phase 15
+cairn workflow run summarize@v2 --context docs/brief.md
+```
+
+---
+
+## 8. Project Context System (Phase 5)
+
+### Architecture
+
+`cairn/context/` indexes all project assets by path, MIME, git state, and content hash.
+Integrates with `loader/sources.py` and `ingest/project_paths.py`.
+
+### Interfaces
 
 ```python
-class Provider(Protocol):                  # model completions — Pipeline only
-    name: str
-    def complete(self, request: CompletionRequest) -> CompletionResult: ...
-
-class ObservedUsage(TypedDict):            # Capture only — parsed from transcripts
-    model: str
-    input_tokens: int
-    output_tokens: int
-    cost: float | None
+class ContextRegistry:
+    def scan(project: Project) -> list[ContextAsset]: ...
+    def resolve(selector: str) -> ContextAsset: ...
+    def exclude(patterns: list[str]) -> None: ...
 ```
 
-Capture **never** calls `Provider.complete()`. It extracts `ObservedUsage` from transcript
-lines via `ingest/usage.py`.
+### Flows
 
-**Agent backends (Pipeline only — Phase 8+):** unchanged `AgentBackend` protocol from v1.2.
-External agents (Claude Code, Codex, Cursor) are **not** invoked by Cairn in Capture mode;
-they are **observed** via ingest.
+1. `cairn init` scaffolds `context/` and `cairn.toml` exclusions
+2. `cairn context scan` refreshes index in ledger
+3. Workflows select context via glob, path, or tag selectors
+4. Capture links file artifacts to context assets by repo-relative path
 
-### 8.4 Ingest writer (normative)
+### Storage
 
-All ingest paths append to the ledger through one module: `ingest/writer.py`.
+- `context_assets` table: path, hash, mime, git_blob, tags, updated_at
+- Large blobs in CAS; metadata in SQLite
 
-```
-append_event(session_id, seq, event_type, payload) → None
-snapshot_file(session_id, path_rel, op, before_hash?, after_hash?) → None
-finish_session(session_id, status, totals) → writes sessions/<id>.json
-```
+### APIs
 
-- **Idempotency:** re-ingesting the same `external_id` is a no-op (compare source + external_id).
-- **Concurrency:** hook handlers and `cairn ingest` serialize writes via SQLite WAL +
-  `BEGIN IMMEDIATE` on session rows.
-- **Secrets:** scrub env vars, API keys, and bearer tokens before CAS write (R16).
+- CLI: `cairn context list|scan|show`
+- SDK: `cairn.context.scan(project_root)`
+
+### Integration
+
+- Git: optional `git_commit` pinning per session/run
+- Workflows: context selectors in workflow YAML
+- Reports: Files tab maps to context assets
+
+### Lifecycle
+
+Create on scan → update on hash change → soft-delete on removal → GC when unreferenced
 
 ---
 
-## 9. The Cache-Key Algorithm (Pipeline mode only)
+## 9. Prompt Registry (Phase 6)
 
-> **Capture mode does not use action keys or the Action Cache.** Ingest writes trajectories
-> and snapshots to the ledger/CAS for provenance only (ADR 0008). Everything below applies to
-> `cairn build` only.
+### Architecture
 
-This is the heart of Pipeline mode. Get it exactly right.
+`cairn/prompts/` manages reusable prompts with versioning, front matter (model/params), and
+project/library scope.
 
-For a node `N`, the **action key** is:
+### Interfaces
 
-```
-action_key(N) = sha256(canonical_json({
-    "cairn_key_version": 1,
-    "kind":          N.kind,                 # "chat" | "agent" | "dynamic"
-    "prompt_hash":   sha256(prompt_or_policy_bytes),
-    "prompt_front_matter": normalized_front_matter,
-    "model":         N.model,
-    "params":        canonical(N.params),
-    "tools":         canonical(N.tools),     # agent only: ids+versions+purity, sorted
-    "sub_agents":    canonical(N.sub_agents), # agent only
-    "budget":        canonical(N.budget),    # agent only
-    "rendered_inputs_hash": rendered_inputs_hash(N),
-}))
+```python
+class PromptRegistry:
+    def register(prompt: PromptDef) -> PromptRef: ...
+    def get(name: str, version: str | None) -> PromptDef: ...
+    def list(library: str | None) -> list[PromptRef]: ...
 ```
 
-`rendered_inputs_hash(N)` is a **Merkle** rollup: `sha256(file_bytes)` for each source
-file read; the upstream node's **output/trajectory content hash** for each `ref()`. If an
-upstream output changes, every downstream key changes automatically. For a **map** node,
-each item gets its own key, so editing one of 20 inputs invalidates exactly one output.
+### Storage
 
-Resolution per node:
+- `.cairn/prompts/registry/<name>/<version>.json` + CAS body
+- `prompt_refs` table for workflow linkage
 
-```
-key = action_key(N)
-if key in ActionCache:
-    output = CAS[ActionCache[key]]                 # CACHE HIT — no tokens, no tool calls
-else:
-    result = run(N)                                # chat completion OR agent run — the only spend
-    output_hash = sha256(result.bytes)
-    CAS[output_hash] = result.bytes                # for agents, this includes the trajectory
-    ActionCache[key] = output_hash
-    Ledger.record(N, key, output_hash, tokens, cost, trajectory, ...)
-```
+### Flows
 
-**Handling non-determinism (the crux), for both completions and agent trajectories:**
+1. Author prompt in `prompts/` or `cairn prompt add`
+2. Version bump creates immutable version
+3. Workflow references `prompt://summarize@v2`
+4. Build/render resolves and pins version in run record
 
-- `cached` is **pseudo-hermetic**: the first realization is pinned. Same key ⇒ same bytes
-  forever, until an input changes. This gives Bazel-like reproducibility on top of a
-  non-deterministic operation, and is what makes an *agent run* replayable.
-- `cairn build --refresh <selector>` deletes matching AC entries, forcing re-realization.
-- `params.temperature` does **not** change the key. To get N samples, declare `samples = n`,
-  which adds a `sample_index` to each node's key.
-- For **agent nodes**, the cache key includes the *tool set* (ids + versions) and
-  sub-agent definitions — because changing an agent's available tools can change its
-  output, so it must invalidate the cache.
+### APIs
 
-**Side-effect safety (agent-specific, see §12.6):** an agent node whose tools are all
-`pure` is safe to cache. An agent node with any `effectful` tool may **not** be silently
-served from cache; it must be declared `volatile`, or the user must explicitly accept
-caching with a loud warning.
+- CLI: `cairn prompt list|show|add|diff`
+- SDK: `cairn.prompts.get(name, version)`
 
-**Bridge (future):** `cairn replay --session <id>` may pin a captured trajectory for
-Pipeline agent steps — out of scope until Phase 8.
+### Lifecycle
+
+Immutable versions; deprecation flag; no deletion of referenced versions
 
 ---
 
-## 10. Command Surface (the CLI)
+## 10. Workflow Engine (Phase 7)
 
-### 10.1 Capture commands (hero path)
+### Architecture
 
-| Command | What it does |
-|---|---|
-| `cairn ingest [--since 7d] [--source claude-code\|codex\|cursor\|hermes\|all]` | Batch-import agent transcripts for cwd's project. |
-| `cairn ingest --watch [--source …]` | Tail agent transcript files (all sources; §11.9). |
-| `cairn watch install [--source …] [--project PATH]` | Install capture hooks (Claude Code, Codex). |
-| `cairn watch uninstall \| status` | Manage hook installation. |
-| `cairn live install [--source all] [--project PATH]` | Hooks + tail watchers for live capture (§11.9). |
-| `cairn live serve [--session ID] [--port 8787]` | Local HTTP server; bundle UI auto-refreshes on new events. |
-| `cairn live status` | Active in-progress sessions + watcher health. |
-| `cairn sessions [--limit N] [--source …] [--in-progress]` | List captured sessions (R19.14). |
-| `cairn show <session_id> [--json]` | Session summary or full trajectory. |
-| `cairn graph <session_id> [--format dot\|json]` | Export micro DAG. |
-| `cairn render [--session ID\|--run ID] [-o dir] [--zip] [--split] [--watch]` | Offline bundle; `--watch` regen on ledger change. |
-| `cairn doctor` | Check ingest paths reachable, hooks installed, disk space. |
+`cairn/workflow/` executes versioned workflow definitions: chat steps, map/reduce, agent nodes
+(Phase 8), dynamic manifests.
 
-### 10.2 Pipeline commands (retained — Phases 1–2 built)
+Extends `executor/runner.py`, `graph/builder.py`, `plan/planner.py`.
 
-| Command | What it does |
-|---|---|
-| `cairn init [dir]` | Scaffold Pipeline project (`cairn.toml`, prompts, inputs). |
-| `cairn validate` | Parse config; resolve macro DAG. No tokens. |
-| `cairn status` / `cairn plan` | Cache state + cost estimate. |
-| `cairn build [selector]` | Execute pipeline. |
-| `cairn runs` | List build runs (`kind=build`). |
-| `cairn diff --session A B` | Phase 7 — session file diff. |
-| `cairn trace` / `cairn cache` | Phase 8+ pipeline ergonomics. |
-| `cairn run <prompt>` | One-off completion outside DAG. |
+### Interfaces
 
-### 10.3 Global flags
+```python
+class WorkflowEngine:
+    def validate(workflow: WorkflowDef) -> ValidationResult: ...
+    def plan(workflow: WorkflowDef, context: ContextSelection) -> ExecutionPlan: ...
+    async def execute(plan: ExecutionPlan, provider: Provider) -> RunRecord: ...
+```
 
-`--project PATH` — override project root (default: git root from cwd).
-`--json` — machine-readable output where supported.
+### Storage
+
+- `workflows/<name>/<version>.yaml` in project
+- `workflow_runs` links run → workflow version + context digest
+
+### Flows
+
+```
+Prompt → Context Selection → Workflow → Model Execution → Artifacts → Report → Graph
+```
+
+### APIs
+
+- CLI: `cairn workflow list|validate|run|history`
+- Reuses `cairn build` for pipeline-compatible workflows
+
+### Lifecycle
+
+Draft → validated → executed → archived; graduation from capture patterns (Phase 8)
 
 ---
 
-## 11. Key Flows (step by step)
+## 11. Agent Integration Framework (Phase 8)
 
-### 11.1 Capture batch ingest (Claude Code)
+### Architecture
 
-1. Resolve project root `P` = git root of cwd.
-2. Compute Claude project slug: `P.as_posix().replace("/", "-")` with leading `-` →
-   e.g. `/Users/harshdaga/cairn` → `-Users-harshdaga-cairn`.
-3. Glob `~/.claude/projects/<slug>/*.jsonl`.
-4. For each file: read `sessionId` from first line; skip if `(source=claude-code, external_id)` exists.
-5. Parse lines (R19.3): build `events[]` in `seq` order; link `parentUuid` chain.
-6. For each `tool_use` / `tool_result` pair: insert `tool_calls` row.
-7. For `Edit|Write|MultiEdit` tools: extract `file_path` from args; record `file_artifact`.
-8. Store trajectory JSON in CAS; insert `runs` row (`kind=capture`).
-9. Write `.cairn/sessions/<session_id>.json`.
+`cairn/agents/` provides parser plugin interface, normalizer, hook installer, live tail,
+session reconstruction, and replay.
 
-### 11.2 Capture live hooks (Claude Code)
+### Interfaces
 
-Hook handler: `cairn hook --event <name>` (installed per R19.4).
-
-| Hook event | Cairn action |
-|---|---|
-| `SessionStart` | `begin_session(source=claude-code, cwd, git_commit, external_id=sessionId)` |
-| `UserPromptSubmit` | `append_event(user_prompt)` — hash + inline if < 64 KiB |
-| `PreToolUse` matcher `Edit\|Write\|MultiEdit` | Read file → CAS `before_hash`; `append_event(tool_call, pending)` |
-| `PostToolUse` | `append_event(tool_result)`; snapshot `after_hash`; update `file_artifacts` |
-| `PostToolUse` matcher `Bash` | `tool_call` with command hash only (no env expansion in bundle) |
-| `SubagentStart` / `SubagentStop` | `sub_agent` event; link child session if `sessionId` known |
-| `Stop` | `finish_session(status=completed)` |
-
-**Contract:** hook command always `exit 0`. On internal error: log to `~/.cairn/hook-errors.log`, still exit 0.
-
-### 11.3 Capture batch ingest (Codex)
-
-1. Glob `~/.codex/sessions/**/rollout-*.jsonl` (recursive).
-2. Filter by `session_meta.payload.cwd` matching project root `P` (prefix match).
-3. Parse line types: `session_meta`, `event_msg`, `response_item`, `turn_context` (R19.5).
-4. Map `response_item.payload.type=function_call` → `tool_call`; results from following items.
-5. Map `apply_patch` / `shell` / MCP tools per R19.5 tool table.
-6. `turn_context.payload.model` → session model; accumulate usage from `event_msg` completion events.
-
-### 11.4 Capture live hooks (Codex)
-
-Install into `~/.codex/config.toml` `[hooks]` or project `.codex/config.toml` (R19.6).
-
-| Hook event | Cairn action |
-|---|---|
-| `SessionStart` | `begin_session(source=codex, …)` — read `session_id`, `cwd` from stdin |
-| `UserPromptSubmit` | `append_event(user_prompt)` |
-| `PreToolUse` matcher `apply_patch\|Edit\|Write` | `before_hash` snapshot |
-| `PostToolUse` | `tool_result` + `after_hash` |
-| `Stop` | `finish_session` |
-
-Codex hooks require user trust via `/hooks` or `--dangerously-bypass-hook-trust` for CI.
-Cairn documents this in `cairn watch install` output.
-
-### 11.5 Capture batch ingest (Cursor)
-
-1. Compute Cursor project dir: `~/.cursor/projects/<slug>/` where slug mirrors path encoding
-   (e.g. `Users-harshdaga-cairn` for `/Users/harshdaga/cairn` — detect both `-Users-…` and
-   `Users-…` variants; R19.7).
-2. Glob `agent-transcripts/<uuid>/<uuid>.jsonl` and `agent-transcripts/<uuid>/subagents/*.jsonl`.
-3. Parse `{role, message}` lines (R19.7). `tool_use` blocks in assistant `content[]`.
-4. Parent session links child `subagents/*.jsonl` via `sub_agent` events.
-5. **Note:** Cursor does not expose stable PreToolUse hooks in v1; file snapshots are
-   **post-hoc** from tool args + optional git diff until Cursor documents hooks.
-
-### 11.5.1 Capture batch ingest (Hermes)
-
-1. Glob `~/.hermes/sessions/session_*.json` (skip `request_dump_*.json`).
-2. Match project by scanning `messages[]` for absolute paths under the repo root (tool args,
-   terminal commands, `read_file` / `write_file` paths; R19.11).
-3. Parse OpenAI-style `messages[]`: `user`, `assistant` (+ `tool_calls`), `tool` (R19.11).
-4. Skip `[CONTEXT COMPACTION …]` user handoffs (reference-only compaction summaries).
-5. **Note:** Hermes sessions do not record `cwd` at top level; Cairn infers cwd from tool
-   paths. Capture is **batch ingest only** in v2.0 (no Hermes hook API in charter).
-
-### 11.6 Render & share (both modes)
-
-1. `cairn render --session <id>` loads session row + events + CAS blobs.
-2. Build `graph{nodes,edges}` via `graph/session_graph.py`.
-3. Build `files[]` index from `file_artifacts`.
-4. Embed JSON in `index.html` (`cairn_bundle_version: 2` for capture; **v3** in Phase 5.5).
-5. `assets/app.js` renders Files (default) | Graph | Timeline tabs.
-
-**Phase 5 delivered a functional scaffold (tabs + data). Phase 5.5 delivers the report product
-quality defined in §11.8. Phase 6 adds live refresh (§11.9).**
-
-### 11.8 Capture Report & Visualization (normative — Phase 5.5)
-
-This section is the product spec for the **best possible offline capture report**. The bar:
-a stranger opens the bundle and understands *what the agent did, why, and which files changed*
-within 60 seconds — without reading raw JSON.
-
-#### 11.8.1 Session identity & header (R19.14)
-
-Every bundle and live view MUST display session identity consistently:
-
-| Field | Source | Display |
-|---|---|---|
-| **Cairn run id** | `runs.run_id` | Monospace, copy button; used by `cairn show` / `render` when ambiguous |
-| **External session id** | Agent-native (`sessionId`, rollout uuid, Cursor uuid, Hermes `session_id`) | Primary human label |
-| **Session key** | `{source}:{external_id}` | Unique ingest idempotency key; shown in header subtitle |
-| **Source** | `claude-code` \| `codex` \| `cursor` \| `hermes` | Badge with runtime icon/color |
-| **Status** | `in_progress` \| `completed` \| `failed` | Live sessions show pulsing indicator |
-| **Parent link** | `sub_agent` events | Child sessions show `↳ spawned from <parent external_id>` with jump link |
-| **Provenance** | `cwd`, `git.branch`, `git.commit` (short), `started_at`, `ended_at` | Header metadata row |
-| **Usage** | `usage.input_tokens`, `usage.output_tokens`, `usage.cost` | When available; `—` when absent (common for Cursor batch) |
-
-**CLI alignment:** `cairn sessions` lists **external_id** by default; `--verbose` adds run_id.
-`cairn render --session` accepts **either** external_id or run_id (resolve unambiguously).
-
-**Subagent ids:** format `{parent_external_id}#subagent:{child_stem}` — bundle header shows
-both parent and child ids; Graph tab draws delegation edge to child session bundle (deep link
-when child is also ingested).
-
-#### 11.8.2 Bundle versions
-
-| Version | Phase | Character |
-|---|---|---|
-| **v2** (current) | 5 | Tabs + embedded JSON; list-based graph; raw timeline JSON |
-| **v3** (target) | 5.5 | Turn model, visual graph, formatted timeline, file diffs, session header |
-| **v3-live** | 6 | Same as v3 + incremental DOM patch / SSE feed from `cairn live serve` |
-
-v3 payload adds:
-
-```json
-{
-  "cairn_bundle_version": 3,
-  "session": { "run_id", "external_id", "session_key", "source", "status", "parent", "git", "usage", "…" },
-  "turns": [ { "turn_id", "seq_range", "user", "assistant_summary", "tool_count", "files_touched" } ],
-  "events": [ … ],
-  "files": [ { "path_rel", "before_hash", "after_hash", "diff_preview", "snapshot_quality", "event_seqs" } ],
-  "graph": { "nodes", "edges", "layout": "layered-dag" },
-  "children": [ { "external_id", "source", "parent_tool_use_id" } ]
-}
+```python
+class AgentParser(Protocol):
+    source_id: str
+    def parse_events(raw: Iterator[dict]) -> Iterator[NormalizedEvent]: ...
+    def external_id(raw: dict) -> str: ...
 ```
 
-`snapshot_quality`: `exact` (live hooks + CAS) \| `inferred` (batch tool args only) \| `missing`.
+### Flows
 
-#### 11.8.3 Turn model (Timeline backbone)
+| Mode | Flow |
+|------|------|
+| Live attachment | hooks/tail → `hook_cmd` → ledger (in_progress) |
+| Historical import | JSONL → parser → normalizer → writer |
+| Reconstruction | events → trajectory CAS → session_graph |
+| Replay | read-only re-render from ledger |
 
-Raw events (300+) are collapsed into **turns** for navigation (R19.10 collapse policy):
+### Storage
 
-```
-Turn N =
-  one user_prompt
-  + optional assistant_message(s)
-  + zero or more (tool_call → tool_result) pairs
-  until next user_prompt or session_end
-```
+Reuses ingest tables: `events`, `tool_calls`, `file_artifacts`, `trajectories`
 
-Each turn shows:
-- User message (full text, markdown-rendered, syntax-safe)
-- Assistant summary (first paragraph or reasoning excerpt when present)
-- Tool strip: icon per tool type (`read`, `edit`, `bash`, `search`, `sub_agent`)
-- Files touched this turn (chips linking to Files tab)
-- Duration / token delta when available
+### APIs
 
-Timeline tab defaults to **turn list**; expand turn → event-level detail (not raw JSON dump).
+- CLI: `cairn ingest`, `cairn watch`, `cairn hook`, `cairn sessions replay`
+- SDK: `cairn.agents.ingest(source, path)`
 
-#### 11.8.4 Files tab (file-first provenance)
+### Integration design
 
-Default tab. Goal: *"show me every file the agent touched and what happened."*
+- Claude Code: hooks in `.claude/settings.local.json` (R19)
+- Codex: hooks + rollout JSONL (R19)
+- Cursor/Hermes: tail watchers on transcript paths (R19)
+- Aider/OpenHands/Goose: new parsers per Phase 8
 
-Per file row:
-- Path (repo-relative), change type (`read` \| `edit` \| `created` \| `deleted`)
-- Snapshot quality badge (`exact diff` / `path only` / `inferred edit`)
-- Event count + seq range
-- Sort: most-edited first, then alphabetical
+### Lifecycle
 
-Per file detail pane:
-- **Before / after hashes** (short + copy full)
-- **Unified diff** when `before_hash` and `after_hash` exist in CAS (live capture)
-- **Tool args excerpt** when batch-only (path + truncated content from `args_inline`)
-- **Related events** as clickable chips → jump to Timeline turn
-- **Causal chain mini-graph**: `read@seqA → edit@seqB` for this path only
-
-Empty state copy MUST explain *why* hashes are missing (e.g. "Cursor batch ingest — install
-`cairn live install` for exact snapshots").
-
-#### 11.8.5 Graph tab (visual causal DAG)
-
-Goal: *see how prompts, tools, and files connect* — not a list of edge strings.
-
-**Layout:** layered DAG (top → bottom temporal flow), left-to-right within layer:
-1. Layer 0: `user_prompt` turns (collapsed super-nodes)
-2. Layer 1–N: `tool_call` / `tool_result` pairs
-3. File nodes as hexagons on the side, linked by `data` edges
-4. `sub_agent` nodes as dashed boxes with link to child session
-
-**Edge styling:**
-
-| Kind | Color | Meaning |
-|---|---|---|
-| `temporal` | gray | seq order within turn |
-| `causal` | blue | tool_call → tool_result |
-| `data` | green | file read → later write same path |
-| `delegation` | purple | sub_agent → child session |
-
-**Interactions:**
-- Pan + zoom (wheel + drag); fit-to-screen button
-- Hover node → tooltip (type, seq, truncated label)
-- Click node → detail panel + "Open in Timeline" / "Open in Files"
-- Filter toggles: show/hide temporal edges, bash nodes, read-only files
-- Export PNG/SVG (offline, no external CDN)
-
-**Implementation:** vanilla JS + SVG (no React build step); optional `graph/layout.py` for
-precomputed positions embedded in bundle JSON (keeps `file://` working).
-
-#### 11.8.6 Timeline tab (human-readable)
-
-- Turn cards (§11.8.3) as primary view
-- Sticky session header with session ids + live status
-- Search/filter: by tool name, file path, text grep on prompts
-- Keyboard: `j`/`k` turn navigation, `/` focus search
-- Error events (`type=error`) highlighted red with stack/message
-
-#### 11.8.7 Cross-tab linking & deep links
-
-- URL hash scheme (works offline): `#turn/12`, `#file/src/app.py`, `#event/39`, `#graph/e42`
-- Clicking related event in Files → switches tab + scrolls Timeline
-- Graph node click → same hash navigation
-- Child session link → opens child bundle if rendered, else `cairn render` hint
-
-#### 11.8.8 Visual design principles
-
-- **Readable defaults:** 16px base, 1.6 line-height, max-width 72ch for prose
-- **No raw JSON** in default views (JSON available via "Developer" drawer)
-- **Source-colored badges** — consistent across CLI and bundle
-- **Offline-first:** zero CDN; all assets in bundle `assets/`
-- **Performance:** 500-event session interactive in < 100 ms tab switch; graph layout precomputed
-- **Accessibility:** WCAG AA contrast, keyboard nav, `aria-label` on graph nodes
-
-#### 11.8.9 Multi-session report (Phase 5.5 stretch / Phase 7)
-
-`cairn render --since 1d` → workspace bundle:
-- Session list sidebar (sorted by time, grouped by source)
-- Aggregate Files tab (union of paths, session attribution per change)
-- Optional macro timeline across sessions
-
-### 11.9 Live Capture & Live Report (normative — Phase 6)
-
-Live mode = **continuous ingest + in-progress ledger + auto-refreshing report** while the agent
-works. Applies to Claude Code, Codex, Cursor, and Hermes (per-source wiring below).
-
-#### 11.9.1 Modes compared
-
-| Mode | Trigger | Session status | File snapshots | Report update |
-|---|---|---|---|---|
-| **Batch** | `cairn ingest` | `completed` | Often inferred | Manual `cairn render` |
-| **Hooks (live)** | Agent hook fires | `in_progress` → `completed` | Exact CAS | `cairn live serve` or `--watch` |
-| **Tail (live)** | File watcher on transcript | `in_progress` → `completed` | Inferred until hooks exist | Same |
-
-#### 11.9.2 Per-source live wiring
-
-| Source | Live ingest path | Session id source | Notes |
-|---|---|---|---|
-| **Claude Code** | `cairn hook` on SessionStart…Stop (installed) | `sessionId` from hook stdin | Richest: PreToolUse/PostToolUse hashes |
-| **Codex** | `cairn hook` on session lifecycle (installed) | `session_id` from hook stdin | User must trust hooks (`/hooks`) |
-| **Cursor** | `cairn ingest --watch --source cursor` tails `agent-transcripts/**/*.jsonl` | uuid from path / first line | Re-parse append-only JSONL; debounce 500 ms |
-| **Hermes** | `cairn ingest --watch --source hermes` tails `session_*.json` | `session_id` field | Re-read growing JSON; atomic write detection |
-
-`cairn live install --source all` = `watch install` (Claude + Codex) + enable tail watchers
-for Cursor + Hermes + register launchd/systemd user service (optional, documented).
-
-#### 11.9.3 In-progress sessions
-
-- `begin_session(…, status=in_progress)` on first event
-- `append_event` on each hook/tail parse — no wait for session end
-- `finish_session(status=completed)` on Stop / JSONL close / idle timeout (configurable, default 5 min)
-- `cairn sessions --in-progress` lists active sessions with last event age
-
-#### 11.9.4 Live report server (`cairn live serve`)
-
-```
-cairn live serve [--session EXTERNAL_ID] [--port 8787] [--project PATH]
-```
-
-1. Binds localhost HTTP (never 0.0.0.0 by default).
-2. Serves bundle v3 UI from `render/assets/`.
-3. **`GET /api/session/<id>`** — full v3 JSON snapshot (same shape as embedded render).
-4. **`GET /api/session/<id>/events?since_seq=N`** — incremental events for patch.
-5. **`GET /api/stream/<id>`** — Server-Sent Events: `event: append|finish`, `data: {seq,…}`.
-6. Browser polls or SSE → patch DOM without full page reload.
-7. On `finish` → optional `POST /api/render` writes offline bundle to `outputs/bundle/`.
-
-**Security:** localhost only; no auth (single-user dev tool). Document firewall implications.
-
-#### 11.9.5 Auto-render paths
-
-| Command | Behavior |
-|---|---|
-| `cairn render --session ID --watch` | Regenerate `index.html` on ledger change (polling `.cairn/ledger.db` mtime) |
-| `cairn live serve` | Interactive live view (preferred during active session) |
-| `cairn watch --auto-render` | On hook `Stop`, run `cairn render` for that session |
-| Config `[capture.live] auto_render = true` | Persist preference in project |
-
-#### 11.9.6 Live UI indicators
-
-- Header badge: **LIVE** (pulsing) vs **COMPLETE**
-- Event count + last update timestamp (relative: "3s ago")
-- New turn slide-in animation (subtle, respect `prefers-reduced-motion`)
-- Toast when child subagent session detected
-
-#### 11.9.7 Failure & recovery
-
-- Hook failures: fail-open (exit 0); `cairn live status` shows last hook error
-- Tail parse errors: skip bad line, log to `.cairn/logs/tail-<source>.log`
-- Crashed agent mid-session: idle timeout → `status=failed` with partial report preserved
-- `cairn live recover --session ID` — re-parse transcript from disk, reconcile ledger
-
-### 11.10 Pipeline cold build (unchanged)
-
-`validate` → DAG → Planner → Executor → CAS + Ledger → `outputs/`.
+Session: `in_progress` → `completed` | `error`; cursor-based incremental ingest
 
 ---
 
-## 12. Agent Sources, Graph Model & Multi-Agent Design
+## 12. Provider Framework (Phase 9)
 
-### 12.1 Stance (read this first)
+### Architecture
 
-**Capture mode implements §12.9 (provenance) first.** Cairn is the **flight recorder** around
-Claude Code, Codex, Cursor, and Hermes — not a replacement. Pipeline mode adds **reproducible builds**
-when users graduate. The two-level model (§12.2) is the architectural spine.
+`cairn/providers/` implements `Provider` protocol, registry, credentials, HTTP adapters,
+recorded replay for CI.
 
-### 12.2 The two-level model
+### Interfaces
 
-| Level | Graph | Default? | How obtained |
-|---|---|---|---|
-| **Micro** | Session event DAG | **Yes** | Inferred from ingest |
-| **Macro** | `cairn.toml` step DAG | Optional | Declared + `ref()` |
-
-**Micro graph edges:**
-
-1. **Temporal:** `seq N → seq N+1`.
-2. **Causal:** `tool_call` → `tool_result` (same `tool_use_id`).
-3. **Data:** `file_snapshot(read)` → later `tool_call(write)` on same `path_rel`.
-4. **Delegation:** `sub_agent` → child session's first event.
-
-**Macro graph:** unchanged from v1.2 — `graph/builder.py`, map/reduce, dynamic manifests.
-
-### 12.3 Claude Code integration (normative)
-
-**Transcript location:**
-
-```
-~/.claude/projects/<project_slug>/
-  <session_uuid>.jsonl          # primary transcript
-  <session_uuid>/               # optional subdir for sidechain assets
+```python
+class Provider(Protocol):
+    async def complete(request: CompletionRequest) -> CompletionResponse: ...
 ```
 
-**Project slug:** absolute cwd with `/` → `-`, e.g. `/Users/harshdaga/cairn` → `-Users-harshdaga-cairn`.
+### Flows
 
-**Line types to parse (R19.3):**
+Direct provider workflow mirrors agent capture output:
 
-| `type` field | Maps to |
-|---|---|
-| `user` | `user_prompt` |
-| `assistant` | `assistant_message` (+ embedded `tool_use` blocks → `tool_call`) |
-| `user` with `tool_result` content | `tool_result` |
-| `system` | `error` or skip (subtype `api_error`, etc.) |
-| `attachment` | skip or `metadata` (hook noise) |
-| `file-history-snapshot` | `file_snapshot` hint |
-| `permission-mode`, `queue-operation`, `last-prompt` | skip |
+1. Select context + workflow
+2. Execute via provider adapter
+3. Write run record with tokens, latency, model
+4. Store outputs as artifacts
+5. Render unified report
 
-**Fields preserved:** `sessionId`, `uuid`, `parentUuid`, `timestamp`, `cwd`, `gitBranch`,
-`version`, `message.model`, `message.usage`, `toolUseResult`.
+### Storage
 
-**Hook install target:** `.claude/settings.local.json` (project-local, gitignored) or
-`.claude/settings.json` (committed, team choice). `cairn watch install` writes:
+- Completions stored in CAS; usage in `nodes` table
+- Recorded fixtures in `cairn/data/fixtures/`
 
-```json
-{
-  "hooks": {
-    "SessionStart": [{ "hooks": [{ "type": "command", "command": "cairn hook --event SessionStart" }] }],
-    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "cairn hook --event UserPromptSubmit" }] }],
-    "PreToolUse": [{
-      "matcher": "Edit|Write|MultiEdit",
-      "hooks": [{ "type": "command", "command": "cairn hook --event PreToolUse" }]
-    }],
-    "PostToolUse": [{
-      "matcher": "Edit|Write|MultiEdit|Bash",
-      "hooks": [{ "type": "command", "command": "cairn hook --event PostToolUse" }]
-    }],
-    "Stop": [{ "hooks": [{ "type": "command", "command": "cairn hook --event Stop" }] }]
-  }
-}
-```
+### APIs
 
-`cairn hook` reads JSON from stdin per [Claude Code hooks reference](https://code.claude.com/docs/en/hooks).
+- CLI: `cairn build`, `cairn doctor`, `--provider-mode recorded|live`
+- SDK: `cairn.providers.get(name)`
 
-### 12.4 Codex integration (normative)
+### Lifecycle
 
-**Transcript location:**
-
-```
-~/.codex/sessions/<YYYY>/<MM>/<DD>/rollout-<ISO-timestamp>-<uuid>.jsonl
-```
-
-**Session metadata:** first `session_meta` line:
-
-```json
-{
-  "type": "session_meta",
-  "payload": {
-    "id": "<uuid>",
-    "cwd": "/abs/path/to/project",
-    "originator": "codex-tui",
-    "cli_version": "…",
-    "model_provider": "openai",
-    "source": "cli"
-  }
-}
-```
-
-**Line types (R19.5):**
-
-| `type` | Maps to |
-|---|---|
-| `session_meta` | `session_start` |
-| `turn_context` | model + sandbox metadata on event |
-| `event_msg` `task_started` | turn boundary |
-| `event_msg` `task_complete` | usage totals |
-| `event_msg` `user_message` | `user_prompt` |
-| `event_msg` `error` | `error` |
-| `response_item` `message` | `assistant_message` |
-| `response_item` `function_call` | `tool_call` |
-| `response_item` `function_call_output` | `tool_result` |
-
-**Codex tool name mapping:**
-
-| Codex tool | Cairn normalized name | File tracking |
-|---|---|---|
-| `apply_patch` | `edit` | parse patch paths |
-| `shell` / `exec_command` | `bash` | command hash only |
-| `read_file` / `list_dir` | `read` | `file_snapshot(read)` |
-| `mcp__*` | `mcp:<server>:<tool>` | per tool schema |
-| `multi_tool_use.parallel` | fan-out parent | child tool_call events |
-
-**Hook install:** `~/.codex/config.toml` or `<project>/.codex/config.toml`:
-
-```toml
-[features]
-hooks = true
-
-[[hooks.SessionStart]]
-matcher = "startup|resume"
-[[hooks.SessionStart.hooks]]
-type = "command"
-command = "cairn hook --event SessionStart --source codex"
-
-[[hooks.PreToolUse]]
-matcher = "apply_patch|Edit|Write"
-[[hooks.PreToolUse.hooks]]
-type = "command"
-command = "cairn hook --event PreToolUse --source codex"
-
-[[hooks.PostToolUse]]
-matcher = "apply_patch|Edit|Write|Bash"
-[[hooks.PostToolUse.hooks]]
-type = "command"
-command = "cairn hook --event PostToolUse --source codex"
-
-[[hooks.UserPromptSubmit]]
-[[hooks.UserPromptSubmit.hooks]]
-type = "command"
-command = "cairn hook --event UserPromptSubmit --source codex"
-
-[[hooks.Stop]]
-[[hooks.Stop.hooks]]
-type = "command"
-command = "cairn hook --event Stop --source codex"
-```
-
-Hook stdin fields used: `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `tool_name`,
-`tool_use_id`, `tool_input`, `turn_id`, `model`.
-
-### 12.5 Cursor integration (normative)
-
-**Transcript location (observed layout):**
-
-```
-~/.cursor/projects/<workspace_slug>/
-  agent-transcripts/
-    <session_uuid>/
-      <session_uuid>.jsonl       # parent agent transcript
-      subagents/
-        <subagent_uuid>.jsonl    # child agent transcripts
-  agent-tools/                   # tool output blobs (optional enrichment)
-  terminals/                     # terminal state snapshots (optional enrichment)
-  mcps/                          # MCP descriptors (not parsed in v1)
-```
-
-**Workspace slug:** derived from workspace root path. Cairn tries, in order:
-
-1. `Users-<path-with-dashes>` (e.g. `Users-harshdaga-cairn`)
-2. `-Users-<path-with-dashes>` (Claude-style, if present)
-3. `cairn config` override `[capture.cursor] workspace_slug = "…"`
-
-**Line format:**
-
-```json
-{"role":"user","message":{"content":[{"type":"text","text":"…"}]}}
-{"role":"assistant","message":{"content":[
-  {"type":"text","text":"…"},
-  {"type":"tool_use","name":"Read","input":{"path":"…"}}
-]}}
-```
-
-**Tool mapping:**
-
-| Cursor tool name | Normalized | Notes |
-|---|---|---|
-| `Read`, `Glob`, `Grep` | `read` / `search` | path from `input.path` or `input.glob_pattern` |
-| `Write`, `StrReplace`, `EditNotebook` | `edit` | path + content hash |
-| `Shell` | `bash` | command hash only |
-| `Delete` | `delete` | path |
-| `Task` | `sub_agent` | spawns subagent transcript file |
-
-**Hooks:** Cursor does not document a public hook API equivalent to Claude/Codex as of v2.0.
-Capture is **batch ingest only** for Cursor in Phase 5. Phase 6 adds **live tail** of
-`agent-transcripts/` (§11.9.2); native Cursor hooks remain optional if/when documented.
-File snapshots use post-tool content hashes until PreToolUse or live hooks are available.
-
-### 12.5.1 Hermes integration (normative)
-
-**Transcript location (observed layout):**
-
-```
-~/.hermes/
-  sessions/
-    session_<YYYYMMDD>_<HHMMSS>_<hex>.json   # one session per file
-    request_dump_*.json                      # debug dumps — not ingested
-  config.yaml
-  state.db
-  hooks/                                     # Hermes-native (not Cairn v2.0)
-```
-
-**Session file shape:**
-
-```json
-{
-  "session_id": "20260428_201027_511da9",
-  "model": "…",
-  "session_start": "…",
-  "last_updated": "…",
-  "system_prompt": "…",
-  "tools": [],
-  "messages": [
-    {"role": "user", "content": "…"},
-    {"role": "assistant", "content": "…", "tool_calls": [
-      {"id": "…", "call_id": "…", "type": "function",
-       "function": {"name": "read_file", "arguments": "{…}"}}
-    ]},
-    {"role": "tool", "content": "…", "tool_call_id": "…"}
-  ]
-}
-```
-
-**Project matching:** no top-level `cwd`. Cairn includes a session when any message references
-a path under the ingest project root (tool `arguments.path`, terminal `command`, etc.).
-
-**Tool mapping:**
-
-| Hermes tool name | Normalized | Notes |
-|---|---|---|
-| `read_file`, `list_dir` | `read` | path from `arguments.path` |
-| `search_files`, `grep`, `find` | `search` | pattern / path |
-| `write_file`, `patch`, `apply_patch` | `edit` | path + content hash |
-| `terminal`, `execute_code`, `shell` | `bash` | command hash only |
-| `skills_list`, `todo`, `plan` | skip | internal planning noise |
-| `browser_*` | `read` | URL / snapshot |
-
-**Hooks:** Hermes has its own hook system under `~/.hermes/hooks/`; Cairn v2.0 does **not**
-install Hermes hooks. Batch ingest only.
-
-### 12.6 Pipeline agent nodes (deferred — Phase 8+)
-
-v1.2 §12.3–§12.11 remain normative for Pipeline mode: `kind = "agent"`, MCP host, A2A,
-dynamic manifests, budgets, side-effect safety. They are **not** the default entry point.
-
-### 12.7 What this is explicitly NOT
-
-Unchanged from v1.2 §12.11: Cairn does not replace agent runtimes, run long-lived agents,
-or compete with A2A orchestration DSLs.
+Credential check → retry policy → completion → ledger write → artifact registration
 
 ---
 
-## 13. Tech Stack & Rationale
+## 13. Execution Graph Engine (Phase 10)
 
-| Concern | Choice | Why |
-|---|---|---|
-| **Language** | Python 3.11+ | Ecosystem, contributor reach, Phases 1–2 already built. |
-| **Distribution** | `uv`/`pipx` + PyInstaller binaries | Zero-infra install. |
-| **CLI** | Typer + Rich | Typed commands, readable output. |
-| **Config** | TOML + Pydantic | Pipeline config; hook install metadata. |
-| **Ledger** | SQLite (WAL) | Single-writer ingest + concurrent reads. |
-| **CAS** | Filesystem sharded by hash | Large blobs, snapshots. |
-| **Renderer** | Static HTML + vanilla JS | Offline `file://`; no build step. |
-| **Ingest** | JSONL streaming parsers | Match agent native formats. |
-| **Hooks** | Subprocess (`cairn hook`) | Agent-native extension points. |
-| **Testing** | pytest + golden fixtures per source | Real transcript fixtures from four runtimes. |
+### Architecture
 
----
+`cairn/graph/session_graph.py` extended for execution, artifact, and dependency DAGs.
+`cairn/render/graph_layout.py` renders SVG with pan/zoom.
 
-## 14. Coding Guidelines & Conventions
+### Interfaces
 
-```
-cairn/
-├── cli/           # Typer commands; thin
-├── ingest/        # parsers, normalizer, hook_cmd, writer, watch
-│   ├── parsers/   # claude_code.py, codex.py, cursor.py, hermes.py
-│   └── ...
-├── graph/
-│   ├── builder.py       # Pipeline macro DAG
-│   ├── session_graph.py # Capture micro DAG
-│   └── selectors.py
-├── model/         # Project, Step, Node, Trajectory, CaptureSession
-├── loader/        # Pipeline config + prompts
-├── plan/          # Pipeline hashing, cost
-├── cache/         # AC + CAS
-├── ledger/        # SQLite schema + migrations
-├── providers/     # HTTP adapters + observe helpers
-├── agents/        # Pipeline agent backends (Phase 8+)
-├── executor/      # Pipeline scheduler
-├── render/        # bundle v1 (build) + v2 (capture)
-└── util/
+```python
+def build_execution_graph(events: list[Event]) -> Graph: ...
+def build_artifact_graph(artifacts: list[Artifact]) -> Graph: ...
+def build_dependency_graph(workflow: WorkflowDef) -> Graph: ...
 ```
 
-**Rules:** unchanged from v1.2 (pure core, mypy strict, injected dependencies, golden hashes).
-**Additional:** ingest parsers are **pure** (bytes/JSON in → events out); only `writer.py` touches SQLite.
+### Storage
+
+Graphs computed at render time from ledger; optional cached JSON in CAS for large sessions
+
+### Reports
+
+Three graph visualizations per execution (§15); hash deep links `#event/N`, `#artifact/<hash>`
 
 ---
 
-## 15. Testing & Validation Strategy
+## 14. Artifact System (Phase 11)
 
-**Capture-specific tests (required):**
+### Architecture
 
-- **Golden transcript fixtures** — one real (redacted) JSONL per source in `tests/fixtures/ingest/`.
-- **Normalizer tests** — fixed input → exact `events[]` sequence.
-- **Idempotency** — ingest same file twice → one session row.
-- **Hook contract** — `cairn hook` always exits 0; malformed stdin → log, no raise.
-- **Graph linker** — tool_call → tool_result → file_write chain produces expected edges.
-- **Bundle v2 snapshot** — render output HTML structure stable.
+`cairn/model/artifact.py` + `cache/store.py` unified registry for all generated outputs.
 
-**Pipeline tests:** unchanged (RecordedProvider, property tests, golden action keys).
+### Interfaces
 
-**Validation gates:** per-phase human gates in §16.
-
----
-
-## 16. Phase-by-Phase Build Plan
-
-Phases 0–2 are **complete**. Do not reopen unless a regression breaks exit criteria.
-
-### Phase 0 — Spike & decide ✅ COMPLETE
-De-risked content-addressed DAG + provider adapter.
-
-### Phase 1 — Core build engine ✅ COMPLETE
-`init`/`validate`/`doctor`/`status`/`plan`/`build`; TOML; map+reduce; AC+CAS; HTTP Provider;
-R18 provider layer; RecordedProvider; tests.
-
-### Phase 2 — Provenance & sharing ✅ COMPLETE
-Ledger (R14 v2); `cairn render`; `--zip`/`--split`; `cairn runs`; build `run.json` mirrors.
-
----
-
-### Phase 3 — Capture: Claude Code batch ingest (2 weeks)
-- **Goal:** zero-config value from existing Claude Code JSONL.
-- **Deliverables:**
-  - `cairn/ingest/parsers/claude_code.py` (R19.3)
-  - `ingest/normalizer.py`, `ingest/writer.py`
-  - Ledger migration v3: `runs.kind`, `events`, `file_artifacts`, `sessions` metadata
-  - `cairn ingest`, `cairn sessions`, `cairn show`
-  - Project slug resolver; git context capture
-  - Tests: golden fixture from `~/.claude/projects/.../*.jsonl` (redacted)
-- **Exit:** `cairn ingest` in a repo with Claude history → sessions listed; events queryable in SQLite.
-- **Validation gate:** *you* run ingest on 3 real projects; sessions match what you remember doing.
-
-### Phase 4 — Capture: Codex + live hooks (2 weeks)
-- **Goal:** Codex parity + real-time file snapshots for Claude and Codex.
-- **Deliverables:**
-  - `ingest/parsers/codex.py` (R19.5)
-  - `cairn hook` entrypoint (R19.8)
-  - `cairn watch install|uninstall|status` for Claude Code + Codex
-  - PreToolUse/PostToolUse file snapshots in CAS
-  - `cairn ingest --source codex`
-- **Exit:** edit file in Codex session → ingest/hooks → `file_artifacts` has before/after hashes.
-- **Validation gate:** one live Claude session + one Codex session captured without manual JSONL copy.
-
-### Phase 5 — Capture: Cursor + bundle v2 scaffold (2–3 weeks)
-- **Goal:** end-to-end capture pipeline for all four runtimes + tabbed report shell.
-- **Deliverables:**
-  - `ingest/parsers/cursor.py` (R19.7); `hermes.py` (R19.11); subagent linking
-  - `graph/session_graph.py` (R19.10)
-  - `render/` bundle `cairn_bundle_version: 2` — Files | Graph | Timeline (data + scaffold UI)
-  - `cairn render --session`, `cairn graph`, `cairn ingest --source all`
-- **Exit (technical):** ingest → render → `file://` opens; data model complete.
-- **Exit (product):** deferred to Phase 5.5 — scaffold UI is not the validation gate.
-
-### Phase 5.5 — Capture Report Excellence (2–3 weeks)
-- **Goal:** the differentiator — **best-in-class offline provenance report** (§11.8).
-- **Deliverables:**
-  - Bundle **v3**: session header (R19.14), turn model, formatted timeline
-  - Visual graph (SVG layered DAG, pan/zoom, edge kinds, filters)
-  - Files tab: diff preview, snapshot quality badges, causal mini-graph
-  - Cross-tab deep links (`#turn/N`, `#file/…`, `#event/N`)
-  - `render/capture_bundle.py` v3 payload; golden HTML snapshot tests
-  - Secret scrubbing in display (extend R16)
-- **Exit:** non-user traces a file change → prompt + tools in **< 60 s** without seeing raw JSON.
-- **Validation gate:** hand bundle to **5 people**; **2 unprompted** "I'd install this" = signal.
-  (This is the real Phase 2 product gate, reframed for agent-first.)
-
-### Phase 6 — Live Capture & Live Report (2–3 weeks)
-- **Goal:** watch the agent work — report updates in real time (§11.9).
-- **Deliverables:**
-  - `cairn/ingest/live/` — tail watchers (Cursor, Hermes, Codex JSONL fallback)
-  - `cairn live install|serve|status|recover` CLI (§10.1)
-  - In-progress sessions in ledger (`status=in_progress`)
-  - Bundle **v3-live**: SSE/poll incremental updates
-  - `cairn render --watch`; `cairn watch --auto-render`
-  - `cairn ingest --watch --source all`
-  - Cursor `agent-tools/` blob enrichment when present
-- **Exit:** Claude/Codex/Cursor/Hermes session visible in browser within **2 s** of each tool call.
-- **Validation gate:** author uses `cairn live serve` for a full workday unprompted.
-
-### Phase 7 — Capture hardening + session diff (2 weeks)
-- **Goal:** retention and trust.
-- **Deliverables:**
-  - `cairn diff --session A B` (files changed between sessions)
-  - `cairn render --zip` polish; large bundle `--split`
-  - Performance: ingest + render < 10 s for typical sessions
-  - Multi-session workspace bundle (`cairn render --since 1d`) — §11.8.9 stretch
-- **Exit:** daily capture workflow is fast and trustworthy.
-- **Validation gate:** ≥3 external users ingest **weekly**, unprompted.
-
-### Phase 8 — Pipeline iteration ergonomics (2 weeks)
-- **Goal:** Pipeline mode daily use (old Phase 3).
-- **Deliverables:** `diff`, selectors, `--refresh`, `--max-cost`, `samples = n`, `cairn docs`, `cache gc`.
-- **Exit:** edit prompt → status → build → diff is fast.
-- **Validation gate:** ≥2 users run Pipeline mode weekly alongside capture.
-
-### Phase 9 — Pipeline agent nodes & MCP (3–4 weeks)
-- **Goal:** `kind = "agent"` with builtin loop, MCP host, budgets (old Phase 4).
-- **Deliverables:** `agents/builtin.py`, MCP host, `cairn trace`, RecordedAgent, trajectory in build bundle.
-- **Exit:** agent node caches/replays; effectful agents never silently cached.
-- **Validation gate:** external user runs agent node, shares trajectory bundle.
-
-### Phase 10 — Multi-agent & interop (3–4 weeks)
-- **Goal:** dynamic manifests, A2A, orchestrator-worker (old Phase 5).
-- **Exit:** unchanged manifest → cached children; plugin backend PR from contributor.
-
-### Phase 11 — Polish, docs, community (ongoing)
-- **Goal:** 10-minute quickstart (capture-first docs); bundled binaries; contribution guide.
-- **Exit:** newcomer: install → `cairn ingest` → render → open bundle from docs alone.
-
----
-
-## 17. Risks & Mitigations
-
-| Risk | Mitigation |
-|---|---|
-| Agent vendors change JSONL format | Versioned parsers; `cairn doctor` warns on parse errors; fixtures in CI. |
-| Cursor storage fragmentation | Adapter tries multiple slug patterns; config override; ingest-only until hooks exist. |
-| Hooks break agent UX | Fail-open (exit 0); `watch status` diagnostics; uninstall restores config backup. |
-| "Feature, not a tool" | Lead with bundle (Phase 5 gate); capture works without `cairn.toml`. |
-| Pipeline vs capture confusion | CLI help separates modes; docs show capture-first path. |
-| Scope creep into agent runtime | §12.7 + §19 unchanged. |
-
----
-
-## 18. Success Metrics
-
-Stars are vanity. Track:
-
-- **Weekly-active capture users** (`cairn ingest` or watch hooks firing)
-- **Bundles shared** (the growth loop)
-- **Sessions rendered per user per week**
-- Unprompted "I use this to understand what the agent did"
-- Pipeline adoption (secondary): repos with `cairn.toml`
-- External parser contributions (new agent source adapters)
-
-North star: *would the median agent user be annoyed if Cairn disappeared tomorrow?*
-
----
-
-## 19. Non-Goals (unchanged core)
-
-- Not an agent runtime or IDE plugin.
-- Not a hosted observability SaaS.
-- Not crypto-compliance tooling.
-- Not marketing CAS/cache to end users.
-- Not replacing git.
-- Not a GUI app (bundle is read-only HTML).
-
----
-
-## 20. Appendix
-
-### 20.1 Glossary
-
-*Session* — one agent conversation (capture unit). *Event* — one step in the micro DAG.
-*Micro graph* — inferred causal DAG from a session. *Macro graph* — Pipeline step DAG.
-*Capture* — ingest mode. *Pipeline* — build mode. *Trajectory* — full event sequence (R7).
-*Bundle* — offline HTML provenance report. Other terms unchanged from v1.2.
-
-### 20.2 Template variable binding rules
-
-- In a **map** step: `item` is bound per input file with `.path`, `.name`, `.stem`,
-  `.content`; the step runs once per item (each item is its own cache node).
-- `source(name)` returns that source set's content (or a list when iterated).
-- `ref(step)` returns the upstream output: a single object for single/reduce steps, a list
-  for map steps.
-- `manifest(name)` (dynamic steps) returns the runtime-emitted child items; each item has an
-  `id` plus its declared inputs.
-- Project-level `vars` are global. Templates render in a Jinja sandbox; no code execution.
-
-### 20.3 `cairn.toml` schema (informal, Pipeline mode)
-
-```
-[project]   name (str, required), version (str)
-[vars]      key → value (str/num/bool)
-[defaults]  model (str), params (table)
-[sources.<name>]  include (list[glob], required), exclude (list[glob])
-
-[steps.<name>]
-    # common
-    output          (path template, required for non-dynamic)
-    model           (str, default = defaults.model)
-    params          (table, merged over defaults.params)
-    materialization ("cached" | "volatile" | "ephemeral", default "cached")
-    samples         (int, default 1)
-    tags            (list[str])
-    when            (predicate over an upstream output, optional)
-    # dependency (exactly one of over / inputs / manifest, except dynamic emitters)
-    over            (str: "source('x')" | "ref('y')" | "manifest('z')")   # ⇒ map
-    inputs          (list[str: source()/ref()])                          # ⇒ reduce/single
-    # kind
-    kind            ("chat" | "agent", default "chat")
-    prompt          (path; chat steps)
-    # agent-only
-    policy          (path; agent system prompt/instructions)
-    tools           (list[str: "mcp:<server>[:<scope>]@<ver>"])
-    effects         ("pure" | "effectful", default "pure")
-    sub_agents      (list[agent spec])
-    budget          (table: max_tokens, max_iterations, max_seconds)  # required for agents
-    backend         ("builtin" | "a2a:<url>" | "cli:<cmd>" | "<runtime>:<entry>")
-    # dynamic
-    dynamic         (bool, default false)   # this step emits a manifest
-    emits           (str; name of the child work-set, when dynamic)
+```python
+class ArtifactRegistry:
+    def register(artifact: Artifact) -> str: ...  # returns hash
+    def get(hash: str) -> Artifact: ...
+    def lineage(hash: str) -> LineageGraph: ...
 ```
 
-`over`, `inputs`, and dynamic `emits` are mutually constrained: `over` ⇒ map (fan-out, incl.
-over a `manifest`), `inputs` ⇒ reduce/single (fan-in), `dynamic = true` + `emits` ⇒ an
-orchestrator that produces a child work-set. Agent steps **must** declare a `budget`.
+### Storage
 
-### 20.4 The single sentence that defines the project
+- `artifacts` table: hash, kind, path, mime, run_id, session_id, metadata
+- Blob in CAS
 
-> **Cairn records what coding agents did, explains it as a causal graph and file-centric
-> report you can share offline — and optionally turns repeatable work into a cached,
-> reproducible pipeline.**
+### Lifecycle
+
+Register on write → link to run/session → include in report inventory → GC per retention policy
+
+---
+
+## 15. Unified Observability Model
+
+Every execution record contains:
+
+**Inputs:** files, prompts, context digests  
+**Execution:** provider/agent, model, tool calls, latency, token usage, reasoning metadata  
+**Outputs:** artifacts, generated files, reports  
+**Relationships:** lineage, dependency, execution edges  
+
+**Report sections (mandatory):**
+
+1. Summary — what was accomplished
+2. Execution narrative — what happened (turn cards, not raw JSON)
+3. Tool usage — tools called with outcomes
+4. Artifact inventory — generated outputs with hashes
+5. Graph visualizations — execution, artifact, dependency DAGs
+6. Reproducibility metadata — workflow version, context digest, model, params, git commit
+
+**Bundle versions:**
+
+| Version | Mode | Status |
+|---------|------|--------|
+| v1 | Pipeline build | Implemented |
+| v3 | Capture session | Implemented |
+| v3-live | Live session | Phase 13 |
 
 ---
 
-*End of Part I. Part II (R1–R19) follows.*
+## 16. Reporting & Visualization (Phases 12–13)
+
+### Architecture
+
+`cairn/render/` produces self-contained HTML (`file://` safe), optional zip, secret scrubbing.
+
+### Live workspace (Phase 13)
+
+`cairn/live/` — HTTP server, SSE event stream, browser auto-refresh via `capture.js`.
+
+```
+cairn live serve --port 8787
+GET /session/<id>        → HTML shell
+GET /session/<id>/events → SSE stream
+```
+
+### Shareability
+
+| Mode | Mechanism |
+|------|-----------|
+| Public report | Export zip; no secrets (scrub.py) |
+| Private report | Local only; optional encryption Phase 19 |
+| Snapshot | Phase 15 point-in-time export |
+| Reproducibility | Run record + workflow version + context digest |
+
+---
+
+## 17. Collaboration & Versioning (Phases 14–15)
+
+### Collaboration (Phase 14)
+
+Optional sync layer — **not required for local-first default**.
+
+- `cairn/collab/` — file-based sync protocol (Syncthing-compatible layout) or HTTP relay
+- Shared project state via exported ledger snapshots
+- Session awareness via `sessions` table + sync cursor
+- No accounts in v1; team share via git + bundle exports
+
+### Snapshots & VCS (Phase 15)
+
+- `cairn snapshot create|list|diff|restore`
+- Pin `git_commit` on runs; optional `cairn diff --session A B`
+- Version history via append-only ledger + snapshot CAS roots
+
+---
+
+## 18. CLI, API, SDK (Phases 16–18)
+
+### CLI (Phase 16)
+
+Unified command groups:
+
+```
+cairn init | validate | doctor | status
+cairn context * | prompt * | workflow *
+cairn ingest | watch | hook | sessions
+cairn build | plan | runs
+cairn render | graph | live *
+cairn snapshot *
+```
+
+### HTTP API (Phase 17)
+
+```
+GET  /v1/projects/{id}/sessions
+GET  /v1/sessions/{id}
+GET  /v1/sessions/{id}/events     (SSE)
+POST /v1/workflows/{id}/run
+GET  /v1/runs/{id}/report
+```
+
+Local bind `127.0.0.1` by default; auth hooks in Phase 19.
+
+### Python SDK (Phase 18)
+
+```python
+import cairn
+project = cairn.Project.open(".")
+run = cairn.workflow.run("summarize", context="docs/")
+report = cairn.render.html(run)
+```
+
+Public API exported from `cairn/__init__.py`; stable SemVer from 1.0.
+
+---
+
+## 19. Security & Performance (Phases 19–20)
+
+### Security (Phase 19)
+
+- Secret scrubbing in bundles (`render/scrub.py`) — implemented
+- Credential env-var only (R3) — implemented
+- Optional report encryption, ACLs for shared relay
+- Hook subprocess sandboxing guidelines
+
+### Performance (Phase 20)
+
+- CAS read cache, graph layout memoization
+- Incremental ingest cursors
+- Parallel build concurrency (implemented)
+- Large session streaming render
+
+---
+
+## 20. 22-Phase Build Plan
+
+| Phase | Name | Exit criteria |
+|-------|------|---------------|
+| **0** | Vision Validation | `docs/phase-0-vision-validation.md`; requirements mapped |
+| **1** | Architecture Audit | `docs/architecture-audit.md`; every file classified |
+| **2** | Charter Rewrite | This document v3.0; no placeholders |
+| **3** | Domain Model | `model/workflow.py`, `model/artifact.py`, `model/session.py`; tests |
+| **4** | Storage Layer | Ledger schema v4; migration; tests |
+| **5** | Project Context System | `cairn/context/`; CLI; tests |
+| **6** | Prompt Registry | `cairn/prompts/`; versioning; tests |
+| **7** | Workflow Engine | `cairn/workflow/`; `cairn workflow run`; tests |
+| **8** | Agent Integration Framework | Aider/OpenHands/Goose parsers; replay; tests |
+| **9** | Provider Framework | Gemini, OpenRouter adapters; tests |
+| **10** | Execution Graph Engine | Artifact + dependency DAGs; tests |
+| **11** | Artifact System | Registry; lineage; tests |
+| **12** | Reporting Engine | Unified report schema agent+provider; tests |
+| **13** | Visualization Layer | `cairn live serve`; SSE; tests |
+| **14** | Collaboration Layer | Sync protocol; session export; tests |
+| **15** | Snapshot & Versioning | `cairn snapshot`; session diff; tests |
+| **16** | CLI | All command groups; e2e CLI tests |
+| **17** | API | HTTP server; OpenAPI spec; tests |
+| **18** | SDK | Stable public API; docs |
+| **19** | Security | Audit; encryption option; docs |
+| **20** | Performance | Benchmarks; profiling; targets met |
+| **21** | Documentation | README, guides, API docs match implementation |
+| **22** | Production Validation | E2E user journey; delete `spike/`; release 1.0 |
+
+**After every phase:** build → test → lint → update docs → commit.
+
+---
+
+## 21. Success Metrics
+
+1. User runs `cairn ingest` → `cairn render` → understands session without reading raw JSON
+2. User runs `cairn build` → identical report shape to capture
+3. All 121+ tests pass; mypy strict clean; ruff clean
+4. Offline `file://` bundle works without network
+5. New agent parser addable without core changes
+6. Charter and implementation match (no drift)
+
+---
+
+## 22. Non-Goals
+
+- Replacing agent runtimes (Claude Code, Cursor, etc.)
+- Cloud-hosted observability SaaS as default
+- Real-time collaborative editing (Google Docs model)
+- Model training or fine-tuning
+- IDE plugin (CLI + HTML report is the product)
+
+---
+
+*Part II (R1–R19) — Detailed Engineering Reference follows.*
 
 ---
 ---
-
 # PART II — Detailed Engineering Reference (R1–R19)
 
 > **No-ambiguity implementation spec.** Part I (§1–§20) gives the design, contracts, and

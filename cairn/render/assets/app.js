@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  var global = typeof window !== "undefined" ? window : globalThis;
+
   var SPLIT_FILE_MESSAGE =
     "This is a --split bundle. Browsers block loading external data from file://. " +
     "Serve this folder over HTTP (e.g. run: python -m http.server in this directory) " +
@@ -501,6 +503,10 @@
   }
 
   function start(data) {
+    if (data && data.cairn_bundle_version === 3 && global.CairnCapture) {
+      global.CairnCapture.boot(data);
+      return;
+    }
     if (data && (data.kind === "capture" || data.cairn_bundle_version === 2)) {
       bootstrapCapture(data);
       return;

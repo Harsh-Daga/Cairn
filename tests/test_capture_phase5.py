@@ -1,4 +1,4 @@
-"""Phase 5 capture tests: Cursor parser, session graph, bundle v2."""
+"""Phase 5 capture tests: Cursor parser, session graph, bundle v3."""
 
 from __future__ import annotations
 
@@ -78,7 +78,7 @@ def test_capture_bundle_v2_snapshot(tmp_path: Path) -> None:
         writer.close()
 
     payload = capture_bundle_from_project(repo, parsed.external_id)
-    assert payload["cairn_bundle_version"] == 2
+    assert payload["cairn_bundle_version"] == 3
     assert payload["kind"] == "capture"
     assert payload["session"]["id"] == parsed.external_id
     assert len(payload["events"]) >= 4
@@ -104,7 +104,7 @@ def test_render_capture_bundle_offline_html(tmp_path: Path) -> None:
     assert "view-tabs" in html
     assert (out / "assets" / "app.js").is_file()
     data = parse_cairn_data(html)
-    assert data["cairn_bundle_version"] == 2
+    assert data["cairn_bundle_version"] == 3
     assert data["kind"] == "capture"
     assert "/Users/" not in html
 

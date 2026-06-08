@@ -209,6 +209,250 @@ pre,
   color: #6b5a20;
 }
 
+.session-header {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.session-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.session-title-wrap h2.session-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.session-key {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: "SF Mono", "Consolas", monospace;
+}
+
+.source-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.session-meta {
+  margin: 0;
+}
+
+.quality-badge {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.quality-exact {
+  background: #e3efe0;
+  color: #2d5a3d;
+}
+
+.quality-partial {
+  background: #fff3d6;
+  color: #7a5a12;
+}
+
+.quality-inferred {
+  background: #ececec;
+  color: #555;
+}
+
+.hint-note {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.5rem 0;
+}
+
+.prose {
+  max-width: 72ch;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.user-prompt {
+  background: #faf8f4;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+}
+
+.turn-range {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0;
+}
+
+.tool-chip {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-family: "SF Mono", "Consolas", monospace;
+  background: #e8eef5;
+  color: #2a4a6e;
+}
+
+.tool-chip.tool-edit {
+  background: #fde8e8;
+  color: #8a3030;
+}
+
+.tool-chip.tool-bash {
+  background: #eee8f8;
+  color: #4a3070;
+}
+
+.file-chips {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.file-chips a {
+  color: var(--accent);
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 0.82rem;
+}
+
+.dev-toggle {
+  margin-top: 1rem;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.dev-panel.hidden {
+  display: none;
+}
+
+.diff-preview {
+  font-size: 0.78rem;
+}
+
+.graph-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.graph-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.graph-mode-note {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-left: 0.5rem;
+}
+
+.node-type-turn .node-rect {
+  fill: #ebe4d8;
+  stroke: var(--accent);
+}
+
+.graph-btn {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.graph-svg {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #faf8f4;
+  cursor: grab;
+}
+
+.graph-node .node-rect {
+  fill: #fff;
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.graph-node.selected .node-rect {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.graph-node .node-label-type {
+  font-size: 9px;
+  fill: var(--muted);
+  font-family: sans-serif;
+}
+
+.graph-node .node-label {
+  font-size: 10px;
+  fill: var(--ink);
+  font-family: sans-serif;
+}
+
+.graph-node .node-sublabel {
+  font-size: 9px;
+  fill: #666;
+  font-family: sans-serif;
+}
+
+.node-type-user_prompt .node-rect {
+  fill: #f0ebe3;
+}
+
+.node-type-tool_call .node-rect {
+  fill: #e8eef5;
+}
+
+.node-type-tool_result .node-rect {
+  fill: #e3efe0;
+}
+
+.graph-node-detail {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+}
+
 @media (max-width: 720px) {
   .layout {
     grid-template-columns: 1fr;
