@@ -9,6 +9,7 @@ from pathlib import Path
 from cairn import __version__
 from cairn.cli import (
     build_cmd,
+    context_cmd,
     doctor_cmd,
     graph_cmd,
     hook_cmd,
@@ -136,6 +137,22 @@ def main(argv: list[str] | None = None) -> int:
     watch_status_p = watch_sub.add_parser("status", help="Show hook install status")
     watch_status_p.add_argument("project", nargs="?", default=".", type=Path)
     watch_status_p.set_defaults(func=watch_cmd.run)
+
+    context_p = sub.add_parser("context", help="Project context assets")
+    context_sub = context_p.add_subparsers(dest="context_command", required=True)
+    context_scan = context_sub.add_parser("scan", help="Scan and index context files")
+    context_scan.add_argument("project", nargs="?", default=".", type=Path)
+    context_scan.add_argument("--json", action="store_true")
+    context_scan.set_defaults(func=context_cmd.run)
+    context_list = context_sub.add_parser("list", help="List indexed context assets")
+    context_list.add_argument("project", nargs="?", default=".", type=Path)
+    context_list.add_argument("--json", action="store_true")
+    context_list.set_defaults(func=context_cmd.run)
+    context_show = context_sub.add_parser("show", help="Show one context asset")
+    context_show.add_argument("selector")
+    context_show.add_argument("project", nargs="?", default=".", type=Path)
+    context_show.add_argument("--json", action="store_true")
+    context_show.set_defaults(func=context_cmd.run)
 
     args = parser.parse_args(argv)
     return int(args.func(args))
