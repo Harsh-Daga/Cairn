@@ -36,22 +36,22 @@ def run(args: argparse.Namespace) -> int:
             return 0
         if args.prompt_command == "show":
             name, version = parse_prompt_ref(args.ref)
-            entry = registry.get(name, version)
-            if entry is None:
+            selected = registry.get(name, version)
+            if selected is None:
                 print(f"Prompt not found: {args.ref}")
                 return 1
             if args.json:
-                payload = entry.to_dict()
-                payload["body"] = entry.body
+                payload = selected.to_dict()
+                payload["body"] = selected.body
                 print(json.dumps(payload, indent=2))
             else:
-                print(f"ref:     {entry.prompt_ref}")
-                print(f"path:    {entry.path_rel}")
-                print(f"hash:    {entry.content_hash}")
-                print(f"model:   {entry.model_override or '-'}")
-                print(f"params:  {entry.params or '-'}")
+                print(f"ref:     {selected.prompt_ref}")
+                print(f"path:    {selected.path_rel}")
+                print(f"hash:    {selected.content_hash}")
+                print(f"model:   {selected.model_override or '-'}")
+                print(f"params:  {selected.params or '-'}")
                 print("---")
-                print(entry.body.rstrip())
+                print(selected.body.rstrip())
             return 0
         if args.prompt_command == "diff":
             diff_text = registry.diff(args.left, args.right)
