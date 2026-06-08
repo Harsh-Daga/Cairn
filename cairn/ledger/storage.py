@@ -149,6 +149,31 @@ def record_workflow_run(conn: sqlite3.Connection, workflow_run: WorkflowRun) -> 
     return workflow_run
 
 
+def list_workflow_runs(
+    conn: sqlite3.Connection,
+    *,
+    limit: int = 20,
+) -> list[WorkflowRun]:
+    rows = conn.execute(
+        """
+        SELECT run_id, workflow_ref, context_digest, git_commit
+        FROM workflow_runs
+        ORDER BY created_at DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    return [
+        WorkflowRun(
+            run_id=str(row[0]),
+            workflow_ref=str(row[1]),
+            context_digest=str(row[2]),
+            git_commit=str(row[3]) if row[3] is not None else None,
+        )
+        for row in rows
+    ]
+
+
 def get_workflow_run(conn: sqlite3.Connection, run_id: str) -> WorkflowRun | None:
     row = conn.execute(
         """

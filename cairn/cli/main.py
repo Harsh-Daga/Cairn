@@ -24,6 +24,7 @@ from cairn.cli import (
     status_cmd,
     validate_cmd,
     watch_cmd,
+    workflow_cmd,
 )
 
 
@@ -175,6 +176,36 @@ def main(argv: list[str] | None = None) -> int:
     prompt_diff.add_argument("right")
     prompt_diff.add_argument("project", nargs="?", default=".", type=Path)
     prompt_diff.set_defaults(func=prompt_cmd.run)
+
+    workflow_p = sub.add_parser("workflow", help="Workflow definitions and execution")
+    workflow_sub = workflow_p.add_subparsers(dest="workflow_command", required=True)
+    workflow_list = workflow_sub.add_parser("list", help="List workflows")
+    workflow_list.add_argument("project", nargs="?", default=".", type=Path)
+    workflow_list.add_argument("--json", action="store_true")
+    workflow_list.set_defaults(func=workflow_cmd.run)
+    workflow_validate = workflow_sub.add_parser("validate", help="Validate a workflow")
+    workflow_validate.add_argument("ref", nargs="?", default=None)
+    workflow_validate.add_argument("project", nargs="?", default=".", type=Path)
+    workflow_validate.add_argument("--json", action="store_true")
+    workflow_validate.set_defaults(func=workflow_cmd.run)
+    workflow_run = workflow_sub.add_parser("run", help="Execute a workflow")
+    workflow_run.add_argument("ref", nargs="?", default=None)
+    workflow_run.add_argument("project", nargs="?", default=".", type=Path)
+    workflow_run.add_argument("--dry-run", action="store_true")
+    workflow_run.add_argument("--yes", "-y", action="store_true")
+    workflow_run.add_argument("--max-cost", type=float, default=None)
+    workflow_run.add_argument(
+        "--provider-mode",
+        choices=["recorded", "live"],
+        default="recorded",
+    )
+    workflow_run.add_argument("--json", action="store_true")
+    workflow_run.set_defaults(func=workflow_cmd.run)
+    workflow_history_p = workflow_sub.add_parser("history", help="List workflow runs")
+    workflow_history_p.add_argument("project", nargs="?", default=".", type=Path)
+    workflow_history_p.add_argument("--limit", type=int, default=20)
+    workflow_history_p.add_argument("--json", action="store_true")
+    workflow_history_p.set_defaults(func=workflow_cmd.run)
 
     args = parser.parse_args(argv)
     return int(args.func(args))
