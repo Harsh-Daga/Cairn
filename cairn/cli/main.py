@@ -12,6 +12,7 @@ from cairn.cli import (
     build_cmd,
     collab_cmd,
     context_cmd,
+    diff_cmd,
     doctor_cmd,
     graph_cmd,
     hook_cmd,
@@ -25,6 +26,7 @@ from cairn.cli import (
     runs_cmd,
     sessions_cmd,
     show_cmd,
+    snapshot_cmd,
     status_cmd,
     validate_cmd,
     watch_cmd,
@@ -214,6 +216,36 @@ def main(argv: list[str] | None = None) -> int:
     prompt_diff.add_argument("right")
     prompt_diff.add_argument("project", nargs="?", default=".", type=Path)
     prompt_diff.set_defaults(func=prompt_cmd.run)
+
+    diff_p = sub.add_parser("diff", help="Compare two capture sessions")
+    diff_p.add_argument("session_a")
+    diff_p.add_argument("session_b")
+    diff_p.add_argument("project", nargs="?", default=".", type=Path)
+    diff_p.add_argument("--json", action="store_true")
+    diff_p.set_defaults(func=diff_cmd.run)
+
+    snapshot_p = sub.add_parser("snapshot", help="Point-in-time project snapshots")
+    snapshot_sub = snapshot_p.add_subparsers(dest="snapshot_command", required=True)
+    snapshot_create = snapshot_sub.add_parser("create", help="Create a snapshot")
+    snapshot_create.add_argument("project", nargs="?", default=".", type=Path)
+    snapshot_create.add_argument("--label", default=None)
+    snapshot_create.add_argument("--json", action="store_true")
+    snapshot_create.set_defaults(func=snapshot_cmd.run)
+    snapshot_list = snapshot_sub.add_parser("list", help="List snapshots")
+    snapshot_list.add_argument("project", nargs="?", default=".", type=Path)
+    snapshot_list.add_argument("--json", action="store_true")
+    snapshot_list.set_defaults(func=snapshot_cmd.run)
+    snapshot_diff = snapshot_sub.add_parser("diff", help="Diff two snapshots")
+    snapshot_diff.add_argument("left")
+    snapshot_diff.add_argument("right")
+    snapshot_diff.add_argument("project", nargs="?", default=".", type=Path)
+    snapshot_diff.add_argument("--json", action="store_true")
+    snapshot_diff.set_defaults(func=snapshot_cmd.run)
+    snapshot_restore = snapshot_sub.add_parser("restore", help="Restore a snapshot")
+    snapshot_restore.add_argument("snapshot_id")
+    snapshot_restore.add_argument("project", nargs="?", default=".", type=Path)
+    snapshot_restore.add_argument("--json", action="store_true")
+    snapshot_restore.set_defaults(func=snapshot_cmd.run)
 
     collab_p = sub.add_parser("collab", help="File-based collaboration sync")
     collab_sub = collab_p.add_subparsers(dest="collab_command", required=True)
