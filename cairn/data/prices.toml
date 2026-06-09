@@ -12,3 +12,8 @@ currency = "USD"
 input_per_mtok = 0.50
 output_per_mtok = 2.00
 currency = "USD"
+
+[gemini-2.0-flash]
+input_per_mtok = 0.10
+output_per_mtok = 0.40
+currency = "USD"

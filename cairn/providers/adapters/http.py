@@ -8,6 +8,12 @@ from typing import Any
 import httpx
 
 from cairn.model.messages import CompletionRequest, CompletionResult, Message, TextBlock, TokenUsage
+from cairn.providers.adapters.gemini import (
+    build_gemini_payload,
+    gemini_endpoint,
+    parse_gemini_response,
+)
+from cairn.providers.adapters.openrouter import openrouter_headers
 from cairn.providers.adapters.retry_policies import (
     compute_backoff,
     is_fatal_status,
@@ -107,8 +113,14 @@ class HttpProvider:
             if cap.api_style == "anthropic-messages":
                 key = require_api_key(self._creds, self._provider)
                 result = await self._anthropic(client, endpoint, key, wire_model, request)
+            elif cap.api_style == "gemini-generate":
+                key = require_api_key(self._creds, self._provider)
+                result = await self._gemini(client, self._creds.base_url, key, wire_model, request)
             elif cap.api_style == "ollama-native":
                 result = await self._ollama(client, endpoint, wire_model, request)
+            elif self._provider == "openrouter":
+                key = require_api_key(self._creds, self._provider)
+                result = await self._openrouter(client, endpoint, key, wire_model, request)
             else:
                 result = await self._openai(client, endpoint, api_key, wire_model, request)
             return ensure_usable_completion(result)
@@ -187,6 +199,60 @@ class HttpProvider:
             raw=body,
             finish_reason=str(body.get("stop_reason"))
             if body.get("stop_reason") is not None
+            else None,
+        )
+
+    async def _gemini(
+        self,
+        client: httpx.AsyncClient,
+        base_url: str,
+        api_key: str,
+        model: str,
+        request: CompletionRequest,
+    ) -> CompletionResult:
+        endpoint = gemini_endpoint(base_url, model)
+        payload = build_gemini_payload(request)
+        response = await client.post(endpoint, params={"key": api_key}, json=payload)
+        response.raise_for_status()
+        body = response.json()
+        text, input_tokens, output_tokens = parse_gemini_response(body)
+        return CompletionResult(
+            text=text,
+            usage=TokenUsage(input_tokens=input_tokens, output_tokens=output_tokens),
+            raw=body,
+            finish_reason=None,
+        )
+
+    async def _openrouter(
+        self,
+        client: httpx.AsyncClient,
+        endpoint: str,
+        api_key: str,
+        model: str,
+        request: CompletionRequest,
+    ) -> CompletionResult:
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": _messages_to_openai(request.messages),
+            "stream": False,
+            **{k: v for k, v in request.params.items() if k in ("temperature", "max_tokens")},
+        }
+        response = await client.post(endpoint, headers=openrouter_headers(api_key), json=payload)
+        response.raise_for_status()
+        body = response.json()
+        choice = body["choices"][0]
+        message = choice["message"]
+        content = message.get("content") or ""
+        usage = body.get("usage", {})
+        return CompletionResult(
+            text=str(content),
+            usage=TokenUsage(
+                input_tokens=int(usage.get("prompt_tokens", 0)),
+                output_tokens=int(usage.get("completion_tokens", 0)),
+            ),
+            raw=body,
+            finish_reason=str(choice.get("finish_reason"))
+            if choice.get("finish_reason") is not None
             else None,
         )
 

@@ -24,7 +24,12 @@ class ProviderCapability:
     supported_models: tuple[str, ...] = ()
     max_context_tokens: int = 128_000
     max_output_tokens: int = 8_192
-    api_style: Literal["openai-chat", "anthropic-messages", "ollama-native"] = "openai-chat"
+    api_style: Literal[
+        "openai-chat",
+        "anthropic-messages",
+        "ollama-native",
+        "gemini-generate",
+    ] = "openai-chat"
     cache_mode: CacheMode = "none"
     rate_limits: RateLimitSemantics = field(default_factory=RateLimitSemantics)
     wire_model_strip_prefixes: tuple[str, ...] = ()
@@ -77,6 +82,19 @@ def _register_defaults() -> None:
             default_base_url="https://api.groq.com/openai",
             supported_models=("llama-3.3-70b-versatile",),
         ),
+        ProviderCapability(
+            name="gemini",
+            default_base_url="https://generativelanguage.googleapis.com",
+            supported_models=("gemini-2.0-flash", "gemini-2.5-pro", "gemini-1.5-pro"),
+            api_style="gemini-generate",
+            wire_model_strip_prefixes=("gemini/", "google/"),
+        ),
+        ProviderCapability(
+            name="openrouter",
+            default_base_url="https://openrouter.ai/api",
+            supported_models=(),
+            wire_model_strip_prefixes=("openrouter/",),
+        ),
     ]
     for cap in defaults:
         _REGISTRY[cap.name] = cap
@@ -95,6 +113,12 @@ def get(provider: str) -> ProviderCapability | None:
 
 def infer_provider(model: str) -> str:
     lowered = model.lower()
+    if lowered.startswith("openrouter/"):
+        return "openrouter"
+    if lowered.startswith("gemini/") or lowered.startswith("google/") or lowered.startswith(
+        "gemini-"
+    ):
+        return "gemini"
     if lowered.startswith("ollama-cloud/"):
         return "ollama-cloud"
     if lowered.startswith("ollama/"):

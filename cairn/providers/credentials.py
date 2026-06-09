@@ -15,6 +15,8 @@ _DEFAULT_KEY_ENVS: dict[str, str] = {
     "anthropic": "ANTHROPIC_API_KEY",
     "ollama-cloud": "OLLAMA_CLOUD_API_KEY",
     "groq": "GROQ_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+    "openrouter": "OPENROUTER_API_KEY",
     "openai-compatible": "OPENAI_API_KEY",
 }
 
@@ -23,6 +25,8 @@ _DEFAULT_BASE_URL_ENVS: dict[str, str] = {
     "anthropic": "ANTHROPIC_BASE_URL",
     "ollama": "OLLAMA_HOST",
     "ollama-cloud": "OLLAMA_CLOUD_BASE_URL",
+    "gemini": "GEMINI_BASE_URL",
+    "openrouter": "OPENROUTER_BASE_URL",
 }
 
 
