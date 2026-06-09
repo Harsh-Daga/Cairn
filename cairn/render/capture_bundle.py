@@ -17,6 +17,7 @@ from cairn.render.scrub import scrub_value
 from cairn.render.turns import build_turns
 
 DEFAULT_INLINE_CAP_BYTES = 64 * 1024
+MAX_BUNDLE_EVENTS = 2000
 _LINE_TIMESTAMP_RE = re.compile(r"^line:\d+$|^\d{4}-\d{2}-\d{2}T")
 
 
@@ -32,15 +33,23 @@ def assemble_capture_bundle(
         msg = f"session not found: {session_id}"
         raise FileNotFoundError(msg)
 
-    events = scrub_value(writer.load_events(summary.run_id))
+    events_raw = writer.load_events(summary.run_id)
+    events_total = len(events_raw)
+    events_body = events_raw
+    events_truncated = False
+    if events_total > MAX_BUNDLE_EVENTS:
+        events_body = events_raw[:MAX_BUNDLE_EVENTS]
+        events_truncated = True
+    events = scrub_value(events_body)
     files = _enrich_files(
         writer.load_file_artifacts(summary.run_id),
         events,
         cas,
         inline_cap=inline_cap,
     )
-    turns = build_turns(events)
-    execution_raw = build_execution_graph(events)
+    graph_events = events_raw if not events_truncated else events_body
+    turns = build_turns(graph_events)
+    execution_raw = build_execution_graph(graph_events)
     execution = {**layout_session_graph(execution_raw), "graph_kind": "execution"}
     artifact = build_artifact_graph_from_files(writer.load_file_artifacts(summary.run_id))
     graph = build_display_graph(events, turns, execution)
@@ -53,6 +62,8 @@ def assemble_capture_bundle(
         "session": session,
         "turns": turns,
         "events": events,
+        "events_total": events_total,
+        "events_truncated": events_truncated,
         "files": files,
         "graph": graph,
         "graphs": {

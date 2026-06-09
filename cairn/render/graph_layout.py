@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from cairn.util.canonical import hash_obj
+
+_LAYOUT_CACHE: dict[str, dict[str, Any]] = {}
+_MAX_LAYOUT_CACHE = 256
+
 _COL_WIDTH = 220
 _ROW_HEIGHT = 72
 _MARGIN_X = 48
@@ -25,6 +30,24 @@ _TYPE_COLUMN = {
 
 
 def layout_session_graph(graph: dict[str, Any]) -> dict[str, Any]:
+    cache_key = hash_obj(
+        {
+            "nodes": graph.get("nodes") or [],
+            "edges": graph.get("edges") or [],
+        }
+    )
+    cached = _LAYOUT_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    result = _layout_session_graph(graph)
+    if len(_LAYOUT_CACHE) >= _MAX_LAYOUT_CACHE:
+        _LAYOUT_CACHE.clear()
+    _LAYOUT_CACHE[cache_key] = result
+    return result
+
+
+def _layout_session_graph(graph: dict[str, Any]) -> dict[str, Any]:
     nodes = list(graph.get("nodes") or [])
     edges = list(graph.get("edges") or [])
     if not nodes:

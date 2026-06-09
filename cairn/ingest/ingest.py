@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from cairn.ingest.cursors import IngestCursors
 from cairn.ingest.parsers.aider import parse_aider_jsonl
 from cairn.ingest.parsers.claude_code import parse_jsonl_file
 from cairn.ingest.parsers.codex import parse_rollout_file
@@ -106,18 +107,24 @@ def _ingest_claude(
         claude_project_dir=claude_project_dir,
         since=since,
     )
+    cursors = IngestCursors(repo_root)
     for path in paths:
         report.scanned += 1
+        if cursors.is_unchanged(path):
+            report.skipped += 1
+            continue
         parsed = parse_jsonl_file(path, repo_root=repo_root)
         if parsed is None:
             report.skipped += 1
             continue
         result = writer.ingest_claude_session(parsed)
+        cursors.mark(path)
         if result.inserted:
             report.inserted += 1
         else:
             report.skipped += 1
         report.results.append(result)
+    cursors.save()
     return report
 
 

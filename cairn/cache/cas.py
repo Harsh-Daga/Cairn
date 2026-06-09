@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import os
 import uuid
+from collections import OrderedDict
 from pathlib import Path
 
 from cairn.util.canonical import hash_bytes
+
+_DEFAULT_READ_CACHE_SIZE = 128
 
 
 def _fsync_dir(path: Path) -> None:
@@ -18,12 +21,14 @@ def _fsync_dir(path: Path) -> None:
 
 
 class ContentAddressableStore:
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, read_cache_size: int = _DEFAULT_READ_CACHE_SIZE) -> None:
         self.root = root
         self.cas_dir = root / "cache" / "cas"
         self.tmp_dir = root / "tmp"
         self.cas_dir.mkdir(parents=True, exist_ok=True)
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        self._read_cache_size = max(0, read_cache_size)
+        self._read_cache: OrderedDict[str, bytes] = OrderedDict()
 
     def _path(self, digest: str) -> Path:
         return self.cas_dir / digest[:2] / digest
@@ -32,10 +37,19 @@ class ContentAddressableStore:
         return self._path(digest).is_file()
 
     def read(self, digest: str) -> bytes | None:
+        if self._read_cache_size > 0 and digest in self._read_cache:
+            self._read_cache.move_to_end(digest)
+            return self._read_cache[digest]
         path = self._path(digest)
         if not path.is_file():
             return None
-        return path.read_bytes()
+        blob = path.read_bytes()
+        if self._read_cache_size > 0:
+            self._read_cache[digest] = blob
+            self._read_cache.move_to_end(digest)
+            while len(self._read_cache) > self._read_cache_size:
+                self._read_cache.popitem(last=False)
+        return blob
 
     def put(self, data: bytes) -> str:
         digest = hash_bytes(data)
