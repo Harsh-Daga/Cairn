@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 17 — API ✅; Phase 18 next  
+**Current phase:** Phase 18 — SDK ✅; Phase 19 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -27,7 +27,8 @@
 | 15 | Snapshot & Versioning | ✅ `cairn snapshot`, `cairn diff --session`, CAS roots + tests |
 | 16 | CLI | ✅ unified `cairn help` groups + e2e CLI smoke tests |
 | 17 | API | ✅ `cairn api serve`, v1 routes, OpenAPI spec + tests |
-| 18–22 | See CHARTER.md §20 | 🔲 Planned |
+| 18 | SDK | ✅ `Project.open`, `workflow.run`, `render.html` public API + tests |
+| 19–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -40,7 +41,7 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 - Phase 3–5 capture (Claude, Codex, Cursor, Hermes)
 - Phase 5.5 capture report excellence (bundle v3)
 
-180 tests passing. See git history for deliverables.
+187 tests passing. See git history for deliverables.
 
 ---
 
@@ -65,3 +66,5 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 14 | Collaboration sync: file-based export/import bundles + cursor |
 | 2026-06-09 | 15 | Snapshots: create/list/diff/restore + session diff CLI |
 | 2026-06-09 | 16 | CLI consolidation: command groups registry, help, e2e tests |
+| 2026-06-09 | 17 | HTTP API: sessions, events SSE, workflow run, run report |
+| 2026-06-09 | 18 | Python SDK: Project, Run, workflow.run, render.html/report_json |
