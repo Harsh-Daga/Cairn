@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import mimetypes
 import re
+import socket
 import threading
 import time
 from http import HTTPStatus
@@ -48,9 +49,23 @@ class LiveServer:
         self._httpd = ThreadingHTTPServer((self.host, self.port), Handler)
         self._httpd.serve_forever()
 
+    def wait_until_ready(self, *, timeout_s: float = 10.0) -> None:
+        deadline = time.monotonic() + timeout_s
+        last_err: OSError | None = None
+        while time.monotonic() < deadline:
+            try:
+                with socket.create_connection((self.host, self.port), timeout=0.5):
+                    return
+            except OSError as exc:
+                last_err = exc
+                time.sleep(0.05)
+        msg = f"Live server not ready on {self.host}:{self.port}: {last_err}"
+        raise TimeoutError(msg)
+
     def serve_background(self) -> None:
         self._thread = threading.Thread(target=self.serve_forever, daemon=True)
         self._thread.start()
+        self.wait_until_ready()
 
     def shutdown(self) -> None:
         if self._httpd is not None:
