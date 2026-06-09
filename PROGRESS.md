@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 15 — Snapshot & Versioning ✅; Phase 16 next  
+**Current phase:** Phase 16 — CLI ✅; Phase 17 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -25,7 +25,8 @@
 | 13 | Visualization Layer | ✅ `cairn live serve`, SSE + capture.js auto-refresh + tests |
 | 14 | Collaboration Layer | ✅ `cairn/collab/`, export/import sync bundles + tests |
 | 15 | Snapshot & Versioning | ✅ `cairn snapshot`, `cairn diff --session`, CAS roots + tests |
-| 16–22 | See CHARTER.md §20 | 🔲 Planned |
+| 16 | CLI | ✅ unified `cairn help` groups + e2e CLI smoke tests |
+| 17–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -38,7 +39,7 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 - Phase 3–5 capture (Claude, Codex, Cursor, Hermes)
 - Phase 5.5 capture report excellence (bundle v3)
 
-177 tests passing. See git history for deliverables.
+180 tests passing. See git history for deliverables.
 
 ---
 
@@ -62,3 +63,4 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 13 | Live workspace: `cairn live serve`, session HTML, SSE event stream |
 | 2026-06-09 | 14 | Collaboration sync: file-based export/import bundles + cursor |
 | 2026-06-09 | 15 | Snapshots: create/list/diff/restore + session diff CLI |
+| 2026-06-09 | 16 | CLI consolidation: command groups registry, help, e2e tests |

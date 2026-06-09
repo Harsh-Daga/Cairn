@@ -15,6 +15,7 @@ from cairn.cli import (
     diff_cmd,
     doctor_cmd,
     graph_cmd,
+    help_cmd,
     hook_cmd,
     ingest_cmd,
     init_cmd,
@@ -38,6 +39,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cairn", description="Build system for LLM work")
     parser.add_argument("--version", action="version", version=f"cairn {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    help_p = sub.add_parser("help", help="List unified command groups")
+    help_p.add_argument("-v", "--verbose", action="store_true")
+    help_p.set_defaults(func=help_cmd.run)
 
     init_p = sub.add_parser("init", help="Scaffold a new project")
     init_p.add_argument("dir", nargs="?", default=".", type=Path)
