@@ -1,62 +1,99 @@
 # Cairn
 
-A build system for LLM computation over a corpus of files — including agentic and
-multi-agent workflows. *"dbt for LLM work."* Local-first. Git-native. Zero infrastructure.
+Local-first inference workspace for AI agents and direct LLM/provider workflows.
+Capture agent sessions, run versioned workflows, and render self-contained HTML reports
+from a single ledger and content-addressable store.
 
-See [CHARTER.md](CHARTER.md) for the full specification.
+See [CHARTER.md](CHARTER.md) for the full specification (v3.0).
 
-## Status
-
-**Phase 1 — Core build engine.** The `cairn` CLI and package live under `cairn/`. The Phase 0
-spike remains under `spike/` for reference.
-
-## Install & run
-
-`uv pip install -e .` installs the `cairn` command into this repo's `.venv/bin/`, which is not
-on your shell `PATH` until you activate the venv or invoke it explicitly:
-
-```bash
-# Option A — activate the venv (once per terminal)
-source .venv/bin/activate
-cairn init my-project
-
-# Option B — call the venv binary directly
-.venv/bin/cairn init my-project
-
-# Option C — uv run (no activation; recommended from repo root)
-uv run cairn init my-project
-```
-
-Sync dev dependencies first if you have not already:
+## Install
 
 ```bash
 uv sync --group dev
 uv pip install -e .
+uv run cairn --version
 ```
 
-## Quickstart (Phase 1)
+## Command groups
+
+```bash
+uv run cairn help
+```
+
+| Group | Commands |
+|-------|----------|
+| Project | `init`, `validate`, `doctor`, `status`, `plan` |
+| Workflows | `context`, `prompt`, `workflow`, `build` |
+| Capture | `ingest`, `watch`, `hook`, `sessions`, `show`, `live` |
+| Observability | `runs`, `render`, `report`, `graph`, `artifact`, `diff` |
+| Sharing | `snapshot`, `collab` |
+| API | `api` |
+| Security | `security` |
+
+## Quickstart — provider workflow
 
 ```bash
 uv run cairn init my-project && cd my-project
-uv run cairn validate
-uv run cairn doctor          # checks credentials for configured models
-uv run cairn status
+uv run cairn validate && uv run cairn doctor
+uv run cairn workflow list
 uv run cairn build --yes --provider-mode recorded   # offline replay (CI default)
+uv run cairn render -o outputs/bundle --zip
+uv run cairn report --json
 ```
 
-For live inference (Ollama Cloud default in the scaffold), set `OLLAMA_CLOUD_API_KEY` and use
-`--provider-mode live`.
+Set provider credentials via environment variables (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`,
+`GEMINI_API_KEY`, `OPENROUTER_API_KEY`, etc.). Use `--provider-mode live` for real APIs.
 
-## Spike (Phase 0)
+## Quickstart — agent capture
 
 ```bash
-uv sync --group dev --extra spike
-uv run python -m spike.run spike/demo --mock
-uv run python -m spike.run spike/demo --dry-run
-uv run python -m spike.run spike/demo
+cd your-repo
+uv run cairn ingest --source claude-code
+uv run cairn sessions list
+uv run cairn show <session_id>
+uv run cairn render --session <session_id> -o outputs/capture-bundle
+uv run cairn live serve --session <session_id>   # http://127.0.0.1:8787
 ```
 
-Use `--mock` for offline runs. Use `--dry-run` to plan without API calls. The default
-live provider is Ollama Cloud (`OLLAMA_CLOUD_API_KEY`, model `kimi-k2.6:cloud`).
+Supported ingest sources: `claude-code`, `codex`, `cursor`, `hermes`, `aider`, `openhands`,
+`goose`, and `all`.
 
-See [spike/README.md](spike/README.md) for details.
+## Python SDK
+
+```python
+import cairn
+from cairn.workflow import run as workflow_run
+from cairn.render import html
+
+project = cairn.Project.open(".")
+run = workflow_run(project=project, yes=True, provider_mode="recorded")
+html(run, output=project.root / "outputs" / "bundle")
+```
+
+## HTTP API
+
+```bash
+export CAIRN_API_TOKEN=local-dev-token   # optional bearer auth
+uv run cairn api serve --port 8790
+curl -H "Authorization: Bearer local-dev-token" http://127.0.0.1:8790/v1/openapi.json
+```
+
+See [docs/api.md](docs/api.md) for route details.
+
+## Documentation
+
+- [Getting started](docs/getting-started.md)
+- [HTTP API](docs/api.md)
+- [Security](docs/security.md)
+- [Architecture audit](docs/architecture-audit.md)
+- [Build progress](PROGRESS.md)
+
+## Development
+
+```bash
+uv run pytest
+uv run ruff check cairn tests
+uv run mypy cairn
+```
+
+196 tests. The Phase 0 spike under `spike/` remains for reference and is removed in Phase 22.
