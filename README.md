@@ -96,4 +96,4 @@ uv run ruff check cairn tests
 uv run mypy cairn
 ```
 
-196 tests. The Phase 0 spike under `spike/` remains for reference and is removed in Phase 22.
+200+ tests. Charter v3.0 phases 0–22 complete — release 1.0.

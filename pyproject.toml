@@ -1,6 +1,6 @@
 [project]
 name = "cairn"
-version = "0.1.0"
+version = "1.0.0"
 description = "A build system for LLM computation over a corpus of files"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -10,12 +10,6 @@ dependencies = [
     "jinja2>=3.1",
     "pydantic>=2.0",
     "pyyaml>=6.0",
-]
-
-[project.optional-dependencies]
-spike = [
-    "httpx>=0.27",
-    "jinja2>=3.1",
 ]
 
 [project.scripts]
@@ -35,7 +29,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "spike/tests"]
+testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -51,10 +45,6 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.11"
 strict = true
 warn_unreachable = true
-
-[[tool.mypy.overrides]]
-module = ["spike.*"]
-disallow_untyped_defs = true
 
 [build-system]
 requires = ["hatchling"]

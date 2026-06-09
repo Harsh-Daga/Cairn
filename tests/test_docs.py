@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import cairn
 from cairn.api.openapi import openapi_spec
 
 
@@ -25,6 +26,12 @@ def test_getting_started_and_api_docs_exist() -> None:
     assert (root / "docs" / "getting-started.md").is_file()
     assert (root / "docs" / "api.md").is_file()
     assert (root / "docs" / "security.md").is_file()
+
+
+def test_release_version_matches_pyproject() -> None:
+    pyproject = (Path(__file__).parent.parent / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'version = "1.0.0"' in pyproject
+    assert cairn.__version__ == "1.0.0"
 
 
 def test_openapi_matches_documented_routes() -> None:

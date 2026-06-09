@@ -54,7 +54,8 @@ def test_capture_run_and_report(tmp_path: Path) -> None:
         kind="capture",
         session_id=parsed.external_id,
     )
-    from cairn.render import html as render_html, report_json
+    from cairn.render import html as render_html
+    from cairn.render import report_json
 
     report = report_json(run)
     assert report["kind"] == "capture"

@@ -19,7 +19,6 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     "outputs/**",
     "**/__pycache__/**",
     ".pytest_cache/**",
-    "spike/demo/.cairn/**",
 )
 
 

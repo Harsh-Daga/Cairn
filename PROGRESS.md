@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 21 — Documentation ✅; Phase 22 next  
+**Current phase:** Phase 22 — Production Validation ✅ — **Charter v3.0 complete (release 1.0)**  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -31,7 +31,7 @@
 | 19 | Security | ✅ audit, encryption, API bearer auth, `docs/security.md` + tests |
 | 20 | Performance | ✅ CAS read cache, layout memo, ingest cursors, streaming bundles |
 | 21 | Documentation | ✅ README, getting-started, API docs, consistency tests |
-| 22 | Production Validation | 🔲 Planned |
+| 22 | Production Validation | ✅ E2E journey, `spike/` removed, release 1.0.0 |
 
 ---
 
@@ -39,12 +39,12 @@
 
 Phases 0–5.5 from the capture-first charter are **implemented**:
 
-- Phase 0 spike (`spike/` — delete in Phase 22)
+- Phase 0 spike (removed in Phase 22)
 - Phase 1–2 build engine + provenance
 - Phase 3–5 capture (Claude, Codex, Cursor, Hermes)
 - Phase 5.5 capture report excellence (bundle v3)
 
-199 tests passing. See git history for deliverables.
+200+ tests passing. See git history for deliverables.
 
 ---
 
@@ -74,3 +74,4 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 19 | Security audit, optional encrypt/decrypt, CAIRN_API_TOKEN for API |
 | 2026-06-09 | 20 | CAS read cache, graph layout memo, ingest cursors, large session caps |
 | 2026-06-09 | 21 | Docs: README v3, getting-started, API reference, doc consistency tests |
+| 2026-06-09 | 22 | Production validation: E2E journey test, delete spike/, release 1.0.0 |
