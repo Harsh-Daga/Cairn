@@ -18,6 +18,7 @@ from cairn.cli import (
     init_cmd,
     plan_cmd,
     prompt_cmd,
+    report_cmd,
     render_cmd,
     runs_cmd,
     sessions_cmd,
@@ -81,6 +82,13 @@ def main(argv: list[str] | None = None) -> int:
         help="write data/cairn-data.json externally (requires HTTP server; not file://)",
     )
     render_p.set_defaults(func=render_cmd.run)
+
+    report_p = sub.add_parser("report", help="Unified observability report (JSON)")
+    report_p.add_argument("project", nargs="?", default=".", type=Path)
+    report_p.add_argument("--session", metavar="SESSION_ID", default=None)
+    report_p.add_argument("--run", metavar="RUN_ID", default=None)
+    report_p.add_argument("--json", action="store_true")
+    report_p.set_defaults(func=report_cmd.run)
 
     runs_p = sub.add_parser("runs", help="List recent runs (no tokens)")
     runs_p.add_argument("project", nargs="?", default=".", type=Path)

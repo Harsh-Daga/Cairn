@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 11 — Artifact System ✅; Phase 12 next  
+**Current phase:** Phase 12 — Reporting Engine ✅; Phase 13 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -21,7 +21,8 @@
 | 9 | Provider Framework | ✅ Gemini + OpenRouter adapters, credentials, tests |
 | 10 | Execution Graph Engine | ✅ execution/artifact/dependency graphs + bundle graphs |
 | 11 | Artifact System | ✅ `cairn/artifacts/`, capture sync, `cairn artifact` CLI + tests |
-| 12–22 | See CHARTER.md §20 | 🔲 Planned |
+| 12 | Reporting Engine | ✅ `cairn/report/`, unified schema, `cairn report` CLI + tests |
+| 13–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -34,7 +35,7 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 - Phase 3–5 capture (Claude, Codex, Cursor, Hermes)
 - Phase 5.5 capture report excellence (bundle v3)
 
-121 tests passing. See git history for deliverables.
+169 tests passing. See git history for deliverables.
 
 ---
 
@@ -53,3 +54,5 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 8 | Agent framework: Aider/OpenHands/Goose parsers + session replay |
 | 2026-06-09 | 9 | Provider adapters: Gemini generateContent + OpenRouter OpenAI API |
 | 2026-06-09 | 10 | Graph engine: execution, artifact, dependency DAGs in bundle + CLI |
+| 2026-06-09 | 11 | Artifact registry: ledger-backed inventory, lineage, capture ingest sync |
+| 2026-06-09 | 12 | Unified report schema for capture + provider; `cairn report` CLI |
