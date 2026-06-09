@@ -35,8 +35,8 @@ def _run(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_release_version_is_1_0_0() -> None:
-    assert cairn.__version__ == "1.0.0"
+def test_release_version_is_1_1_0() -> None:
+    assert cairn.__version__ == "1.1.0"
     result = subprocess.run(
         [sys.executable, "-m", "cairn", "--version"],
         capture_output=True,
@@ -44,7 +44,7 @@ def test_release_version_is_1_0_0() -> None:
         check=False,
     )
     assert result.returncode == 0
-    assert "cairn 1.0.0" in result.stdout
+    assert "cairn 1.1.0" in result.stdout
 
 
 def test_full_user_journey_provider_then_capture(tmp_path: Path) -> None:

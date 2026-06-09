@@ -101,6 +101,56 @@ def _render_output_path(project: Project, template: str, item: SourceFile | None
     return render_template(template, {"item": item, **project.vars})
 
 
+@dataclass(frozen=True)
+class StepOutput:
+    stem: str
+    output_path: str
+
+
+def _item_from_output(output_path: str, stem: str) -> SourceFile:
+    name = Path(output_path).name
+    return SourceFile(
+        path=output_path,
+        name=name,
+        stem=stem,
+        content="",
+        content_hash="",
+    )
+
+
+def enumerate_step_outputs(project: Project, step_name: str) -> tuple[StepOutput, ...]:
+    """Return expected (stem, output_path) products for a step at graph-build time."""
+    step = project.steps[step_name]
+    if step.over is not None:
+        dep = parse_dep_expr(step.over)
+        if dep.kind == "source":
+            return tuple(
+                StepOutput(
+                    stem=item.stem,
+                    output_path=_render_output_path(project, step.output, item),
+                )
+                for item in resolve_source_files(project, dep.name)
+            )
+        return tuple(
+            StepOutput(
+                stem=upstream.stem,
+                output_path=_render_output_path(
+                    project,
+                    step.output,
+                    _item_from_output(upstream.output_path, upstream.stem),
+                ),
+            )
+            for upstream in enumerate_step_outputs(project, dep.name)
+        )
+    assert step.inputs is not None
+    return (
+        StepOutput(
+            stem=step_name,
+            output_path=_render_output_path(project, step.output, None),
+        ),
+    )
+
+
 def build_graph(project: Project) -> BuiltGraph:
     """Build the node graph and validate dependencies."""
     adjacency: dict[str, set[str]] = {name: set() for name in project.steps}
@@ -165,8 +215,37 @@ def build_graph(project: Project) -> BuiltGraph:
                         )
                     )
             else:
-                msg = "map over ref() is Phase 4+; use source() in Phase 1"
-                raise ValidationError(msg)
+                for upstream in enumerate_step_outputs(project, dep.name):
+                    item = _item_from_output(upstream.output_path, upstream.stem)
+                    out_path = _render_output_path(project, step.output, item)
+                    if out_path in output_paths_seen:
+                        raise output_collision_error(
+                            step_name,
+                            out_path,
+                            (
+                                f"output path collision in step {step_name!r}: {out_path!r} "
+                                f"(also from {output_paths_seen[out_path]!r})"
+                            ),
+                        )
+                    output_paths_seen[out_path] = f"{step_name}:{upstream.stem}"
+                    node_id = f"{step_name}:{upstream.stem}"
+                    nodes.append(
+                        Node(
+                            node_id=node_id,
+                            step=step_name,
+                            kind="map",
+                            prompt=prompt,
+                            model=model,
+                            params=params,
+                            materialization=step.materialization,
+                            output_path=out_path,
+                            item=item,
+                            input_digests=(),
+                            declared_refs=(dep.name,),
+                            declared_sources=(),
+                            system=system,
+                        )
+                    )
         else:
             assert step.inputs is not None
             declared_sources = tuple(

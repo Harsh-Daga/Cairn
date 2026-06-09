@@ -126,4 +126,17 @@ def run_security_audit(project_root: Path) -> list[SecurityFinding]:
                 )
             )
 
+    watch_record = root / ".cairn" / "watch" / "install.json"
+    if watch_record.is_file():
+        findings.append(
+            SecurityFinding(
+                level="info",
+                code="hooks.installed",
+                message=(
+                    "Capture hooks are installed; they run with your user privileges. "
+                    "Use `cairn watch uninstall` before removing Cairn."
+                ),
+            )
+        )
+
     return findings

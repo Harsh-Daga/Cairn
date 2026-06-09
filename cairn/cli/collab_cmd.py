@@ -17,21 +17,30 @@ def run(args: argparse.Namespace) -> int:
 
     if args.collab_command == "export":
         try:
-            manifest = export_sync_bundle(root, args.dest, project_label=args.label)
+            exported = export_sync_bundle(
+                root,
+                args.dest,
+                project_label=args.label,
+                access_token=args.token,
+                generate_token=args.generate_token,
+            )
         except (FileNotFoundError, FileExistsError) as exc:
             print(str(exc))
             return 1
+        manifest = exported.manifest
         if args.json:
             print(json.dumps(manifest.to_dict(), indent=2, sort_keys=True))
         else:
             print(f"Exported {len(manifest.sessions)} sessions to {args.dest.resolve()}")
             print(f"Ledger sha256: {manifest.ledger_sha256[:16]}…")
+            if exported.access_token:
+                print(f"Access token (share with importer): {exported.access_token}")
         return 0
 
     if args.collab_command == "import":
         try:
-            result = import_sync_bundle(root, args.source)
-        except (FileNotFoundError, ValueError) as exc:
+            result = import_sync_bundle(root, args.source, access_token=args.token)
+        except (FileNotFoundError, ValueError, PermissionError) as exc:
             print(str(exc))
             return 1
         if args.json:

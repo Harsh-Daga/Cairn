@@ -8,6 +8,7 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
+from cairn.collab.acl import verify_access_token
 from cairn.collab.cursor import update_cursor
 from cairn.collab.protocol import SYNC_VERSION, SyncCursor, SyncManifest
 from cairn.ingest.project_paths import resolve_git_root
@@ -27,7 +28,12 @@ class ImportResult:
         self.events_inserted = events_inserted
 
 
-def import_sync_bundle(project_root: Path, source: Path) -> ImportResult:
+def import_sync_bundle(
+    project_root: Path,
+    source: Path,
+    *,
+    access_token: str | None = None,
+) -> ImportResult:
     """Merge capture sessions from a sync bundle (append-only, no action_cache changes)."""
     root = resolve_git_root(project_root) or project_root.resolve()
     source = source.resolve()
@@ -38,6 +44,9 @@ def import_sync_bundle(project_root: Path, source: Path) -> ImportResult:
         raise FileNotFoundError(msg)
 
     manifest = _load_manifest(manifest_path)
+    if not verify_access_token(access_token or "", manifest.access_token_hash):
+        msg = "access denied: invalid or missing sync bundle token"
+        raise PermissionError(msg)
     if manifest.cairn_sync_version != SYNC_VERSION:
         msg = f"unsupported sync version: {manifest.cairn_sync_version}"
         raise ValueError(msg)
@@ -83,6 +92,7 @@ def _load_manifest(path: Path) -> SyncManifest:
         last_exported_run_id=cursor_data.get("last_exported_run_id"),
         session_count=int(cursor_data.get("session_count", 0)),
     )
+    token_hash = data.get("access_token_hash")
     return SyncManifest(
         cairn_sync_version=int(data["cairn_sync_version"]),
         exported_at=str(data["exported_at"]),
@@ -90,6 +100,7 @@ def _load_manifest(path: Path) -> SyncManifest:
         ledger_sha256=str(data.get("ledger_sha256", "")),
         sessions=tuple(str(s) for s in data.get("sessions", [])),
         cursor=cursor,
+        access_token_hash=str(token_hash) if token_hash else None,
     )
 
 

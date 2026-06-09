@@ -6,12 +6,20 @@ import hashlib
 import json
 import shutil
 import sqlite3
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from cairn.collab.acl import generate_access_token, hash_access_token
 from cairn.collab.cursor import update_cursor
 from cairn.collab.protocol import SYNC_VERSION, SyncCursor, SyncManifest
 from cairn.ingest.project_paths import resolve_git_root
+
+
+@dataclass(frozen=True)
+class ExportResult:
+    manifest: SyncManifest
+    access_token: str | None
 
 
 def export_sync_bundle(
@@ -19,7 +27,9 @@ def export_sync_bundle(
     dest: Path,
     *,
     project_label: str | None = None,
-) -> SyncManifest:
+    access_token: str | None = None,
+    generate_token: bool = False,
+) -> ExportResult:
     """Write a Syncthing-friendly sync directory with ledger snapshot and session mirrors."""
     root = resolve_git_root(project_root) or project_root.resolve()
     ledger = root / ".cairn" / "ledger.db"
@@ -54,6 +64,10 @@ def export_sync_bundle(
         last_exported_run_id=last_run_id,
         session_count=len(session_ids),
     )
+    token = access_token
+    if generate_token and token is None:
+        token = generate_access_token()
+    token_hash = hash_access_token(token) if token else None
     manifest = SyncManifest(
         cairn_sync_version=SYNC_VERSION,
         exported_at=exported_at,
@@ -61,6 +75,7 @@ def export_sync_bundle(
         ledger_sha256=ledger_sha256,
         sessions=tuple(session_ids),
         cursor=cursor,
+        access_token_hash=token_hash,
     )
     (dest / "manifest.json").write_text(
         json.dumps(manifest.to_dict(), indent=2, sort_keys=True) + "\n",
@@ -72,7 +87,7 @@ def export_sync_bundle(
         last_exported_run_id=last_run_id,
         session_count=len(session_ids),
     )
-    return manifest
+    return ExportResult(manifest=manifest, access_token=token)
 
 
 def _sha256_file(path: Path) -> str:

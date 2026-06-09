@@ -30,7 +30,7 @@ def test_export_sync_bundle(tmp_path: Path) -> None:
     repo.mkdir()
     session_id = _ingest_fixture(repo)
     bundle_dir = tmp_path / "sync-out"
-    manifest = export_sync_bundle(repo, bundle_dir, project_label="demo")
+    manifest = export_sync_bundle(repo, bundle_dir, project_label="demo").manifest
     assert manifest.cairn_sync_version == SYNC_VERSION
     assert session_id in manifest.sessions
     assert (bundle_dir / "manifest.json").is_file()
@@ -79,3 +79,22 @@ def test_import_skips_duplicate_sessions(tmp_path: Path) -> None:
 
     manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
     assert session_id in manifest["sessions"]
+
+
+def test_collab_acl_token_required(tmp_path: Path) -> None:
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    _ingest_fixture(repo)
+    bundle_dir = tmp_path / "bundle"
+    exported = export_sync_bundle(repo, bundle_dir, generate_token=True)
+    assert exported.access_token
+    assert exported.manifest.access_token_hash
+
+    target = tmp_path / "target"
+    target.mkdir()
+    import pytest
+
+    with pytest.raises(PermissionError):
+        import_sync_bundle(target, bundle_dir)
+    result = import_sync_bundle(target, bundle_dir, access_token=exported.access_token)
+    assert result.runs_inserted >= 1

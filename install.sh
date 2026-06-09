@@ -93,7 +93,7 @@ install_uv() {
 install_cairn() {
   local spec="git+${CAIRN_REPO}@${CAIRN_VERSION}"
   info "Installing cairn from ${spec}..."
-  uv tool install cairn --from "${spec}" --force
+  uv tool install cairn-workspace --from "${spec}" --force
 }
 
 verify_cairn() {

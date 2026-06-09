@@ -43,11 +43,19 @@ curl -fsSL https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.sh | 
 | macOS (Intel & Apple Silicon) | ✓ |
 | Linux (Ubuntu, Debian, Fedora, Arch, Alpine, …) | ✓ |
 | WSL2 | ✓ |
-| Native Windows | use WSL2 or [install from source](docs/getting-started.md#install-from-source) |
+| Native Windows (PowerShell) | `irm …/install.ps1 \| iex` or WSL2 |
 
 Requires `curl` (or `wget`) and `git`. Python 3.11+ is installed automatically.
 
-Pin a release: `CAIRN_VERSION=v1.0.0 curl -fsSL … | bash`
+Pin a release: `CAIRN_VERSION=v1.1.0 curl -fsSL … | bash`
+
+**From PyPI** (CLI command is still `cairn`):
+
+```bash
+uv tool install cairn-workspace
+```
+
+See [docs/publishing.md](docs/publishing.md) for maintainer release steps.
 
 ---
 

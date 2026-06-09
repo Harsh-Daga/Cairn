@@ -53,8 +53,8 @@ def test_internal_planning_docs_removed() -> None:
 
 def test_release_version_matches_pyproject() -> None:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    assert 'version = "1.0.0"' in pyproject
-    assert cairn.__version__ == "1.0.0"
+    assert 'version = "1.1.0"' in pyproject
+    assert cairn.__version__ == "1.1.0"
 
 
 def test_openapi_matches_documented_routes() -> None:

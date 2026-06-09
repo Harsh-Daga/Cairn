@@ -57,7 +57,9 @@ Ingest and inspect agent sessions.
 | `cairn sessions list` | List captured sessions |
 | `cairn sessions replay` | Replay session events |
 | `cairn show <session_id>` | Session summary |
-| `cairn live serve` | Local HTML workspace + SSE |
+| `cairn live install` | Install hooks + Cursor/Hermes tail watchers |
+| `cairn live uninstall` | Remove live capture install |
+| `cairn live serve` | Local HTML workspace + SSE (polls tail watchers when installed) |
 
 **Ingest sources:** `claude-code`, `codex`, `cursor`, `hermes`, `aider`, `openhands`, `goose`, `all`.
 
@@ -84,8 +86,8 @@ Reports, graphs, and run history.
 | `cairn snapshot list` | List snapshots |
 | `cairn snapshot diff` | Compare snapshots |
 | `cairn snapshot restore` | Restore from snapshot |
-| `cairn collab export <path>` | Export sync bundle |
-| `cairn collab import <path>` | Import sync bundle |
+| `cairn collab export <path>` | Export sync bundle (`--generate-token` for ACL) |
+| `cairn collab import <path>` | Import sync bundle (`--token` when required) |
 | `cairn collab status` | Collaboration cursor state |
 
 ## API & security

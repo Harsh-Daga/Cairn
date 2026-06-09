@@ -260,11 +260,18 @@ def main(argv: list[str] | None = None) -> int:
     collab_export.add_argument("dest", type=Path)
     collab_export.add_argument("project", nargs="?", default=".", type=Path)
     collab_export.add_argument("--label", default=None)
+    collab_export.add_argument("--token", default=None, help="ACL token for bundle import")
+    collab_export.add_argument(
+        "--generate-token",
+        action="store_true",
+        help="Generate a random ACL token for this export",
+    )
     collab_export.add_argument("--json", action="store_true")
     collab_export.set_defaults(func=collab_cmd.run)
     collab_import = collab_sub.add_parser("import", help="Import a remote sync bundle")
     collab_import.add_argument("source", type=Path)
     collab_import.add_argument("project", nargs="?", default=".", type=Path)
+    collab_import.add_argument("--token", default=None, help="ACL token required by the bundle")
     collab_import.add_argument("--json", action="store_true")
     collab_import.set_defaults(func=collab_cmd.run)
     collab_status = collab_sub.add_parser("status", help="Show local sync cursor")
@@ -299,6 +306,23 @@ def main(argv: list[str] | None = None) -> int:
 
     live_p = sub.add_parser("live", help="Live capture workspace")
     live_sub = live_p.add_subparsers(dest="live_command", required=True)
+    live_install = live_sub.add_parser(
+        "install",
+        help="Install hooks and tail watchers for live capture",
+    )
+    live_install.add_argument("project", nargs="?", default=".", type=Path)
+    live_install.add_argument(
+        "--source",
+        choices=["claude-code", "codex", "cursor", "hermes", "all"],
+        default="all",
+    )
+    live_install.set_defaults(func=live_cmd.run)
+    live_uninstall = live_sub.add_parser("uninstall", help="Remove live capture install")
+    live_uninstall.add_argument("project", nargs="?", default=".", type=Path)
+    live_uninstall.set_defaults(func=live_cmd.run)
+    live_status = live_sub.add_parser("status", help="Show live capture install state")
+    live_status.add_argument("project", nargs="?", default=".", type=Path)
+    live_status.set_defaults(func=live_cmd.run)
     live_serve = live_sub.add_parser("serve", help="Serve live session UI over HTTP + SSE")
     live_serve.add_argument("project", nargs="?", default=".", type=Path)
     live_serve.add_argument("--host", default="127.0.0.1")

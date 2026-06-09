@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from cairn.agents.profiles import check_profile
+from cairn.doctor.mcp import check_mcp_server, load_agent_profiles, load_mcp_servers
+from cairn.ingest.watch import watch_status
 from cairn.model.project import Project
 from cairn.providers.capabilities import get, infer_provider, strip_model_prefix
 from cairn.providers.credentials import resolve_credentials
@@ -70,11 +73,34 @@ def run_doctor(project: Project) -> DoctorReport:
                     )
                 )
 
-    # MCP / agent checks stubbed for Phase 1
-    issues.append(
-        DoctorIssue(
-            severity="info",
-            message="MCP server reachability checks deferred to Phase 4",
+    profile_ids = list(load_agent_profiles(project.root))
+    watch = watch_status(project.root)
+    if watch and not profile_ids:
+        profile_ids = [s for s in watch.installed if s in ("claude-code", "codex", "cursor")]
+    for profile_id in profile_ids:
+        ok, message = check_profile(profile_id)
+        issues.append(
+            DoctorIssue(
+                severity="error" if not ok else "info",
+                message=message,
+            )
         )
-    )
+
+    mcp_servers = load_mcp_servers(project.root)
+    if not mcp_servers:
+        issues.append(
+            DoctorIssue(
+                severity="info",
+                message="no MCP servers declared in cairn.toml ([mcp.servers])",
+            )
+        )
+    for server in mcp_servers:
+        ok, message = check_mcp_server(server)
+        issues.append(
+            DoctorIssue(
+                severity="error" if not ok else "info",
+                message=message,
+            )
+        )
+
     return DoctorReport(issues=tuple(issues))

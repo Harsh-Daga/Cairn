@@ -10,7 +10,7 @@ def test_install_script_exists_and_is_executable() -> None:
     script = Path(__file__).parent.parent / "install.sh"
     assert script.is_file()
     text = script.read_text(encoding="utf-8")
-    assert "uv tool install cairn" in text
+    assert "uv tool install cairn-workspace" in text
     assert "cairn init my-project" in text
 
 

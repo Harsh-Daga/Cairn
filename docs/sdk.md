@@ -13,7 +13,9 @@ curl -fsSL https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.sh | 
 For library use in another project:
 
 ```bash
-uv add "cairn @ git+https://github.com/Harsh-Daga/Cairn.git"
+uv add cairn-workspace
+# or from git:
+uv add "cairn-workspace @ git+https://github.com/Harsh-Daga/Cairn.git"
 ```
 
 ## Open a project

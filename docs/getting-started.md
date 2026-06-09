@@ -117,11 +117,12 @@ Capture and provider reports share the same bundle format.
 
 ---
 
-## Tutorial 3: Live workspace
+## Tutorial 3: Live capture
 
-Watch a session update in the browser:
+Install hooks and tail watchers for continuous capture:
 
 ```bash
+cairn live install --source all
 cairn live serve --session <session_id> --port 8787
 ```
 

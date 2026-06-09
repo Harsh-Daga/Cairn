@@ -30,9 +30,10 @@ class SyncManifest:
     ledger_sha256: str
     sessions: tuple[str, ...]
     cursor: SyncCursor
+    access_token_hash: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "cairn_sync_version": self.cairn_sync_version,
             "exported_at": self.exported_at,
             "project_label": self.project_label,
@@ -40,3 +41,6 @@ class SyncManifest:
             "sessions": list(self.sessions),
             "cursor": self.cursor.to_dict(),
         }
+        if self.access_token_hash is not None:
+            payload["access_token_hash"] = self.access_token_hash
+        return payload
