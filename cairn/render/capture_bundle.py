@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from cairn.cache.cas import ContentAddressableStore
-from cairn.graph.session_graph import build_session_graph
+from cairn.graph.engine import build_artifact_graph_from_files, build_execution_graph
 from cairn.ingest.project_paths import resolve_git_root
 from cairn.ingest.writer import CaptureWriter, SessionSummary
 from cairn.render.graph_layout import build_display_graph, layout_session_graph
@@ -40,8 +40,10 @@ def assemble_capture_bundle(
         inline_cap=inline_cap,
     )
     turns = build_turns(events)
-    event_graph = layout_session_graph(build_session_graph(events))
-    graph = build_display_graph(events, turns, event_graph)
+    execution_raw = build_execution_graph(events)
+    execution = {**layout_session_graph(execution_raw), "graph_kind": "execution"}
+    artifact = build_artifact_graph_from_files(writer.load_file_artifacts(summary.run_id))
+    graph = build_display_graph(events, turns, execution)
     blobs = _collect_blobs(events, cas, inline_cap=inline_cap)
     session = _session_header(summary)
 
@@ -53,6 +55,10 @@ def assemble_capture_bundle(
         "events": events,
         "files": files,
         "graph": graph,
+        "graphs": {
+            "execution": execution,
+            "artifact": artifact,
+        },
         "blobs": blobs,
     }
     return cast(dict[str, Any], scrub_value(payload))

@@ -112,6 +112,12 @@ def main(argv: list[str] | None = None) -> int:
     graph_p.add_argument("session_id")
     graph_p.add_argument("project", nargs="?", default=".", type=Path)
     graph_p.add_argument("--format", choices=["json", "dot"], default="json")
+    graph_p.add_argument(
+        "--kind",
+        choices=["execution", "artifact", "dependency"],
+        default="execution",
+        help="execution=session events; artifact=file outputs; dependency=pipeline steps",
+    )
     graph_p.set_defaults(func=graph_cmd.run)
 
     sessions_p = sub.add_parser("sessions", help="Captured sessions")

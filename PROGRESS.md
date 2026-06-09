@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 9 — Provider Framework ✅; Phase 10 next  
+**Current phase:** Phase 10 — Execution Graph Engine ✅; Phase 11 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -19,7 +19,8 @@
 | 7 | Workflow Engine | ✅ `cairn/workflow/`, `cairn workflow` CLI + tests |
 | 8 | Agent Integration Framework | ✅ parsers, registry, replay, `cairn sessions replay` |
 | 9 | Provider Framework | ✅ Gemini + OpenRouter adapters, credentials, tests |
-| 10–22 | See CHARTER.md §20 | 🔲 Planned |
+| 10 | Execution Graph Engine | ✅ execution/artifact/dependency graphs + bundle graphs |
+| 11–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -50,3 +51,4 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 7 | Workflow engine: validate/run/history via build executor |
 | 2026-06-09 | 8 | Agent framework: Aider/OpenHands/Goose parsers + session replay |
 | 2026-06-09 | 9 | Provider adapters: Gemini generateContent + OpenRouter OpenAI API |
+| 2026-06-09 | 10 | Graph engine: execution, artifact, dependency DAGs in bundle + CLI |

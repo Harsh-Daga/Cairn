@@ -106,6 +106,8 @@ def test_capture_bundle_v3_payload(tmp_path: Path) -> None:
         assert payload["files"][0]["snapshot_quality"] in ("exact", "inferred", "partial")
     node = payload["graph"]["nodes"][0]
     assert "x" in node and "y" in node
+    assert payload["graphs"]["execution"]["graph_kind"] == "execution"
+    assert payload["graphs"]["artifact"]["graph_kind"] == "artifact"
 
 
 def test_render_capture_bundle_v3_html(tmp_path: Path) -> None:
