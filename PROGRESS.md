@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 18 — SDK ✅; Phase 19 next  
+**Current phase:** Phase 19 — Security ✅; Phase 20 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -28,7 +28,8 @@
 | 16 | CLI | ✅ unified `cairn help` groups + e2e CLI smoke tests |
 | 17 | API | ✅ `cairn api serve`, v1 routes, OpenAPI spec + tests |
 | 18 | SDK | ✅ `Project.open`, `workflow.run`, `render.html` public API + tests |
-| 19–22 | See CHARTER.md §20 | 🔲 Planned |
+| 19 | Security | ✅ audit, encryption, API bearer auth, `docs/security.md` + tests |
+| 20–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -41,7 +42,7 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 - Phase 3–5 capture (Claude, Codex, Cursor, Hermes)
 - Phase 5.5 capture report excellence (bundle v3)
 
-187 tests passing. See git history for deliverables.
+191 tests passing. See git history for deliverables.
 
 ---
 
@@ -68,3 +69,4 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 16 | CLI consolidation: command groups registry, help, e2e tests |
 | 2026-06-09 | 17 | HTTP API: sessions, events SSE, workflow run, run report |
 | 2026-06-09 | 18 | Python SDK: Project, Run, workflow.run, render.html/report_json |
+| 2026-06-09 | 19 | Security audit, optional encrypt/decrypt, CAIRN_API_TOKEN for API |

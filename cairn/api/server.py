@@ -20,6 +20,7 @@ from cairn.ingest.project_paths import resolve_git_root
 from cairn.ingest.writer import CaptureWriter
 from cairn.providers.registry import create_provider
 from cairn.report.engine import build_report, report_from_capture
+from cairn.security.auth import api_token_from_env, authorize_bearer
 from cairn.util.canonical import canonical_json
 from cairn.workflow.engine import WorkflowEngine
 from cairn.workflow.loader import load_workflow
@@ -39,6 +40,7 @@ class ApiServer:
         self.project_id = self.project_root.name
         self.host = host
         self.port = port
+        self.api_token = api_token_from_env()
         self._httpd: ThreadingHTTPServer | None = None
         self._thread: threading.Thread | None = None
 
@@ -73,6 +75,8 @@ class ApiServer:
         return f"http://{self.host}:{self.port}"
 
     def _handle_get(self, handler: BaseHTTPRequestHandler) -> None:
+        if not self._require_auth(handler):
+            return
         path = urlparse(handler.path).path
         if path == "/v1/openapi.json":
             self._write_json(handler, HTTPStatus.OK, openapi_spec())
@@ -103,6 +107,8 @@ class ApiServer:
         self._write_json(handler, HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def _handle_post(self, handler: BaseHTTPRequestHandler) -> None:
+        if not self._require_auth(handler):
+            return
         path = urlparse(handler.path).path
         match = _WORKFLOW_RUN_RE.match(path)
         if match is None:
@@ -110,6 +116,12 @@ class ApiServer:
             return
         body = _read_json_body(handler)
         self._run_workflow(handler, match.group(1), body)
+
+    def _require_auth(self, handler: BaseHTTPRequestHandler) -> bool:
+        if authorize_bearer(handler.headers.get("Authorization"), self.api_token):
+            return True
+        self._write_json(handler, HTTPStatus.UNAUTHORIZED, {"error": "unauthorized"})
+        return False
 
     def _check_project(self, project_id: str, handler: BaseHTTPRequestHandler) -> bool:
         if project_id != self.project_id:

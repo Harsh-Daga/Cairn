@@ -26,6 +26,7 @@ from cairn.cli import (
     report_cmd,
     render_cmd,
     runs_cmd,
+    security_cmd,
     sessions_cmd,
     show_cmd,
     snapshot_cmd,
@@ -270,6 +271,23 @@ def main(argv: list[str] | None = None) -> int:
     collab_status.add_argument("project", nargs="?", default=".", type=Path)
     collab_status.add_argument("--json", action="store_true")
     collab_status.set_defaults(func=collab_cmd.run)
+
+    security_p = sub.add_parser("security", help="Security audit and encryption")
+    security_sub = security_p.add_subparsers(dest="security_command", required=True)
+    security_audit = security_sub.add_parser("audit", help="Run project security audit")
+    security_audit.add_argument("project", nargs="?", default=".", type=Path)
+    security_audit.add_argument("--json", action="store_true")
+    security_audit.set_defaults(func=security_cmd.run)
+    security_encrypt = security_sub.add_parser("encrypt", help="Encrypt a file for export")
+    security_encrypt.add_argument("input", type=Path)
+    security_encrypt.add_argument("output", type=Path)
+    security_encrypt.add_argument("--password", default=None)
+    security_encrypt.set_defaults(func=security_cmd.run)
+    security_decrypt = security_sub.add_parser("decrypt", help="Decrypt an exported file")
+    security_decrypt.add_argument("input", type=Path)
+    security_decrypt.add_argument("output", type=Path)
+    security_decrypt.add_argument("--password", default=None)
+    security_decrypt.set_defaults(func=security_cmd.run)
 
     api_p = sub.add_parser("api", help="HTTP API server")
     api_sub = api_p.add_subparsers(dest="api_command", required=True)
