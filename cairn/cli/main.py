@@ -8,6 +8,7 @@ from pathlib import Path
 
 from cairn import __version__
 from cairn.cli import (
+    api_cmd,
     artifact_cmd,
     build_cmd,
     collab_cmd,
@@ -269,6 +270,14 @@ def main(argv: list[str] | None = None) -> int:
     collab_status.add_argument("project", nargs="?", default=".", type=Path)
     collab_status.add_argument("--json", action="store_true")
     collab_status.set_defaults(func=collab_cmd.run)
+
+    api_p = sub.add_parser("api", help="HTTP API server")
+    api_sub = api_p.add_subparsers(dest="api_command", required=True)
+    api_serve = api_sub.add_parser("serve", help="Serve Cairn v1 HTTP API")
+    api_serve.add_argument("project", nargs="?", default=".", type=Path)
+    api_serve.add_argument("--host", default="127.0.0.1")
+    api_serve.add_argument("--port", type=int, default=8790)
+    api_serve.set_defaults(func=api_cmd.run)
 
     live_p = sub.add_parser("live", help="Live capture workspace")
     live_sub = live_p.add_subparsers(dest="live_command", required=True)

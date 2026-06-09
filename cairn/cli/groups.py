@@ -8,6 +8,7 @@ COMMAND_GROUPS: dict[str, tuple[str, ...]] = {
     "Capture": ("ingest", "watch", "hook", "sessions", "show", "live"),
     "Observability": ("runs", "render", "report", "graph", "artifact", "diff"),
     "Sharing": ("snapshot", "collab"),
+    "API": ("api",),
 }
 
 ALL_COMMANDS: tuple[str, ...] = tuple(

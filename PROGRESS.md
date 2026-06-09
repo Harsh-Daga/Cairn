@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 16 — CLI ✅; Phase 17 next  
+**Current phase:** Phase 17 — API ✅; Phase 18 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -26,7 +26,8 @@
 | 14 | Collaboration Layer | ✅ `cairn/collab/`, export/import sync bundles + tests |
 | 15 | Snapshot & Versioning | ✅ `cairn snapshot`, `cairn diff --session`, CAS roots + tests |
 | 16 | CLI | ✅ unified `cairn help` groups + e2e CLI smoke tests |
-| 17–22 | See CHARTER.md §20 | 🔲 Planned |
+| 17 | API | ✅ `cairn api serve`, v1 routes, OpenAPI spec + tests |
+| 18–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
