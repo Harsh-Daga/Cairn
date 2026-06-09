@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 10 — Execution Graph Engine ✅; Phase 11 next  
+**Current phase:** Phase 11 — Artifact System ✅; Phase 12 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -20,7 +20,8 @@
 | 8 | Agent Integration Framework | ✅ parsers, registry, replay, `cairn sessions replay` |
 | 9 | Provider Framework | ✅ Gemini + OpenRouter adapters, credentials, tests |
 | 10 | Execution Graph Engine | ✅ execution/artifact/dependency graphs + bundle graphs |
-| 11–22 | See CHARTER.md §20 | 🔲 Planned |
+| 11 | Artifact System | ✅ `cairn/artifacts/`, capture sync, `cairn artifact` CLI + tests |
+| 12–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from cairn import __version__
+from cairn.artifacts.registry import ArtifactRegistry
 from cairn.cache.cas import ContentAddressableStore
 from cairn.ingest.normalizer import assign_seq
 from cairn.ingest.parsers.claude_code import ParsedClaudeSession, ToolCallDraft
@@ -553,6 +554,7 @@ class CaptureWriter:
             )
 
         self._conn.commit()
+        self._sync_artifact_registry(run_id, external_id, file_artifacts)
         self._write_session_mirror(external_id, trajectory)
         return IngestResult(
             external_id=external_id,
@@ -560,6 +562,30 @@ class CaptureWriter:
             inserted=True,
             event_count=len(seq_events),
         )
+
+    def _sync_artifact_registry(
+        self,
+        run_id: str,
+        session_id: str,
+        file_artifacts: list[Any],
+    ) -> None:
+        if not file_artifacts:
+            return
+        rows = [
+            {
+                "path_rel": artifact.path_rel,
+                "before_hash": getattr(artifact, "before_hash", None),
+                "after_hash": getattr(artifact, "after_hash", None),
+                "first_seq": artifact.first_seq_hint,
+                "last_seq": artifact.last_seq_hint,
+            }
+            for artifact in file_artifacts
+        ]
+        registry = ArtifactRegistry(self.project_root)
+        try:
+            registry.sync_capture_run(run_id, session_id, rows)
+        finally:
+            registry.close()
 
     def _write_session_mirror(self, external_id: str, trajectory: dict[str, Any]) -> None:
         sessions_dir = self.project_root / ".cairn" / "sessions"

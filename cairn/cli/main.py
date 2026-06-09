@@ -8,6 +8,7 @@ from pathlib import Path
 
 from cairn import __version__
 from cairn.cli import (
+    artifact_cmd,
     build_cmd,
     context_cmd,
     doctor_cmd,
@@ -233,6 +234,24 @@ def main(argv: list[str] | None = None) -> int:
     workflow_history_p.add_argument("--limit", type=int, default=20)
     workflow_history_p.add_argument("--json", action="store_true")
     workflow_history_p.set_defaults(func=workflow_cmd.run)
+
+    artifact_p = sub.add_parser("artifact", help="Artifact registry and lineage")
+    artifact_sub = artifact_p.add_subparsers(dest="artifact_command", required=True)
+    artifact_list = artifact_sub.add_parser("list", help="List artifacts for a session")
+    artifact_list.add_argument("session_id")
+    artifact_list.add_argument("project", nargs="?", default=".", type=Path)
+    artifact_list.add_argument("--json", action="store_true")
+    artifact_list.set_defaults(func=artifact_cmd.run)
+    artifact_show = artifact_sub.add_parser("show", help="Show one artifact")
+    artifact_show.add_argument("hash")
+    artifact_show.add_argument("project", nargs="?", default=".", type=Path)
+    artifact_show.add_argument("--json", action="store_true")
+    artifact_show.set_defaults(func=artifact_cmd.run)
+    artifact_lineage = artifact_sub.add_parser("lineage", help="Artifact lineage graph")
+    artifact_lineage.add_argument("hash")
+    artifact_lineage.add_argument("project", nargs="?", default=".", type=Path)
+    artifact_lineage.add_argument("--json", action="store_true")
+    artifact_lineage.set_defaults(func=artifact_cmd.run)
 
     args = parser.parse_args(argv)
     return int(args.func(args))
