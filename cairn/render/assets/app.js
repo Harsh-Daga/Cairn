@@ -514,10 +514,29 @@
     bootstrap(data);
   }
 
+  function connectLive(eventsUrl, dataPath) {
+    if (!eventsUrl || typeof EventSource === "undefined") return;
+    var es = new EventSource(eventsUrl);
+    var refresh = function () {
+      loadSplitPayload(dataPath)
+        .then(function (data) {
+          start(data);
+        })
+        .catch(function () {});
+    };
+    es.addEventListener("append", refresh);
+    es.addEventListener("refresh", refresh);
+    es.addEventListener("finish", function () {
+      es.close();
+      refresh();
+    });
+  }
+
   if (stub && stub.data_path) {
     loadSplitPayload(stub.data_path)
       .then(function (data) {
         start(data);
+        connectLive(stub.live_events_url, stub.data_path);
       })
       .catch(function () {
         showFatal(SPLIT_FILE_MESSAGE);

@@ -68,6 +68,18 @@ def _copy_assets(dest: Path) -> None:
             shutil.copyfile(src_path, assets_dir / name)
 
 
+def render_live_shell(session_id: str) -> str:
+    """HTML shell for ``cairn live serve`` with split data + SSE hooks."""
+    stub = json.dumps(
+        {
+            "data_path": f"/session/{session_id}/data.json",
+            "live_events_url": f"/session/{session_id}/events",
+        },
+        sort_keys=True,
+    )
+    return _html_shell(escape_json_for_html_embedding(stub), capture=True)
+
+
 def render_bundle(
     project_root: Path,
     output_dir: Path,

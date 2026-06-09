@@ -16,6 +16,7 @@ from cairn.cli import (
     hook_cmd,
     ingest_cmd,
     init_cmd,
+    live_cmd,
     plan_cmd,
     prompt_cmd,
     report_cmd,
@@ -212,6 +213,15 @@ def main(argv: list[str] | None = None) -> int:
     prompt_diff.add_argument("right")
     prompt_diff.add_argument("project", nargs="?", default=".", type=Path)
     prompt_diff.set_defaults(func=prompt_cmd.run)
+
+    live_p = sub.add_parser("live", help="Live capture workspace")
+    live_sub = live_p.add_subparsers(dest="live_command", required=True)
+    live_serve = live_sub.add_parser("serve", help="Serve live session UI over HTTP + SSE")
+    live_serve.add_argument("project", nargs="?", default=".", type=Path)
+    live_serve.add_argument("--host", default="127.0.0.1")
+    live_serve.add_argument("--port", type=int, default=8787)
+    live_serve.add_argument("--session", metavar="SESSION_ID", default=None)
+    live_serve.set_defaults(func=live_cmd.run)
 
     workflow_p = sub.add_parser("workflow", help="Workflow definitions and execution")
     workflow_sub = workflow_p.add_subparsers(dest="workflow_command", required=True)
