@@ -10,6 +10,7 @@ from cairn import __version__
 from cairn.cli import (
     artifact_cmd,
     build_cmd,
+    collab_cmd,
     context_cmd,
     doctor_cmd,
     graph_cmd,
@@ -213,6 +214,24 @@ def main(argv: list[str] | None = None) -> int:
     prompt_diff.add_argument("right")
     prompt_diff.add_argument("project", nargs="?", default=".", type=Path)
     prompt_diff.set_defaults(func=prompt_cmd.run)
+
+    collab_p = sub.add_parser("collab", help="File-based collaboration sync")
+    collab_sub = collab_p.add_subparsers(dest="collab_command", required=True)
+    collab_export = collab_sub.add_parser("export", help="Export ledger snapshot for sync")
+    collab_export.add_argument("dest", type=Path)
+    collab_export.add_argument("project", nargs="?", default=".", type=Path)
+    collab_export.add_argument("--label", default=None)
+    collab_export.add_argument("--json", action="store_true")
+    collab_export.set_defaults(func=collab_cmd.run)
+    collab_import = collab_sub.add_parser("import", help="Import a remote sync bundle")
+    collab_import.add_argument("source", type=Path)
+    collab_import.add_argument("project", nargs="?", default=".", type=Path)
+    collab_import.add_argument("--json", action="store_true")
+    collab_import.set_defaults(func=collab_cmd.run)
+    collab_status = collab_sub.add_parser("status", help="Show local sync cursor")
+    collab_status.add_argument("project", nargs="?", default=".", type=Path)
+    collab_status.add_argument("--json", action="store_true")
+    collab_status.set_defaults(func=collab_cmd.run)
 
     live_p = sub.add_parser("live", help="Live capture workspace")
     live_sub = live_p.add_subparsers(dest="live_command", required=True)

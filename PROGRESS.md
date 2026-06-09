@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 13 — Visualization Layer ✅; Phase 14 next  
+**Current phase:** Phase 14 — Collaboration Layer ✅; Phase 15 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -23,7 +23,8 @@
 | 11 | Artifact System | ✅ `cairn/artifacts/`, capture sync, `cairn artifact` CLI + tests |
 | 12 | Reporting Engine | ✅ `cairn/report/`, unified schema, `cairn report` CLI + tests |
 | 13 | Visualization Layer | ✅ `cairn live serve`, SSE + capture.js auto-refresh + tests |
-| 14–22 | See CHARTER.md §20 | 🔲 Planned |
+| 14 | Collaboration Layer | ✅ `cairn/collab/`, export/import sync bundles + tests |
+| 15–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -36,7 +37,7 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 - Phase 3–5 capture (Claude, Codex, Cursor, Hermes)
 - Phase 5.5 capture report excellence (bundle v3)
 
-171 tests passing. See git history for deliverables.
+174 tests passing. See git history for deliverables.
 
 ---
 
@@ -58,3 +59,4 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 11 | Artifact registry: ledger-backed inventory, lineage, capture ingest sync |
 | 2026-06-09 | 12 | Unified report schema for capture + provider; `cairn report` CLI |
 | 2026-06-09 | 13 | Live workspace: `cairn live serve`, session HTML, SSE event stream |
+| 2026-06-09 | 14 | Collaboration sync: file-based export/import bundles + cursor |
