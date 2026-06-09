@@ -1,6 +1,6 @@
 # Getting started
 
-This guide takes you from zero to a rendered HTML report in a few minutes.
+From zero to an offline HTML report in five minutes.
 
 ## Install
 
@@ -8,33 +8,44 @@ This guide takes you from zero to a rendered HTML report in a few minutes.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.sh | bash
-```
-
-Verify:
-
-```bash
 cairn --version
 ```
 
-Ensure `~/.local/bin` is on your `PATH` if the shell cannot find `cairn`.
+Add `~/.local/bin` to your `PATH` if the shell cannot find `cairn`.
 
-### Install from source
-
-For development or when you need an editable checkout:
+**PyPI** — [pypi.org/project/cairn-workspace](https://pypi.org/project/cairn-workspace/):
 
 ```bash
-git clone https://github.com/Harsh-Daga/Cairn.git
-cd Cairn
-uv sync --group dev
-uv pip install -e .
-uv run cairn --version
+pip install cairn-workspace
+cairn --version
+```
+
+For an isolated CLI install (recommended on shared machines):
+
+```bash
+pipx install cairn-workspace
+```
+
+Or with uv:
+
+```bash
+uv tool install cairn-workspace
+```
+
+Pin a release: `pip install cairn-workspace==1.1.0`
+
+**From source** (development):
+
+```bash
+git clone https://github.com/Harsh-Daga/Cairn.git && cd Cairn
+uv sync --group dev && uv pip install -e .
 ```
 
 ---
 
-## Tutorial 1: Provider workflow
+## Path A: Provider workflow (5 minutes)
 
-Create a project, run an offline build, and open the report.
+Run a versioned LLM pipeline over markdown files in your repo.
 
 ### 1. Scaffold
 
@@ -44,137 +55,106 @@ cd my-project
 cairn validate
 ```
 
-`cairn init` creates `cairn.toml`, prompt templates, and sample inputs under `inputs/`.
+`cairn init` creates `cairn.toml`, three prompt templates, and sample inputs under `inputs/`.
 
-### 2. Preflight (optional)
-
-```bash
-export OLLAMA_CLOUD_API_KEY=your-key   # if using default ollama-cloud model
-cairn doctor
-```
-
-`doctor` checks credentials and model compatibility without spending tokens.
-
-### 3. Build
+### 2. Offline build (no API keys)
 
 ```bash
 cairn status
+cairn plan
 cairn build --yes --provider-mode recorded
 ```
 
-`recorded` replays fixtures — no API keys required. Use `--provider-mode live` for real LLM
-calls once credentials are set.
+Example output:
 
-### 4. Render
+```
+Run: 1780995065130-be3e6c2ad1783c78
+
+NODE                     STATUS       TOKENS
+----------------------------------------------
+summaries:alpha          RAN              59
+summaries:beta           RAN              59
+summaries:gamma          RAN              59
+synthesis                RAN              59
+report                   RAN              59
+----------------------------------------------
+hits=0 misses=5 tokens=295
+```
+
+`recorded` replays fixtures — zero API cost, ideal for CI.
+
+### 3. Render and open
 
 ```bash
 cairn render -o outputs/bundle --zip
 open outputs/bundle/index.html        # macOS
-xdg-open outputs/bundle/index.html    # Linux
+# xdg-open outputs/bundle/index.html  # Linux
 ```
 
-You get a self-contained HTML report with execution graph, step outputs, and metadata.
+You get **Cairn Provenance** — a sidebar of pipeline nodes, per-step prompts, token counts,
+and upstream dependency hashes.
 
-### 5. Inspect as JSON
+### 4. Inspect as JSON
 
 ```bash
-cairn report --json
+cairn report --json | head -40
 cairn runs
 ```
 
 ---
 
-## Tutorial 2: Agent capture
+## Path B: Live provider (Ollama Cloud)
+
+The default `cairn init` model is `ollama-cloud/kimi-k2.6:cloud`. Reasoning models need
+adequate `max_tokens` (4096+ recommended).
+
+```bash
+export OLLAMA_CLOUD_API_KEY=your-key
+cairn doctor
+cairn build --yes --provider-mode live --refresh summaries
+cairn render -o outputs/bundle-live --zip
+```
+
+If a previous recorded build filled the cache, use `--refresh` to force live API calls.
+See [Provider workflows](guides/provider-workflows.md) for local Ollama and cache details.
+
+---
+
+## Path C: Agent capture (no cairn.toml)
 
 Record what a coding agent did in an existing repository.
 
-### 1. Ingest
-
-From your project root (no `cairn init` required):
-
 ```bash
+cd your-git-repo
 cairn ingest --source claude-code
-```
-
-Other sources: `codex`, `cursor`, `hermes`, `aider`, `openhands`, `goose`, or `all`.
-
-### 2. List and inspect
-
-```bash
 cairn sessions list
 cairn show <session_id>
-cairn graph <session_id> --kind execution
-```
-
-### 3. Render capture bundle
-
-```bash
 cairn render --session <session_id> -o outputs/capture-bundle
-cairn report --session <session_id> --json
+open outputs/capture-bundle/index.html
 ```
 
-Capture and provider reports share the same bundle format.
+You get **Cairn Capture** — Timeline, Graph, and Files tabs for the session.
+
+See [Agent capture](guides/agent-capture.md) for hooks, fixtures, and live serve.
 
 ---
 
-## Tutorial 3: Live capture
+## E2E demo corpus
 
-Install hooks and tail watchers for continuous capture:
-
-```bash
-cairn live install --source all
-cairn live serve --session <session_id> --port 8787
-```
-
-Open `http://127.0.0.1:8787/session/<session_id>`. The page subscribes to SSE for live events.
-
----
-
-## Tutorial 4: Snapshots and sharing
+A ready-made test repo with three notes, a spec, and prompts:
 
 ```bash
-cairn snapshot create --label baseline
-cairn snapshot list
-cairn collab export /tmp/sync-bundle
-cairn render -o outputs/share --zip
+git clone https://github.com/Harsh-Daga/Cairn.git
+chmod +x Cairn/examples/e2e-demo/setup.sh
+
+# Local Ollama (default)
+Cairn/examples/e2e-demo/setup.sh ~/cairn-e2e-test
+
+# Ollama Cloud + kimi-k2.6
+Cairn/examples/e2e-demo/setup.sh ~/cairn-e2e-test --provider cloud
 ```
 
-Encrypt before sharing externally:
-
-```bash
-export CAIRN_ENCRYPTION_KEY="your-passphrase"
-cairn security encrypt outputs/share.zip outputs/share.zip.enc
-```
-
----
-
-## Tutorial 5: Python SDK
-
-```python
-import cairn
-from cairn.workflow import run as workflow_run
-from cairn.render import html, report_json
-
-project = cairn.Project.open(".")
-run = workflow_run(project=project, yes=True, provider_mode="recorded")
-print(report_json(run))
-html(run, output=project.root / "outputs" / "sdk-bundle")
-```
-
-See [Python SDK](sdk.md) for capture ingest and `Run` construction.
-
----
-
-## Tutorial 6: HTTP API
-
-```bash
-export CAIRN_API_TOKEN=local-dev-token
-cairn api serve --port 8790
-curl -H "Authorization: Bearer local-dev-token" \
-  http://127.0.0.1:8790/v1/openapi.json
-```
-
-See [HTTP API](api.md) for routes and examples.
+Full manual test checklist: [E2E testing guide](guides/e2e-testing.md).
 
 ---
 
@@ -183,5 +163,6 @@ See [HTTP API](api.md) for routes and examples.
 | Topic | Guide |
 |-------|-------|
 | Mental model | [Concepts](concepts.md) |
-| All commands | [CLI reference](cli.md) |
-| Security | [Security](security.md) |
+| Every command | [CLI reference](reference/cli.md) |
+| `cairn.toml` and providers | [Configuration](reference/configuration.md) |
+| Security and sharing | [Security](security.md) |

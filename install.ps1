@@ -41,5 +41,6 @@ Cairn is ready. Try:
   cairn validate
   cairn build --yes --provider-mode recorded
 
-Docs: https://github.com/Harsh-Daga/Cairn/blob/main/docs/README.md
+PyPI:  pip install cairn-workspace  (https://pypi.org/project/cairn-workspace/)
+Docs:  https://github.com/Harsh-Daga/Cairn/blob/main/docs/README.md
 "@

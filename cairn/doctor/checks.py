@@ -11,7 +11,7 @@ from cairn.model.project import Project
 from cairn.providers.capabilities import get, infer_provider, strip_model_prefix
 from cairn.providers.credentials import resolve_credentials
 
-_MIN_REASONING_MAX_TOKENS = 1024
+_MIN_REASONING_MAX_TOKENS = 4096
 
 
 @dataclass(frozen=True)

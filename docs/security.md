@@ -44,11 +44,15 @@ Authorization: Bearer your-local-token
 
 For reports that may leave your machine:
 
+Set the passphrase **before** encrypting:
+
 ```bash
 export CAIRN_ENCRYPTION_KEY="strong-passphrase"
 cairn security encrypt outputs/bundle.zip outputs/bundle.zip.enc
-cairn security decrypt outputs/bundle.zip.enc outputs/bundle.zip
+cairn security decrypt outputs/bundle.zip.enc /tmp/bundle-restored.zip
 ```
+
+`encrypt` and `decrypt` take file paths only — no project directory argument.
 
 ## Security audit
 

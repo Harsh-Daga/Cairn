@@ -88,4 +88,22 @@ curl -s -H "Authorization: Bearer dev" \
 | `cairn live serve` | 8787 (default) | Browser HTML bundle + SSE |
 | `cairn api serve` | 8790 (default) | JSON/SSE for scripts and integrations |
 
-Both bind to localhost by default. See [Security](security.md) before exposing beyond your machine.
+Both bind to localhost by default. See [Security](../security.md) before exposing beyond your machine.
+
+## Verified example (E2E demo)
+
+```bash
+export CAIRN_API_TOKEN=demo-token
+cairn api serve --port 8790 &
+
+curl -s -H "Authorization: Bearer demo-token" \
+  http://127.0.0.1:8790/v1/projects/cairn-e2e-test/sessions | python3 -m json.tool
+
+curl -s -H "Authorization: Bearer demo-token" \
+  http://127.0.0.1:8790/v1/sessions/sess-redacted-001 | python3 -m json.tool
+
+curl -N -H "Authorization: Bearer demo-token" \
+  http://127.0.0.1:8790/v1/sessions/sess-redacted-001/events | head -10
+```
+
+Returns two sessions (`sess-redacted-001`, `sess-redacted-002`) and SSE `event: append` stream.

@@ -69,6 +69,8 @@ Pipeline steps compute an **action key** from inputs (prompt hash, model, params
 outputs). Identical keys skip LLM calls — safe, exact cache hits only.
 
 Recorded provider mode (`--provider-mode recorded`) replays fixtures for CI with zero tokens.
+Switching to `live` reuses cache unless you pass `--refresh` — see
+[Provider workflows](guides/provider-workflows.md).
 
 ### Bundles and offline reports
 
@@ -100,5 +102,6 @@ address defaults to `127.0.0.1` — local only.
 ## Next steps
 
 - [Getting started](getting-started.md) — hands-on tutorial
-- [CLI reference](cli.md) — command lookup
+- [CLI reference](reference/cli.md) — command lookup
+- [Configuration](reference/configuration.md) — `cairn.toml` and providers
 - [Security](security.md) — credentials and sharing

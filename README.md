@@ -1,19 +1,28 @@
-# Cairn
+<p align="center">
+  <strong>Cairn</strong><br>
+  Local-first provenance for AI agents and LLM workflows
+</p>
 
-**Local-first inference workspace for AI agents and LLM workflows.**
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
+  <a href="https://pypi.org/project/cairn-workspace/"><img src="https://img.shields.io/pypi/v/cairn-workspace.svg" alt="PyPI"></a>
+</p>
 
-Cairn records what your agents and models actually did — prompts, tool calls, artifacts, and
-outputs — and turns that into shareable HTML reports with execution graphs. One ledger, one CLI,
-works offline.
+---
+
+**Cairn** records what your coding agents and LLM pipelines actually did — prompts, tool
+calls, artifacts, token usage — and turns that into **shareable HTML reports** with
+execution graphs. One ledger, one CLI, works offline at `file://`.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.sh | bash
 cairn init my-project && cd my-project
 cairn build --yes --provider-mode recorded
-cairn render -o outputs/bundle --zip
+cairn render -o outputs/bundle --zip && open outputs/bundle/index.html
 ```
 
-Open `outputs/bundle/index.html` in a browser. No server required.
+No server. No account. No CDN.
 
 ---
 
@@ -22,72 +31,51 @@ Open `outputs/bundle/index.html` in a browser. No server required.
 Developers mix Claude Code, Cursor, Codex, and direct API calls. Provenance ends up scattered
 across JSONL logs, chat exports, and dashboards.
 
-Cairn gives you:
-
-- **Unified capture** — ingest sessions from Claude Code, Cursor, Codex, Hermes, Aider, OpenHands, Goose
-- **Versioned workflows** — run repeatable LLM pipelines over your repo with content-addressed caching
-- **One report shape** — agent sessions and provider builds render the same bundle format
-- **Local by default** — SQLite ledger + content-addressable store under `.cairn/`; no account, no cloud
-- **Explainability** — turn cards, tool timelines, artifact inventory, and execution DAGs
-
----
-
-## Install
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.sh | bash
-```
-
-| Platform | Supported |
-|----------|-----------|
-| macOS (Intel & Apple Silicon) | ✓ |
-| Linux (Ubuntu, Debian, Fedora, Arch, Alpine, …) | ✓ |
-| WSL2 | ✓ |
-| Native Windows (PowerShell) | `irm …/install.ps1 \| iex` or WSL2 |
-
-Requires `curl` (or `wget`) and `git`. Python 3.11+ is installed automatically.
-
-Pin a release: `CAIRN_VERSION=v1.1.0 curl -fsSL … | bash`
-
-**From PyPI** (CLI command is still `cairn`):
-
-```bash
-uv tool install cairn-workspace
-```
-
-See [docs/publishing.md](docs/publishing.md) for maintainer release steps.
+| Problem | Cairn |
+|---------|-------|
+| Agent logs are opaque JSONL | Normalized events + timeline + graph UI |
+| LLM scripts are not reproducible | Versioned prompts, action-key cache, recorded CI mode |
+| Reports need a SaaS account | Self-contained HTML bundles you can attach to a PR |
+| Capture ≠ pipeline observability | **One report shape** for both paths |
 
 ---
 
-## Quick start
+## Two paths, one report
 
-### Run a workflow on your files
+### 1. Provider pipeline — run LLM workflows on your files
+
+Declare steps in `cairn.toml`, run over markdown/code in your repo, cache by content hash.
 
 ```bash
-cairn init my-project && cd my-project
 cairn validate
 cairn workflow list
-cairn build --yes --provider-mode recorded   # offline replay for CI
-cairn render -o outputs/bundle --zip
+cairn build --yes --provider-mode recorded   # offline CI replay
+cairn build --yes --provider-mode live      # real API calls
 cairn report --json
+cairn render -o outputs/bundle-live --zip
 ```
 
-Set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, or `OPENROUTER_API_KEY` for live
-provider calls (`--provider-mode live`).
+Live build with **Ollama Cloud** (`kimi-k2.6:cloud`):
 
-### Capture an agent session
+```bash
+export OLLAMA_CLOUD_API_KEY=your-key
+cairn doctor
+cairn build --yes --provider-mode live --refresh summaries
+```
 
-From any git repo where agents have run:
+### 2. Agent capture — ingest what agents already did
+
+Works in any git repo. No `cairn.toml` required.
 
 ```bash
 cairn ingest --source claude-code
 cairn sessions list
-cairn show <session_id>
-cairn render --session <session_id> -o outputs/capture-bundle
-cairn live serve --session <session_id>    # http://127.0.0.1:8787
+cairn show sess-redacted-001
+cairn render --session sess-redacted-001 -o outputs/capture-bundle
+cairn live serve --session sess-redacted-001 --port 8787
 ```
 
-`cairn ingest` works without a `cairn.toml`. Hooks and watchers are optional.
+**Sources:** `claude-code`, `codex`, `cursor`, `hermes`, `aider`, `openhands`, `goose`, `all`.
 
 ---
 
@@ -97,33 +85,77 @@ Every run produces:
 
 | Output | Description |
 |--------|-------------|
-| **HTML bundle** | Self-contained report — open via `file://`, no CDN |
+| **HTML bundle** | Self-contained report — Timeline, Graph, Files tabs; works at `file://` |
 | **Execution graph** | DAG of context → prompts → tools → artifacts |
 | **Ledger** | Append-only `.cairn/ledger.db` with full provenance |
 | **CAS** | Content-addressed blobs for prompts, outputs, snapshots |
+| **JSON report** | Unified schema for provider runs and capture sessions |
 
-Agent capture and provider builds share the same observability model. You do not need to know
-which runtime executed the work to read the report.
+Provider builds show per-node prompts, token counts, and upstream hashes. Capture sessions
+show turn cards, tool calls, and causal edges.
 
 ---
 
-## CLI overview
+## Install
+
+**Install script** (macOS, Linux, WSL2 — bootstraps Python and uv):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.sh | bash
+```
+
+**PyPI** — [cairn-workspace on PyPI](https://pypi.org/project/cairn-workspace/) (v1.1.0+):
+
+```bash
+pip install cairn-workspace
+# or isolated CLI install (recommended):
+pipx install cairn-workspace
+# or:
+uv tool install cairn-workspace
+```
+
+| Method | Command |
+|--------|---------|
+| Install script | `curl -fsSL …/install.sh \| bash` |
+| pip | `pip install cairn-workspace` |
+| pipx | `pipx install cairn-workspace` |
+| uv | `uv tool install cairn-workspace` |
+| Windows (PowerShell) | `irm …/install.ps1 \| iex` |
+
+Pin a version: `pip install cairn-workspace==1.1.0` or `CAIRN_VERSION=v1.1.0 curl -fsSL … \| bash`
+
+Requires Python 3.11+. The install script also requires `curl` (or `wget`) and `git`.
+
+---
+
+## CLI at a glance
 
 ```bash
 cairn help
 ```
 
-| Group | What it does |
-|-------|----------------|
+| Group | Commands |
+|-------|----------|
 | **Project** | `init`, `validate`, `doctor`, `status`, `plan` |
 | **Workflows** | `context`, `prompt`, `workflow`, `build` |
 | **Capture** | `ingest`, `watch`, `sessions`, `show`, `live` |
 | **Observability** | `runs`, `render`, `report`, `graph`, `artifact`, `diff` |
 | **Sharing** | `snapshot`, `collab` |
-| **API** | `api serve` — local HTTP + OpenAPI |
-| **Security** | `security audit`, encrypt/decrypt bundles |
+| **API & security** | `api serve`, `security audit`, `encrypt` / `decrypt` |
 
-See the [CLI reference](docs/cli.md) for details.
+Full reference with copy-paste examples: **[docs/reference/cli.md](docs/reference/cli.md)**
+
+---
+
+## HTTP API
+
+```bash
+export CAIRN_API_TOKEN=local-dev-token
+cairn api serve --port 8790
+curl http://127.0.0.1:8790/v1/openapi.json
+```
+
+See [HTTP API](docs/reference/api.md).
 
 ---
 
@@ -136,20 +168,11 @@ from cairn.render import html, report_json
 
 project = cairn.Project.open(".")
 run = workflow_run(project=project, yes=True, provider_mode="recorded")
-print(report_json(run)["kind"])
-html(run, output=project.root / "outputs" / "bundle")
+print(report_json(run)["kind"])  # "provider"
+html(run, output=project.root / "outputs" / "sdk-bundle")
 ```
 
----
-
-## HTTP API
-
-```bash
-export CAIRN_API_TOKEN=local-dev-token   # optional bearer auth
-cairn api serve --port 8790
-```
-
-OpenAPI spec at `http://127.0.0.1:8790/v1/openapi.json`. See [API docs](docs/api.md).
+See [Python SDK](docs/reference/sdk.md).
 
 ---
 
@@ -158,14 +181,15 @@ OpenAPI spec at `http://127.0.0.1:8790/v1/openapi.json`. See [API docs](docs/api
 | Guide | Description |
 |-------|-------------|
 | [Getting started](docs/getting-started.md) | Install → first project → first report |
-| [Concepts](docs/concepts.md) | How Cairn thinks about projects, sessions, and lineage |
-| [CLI reference](docs/cli.md) | Command groups and common flags |
-| [Python SDK](docs/sdk.md) | Programmatic access |
-| [HTTP API](docs/api.md) | Routes, auth, examples |
+| [E2E testing](docs/guides/e2e-testing.md) | Manual checklist for every feature |
+| [Provider workflows](docs/guides/provider-workflows.md) | Pipelines, caching, live providers |
+| [Agent capture](docs/guides/agent-capture.md) | Ingest, hooks, live UI |
+| [Collaboration](docs/guides/collaboration.md) | Snapshots, sync, encryption |
+| [Concepts](docs/concepts.md) | Mental model: sessions, runs, CAS, bundles |
+| [Configuration](docs/reference/configuration.md) | `cairn.toml`, providers, env vars |
 | [Security](docs/security.md) | Credentials, scrubbing, encryption |
-| [Contributing](CONTRIBUTING.md) | Development setup and guidelines |
 
-Architecture decisions: [docs/adr/](docs/adr/). Full specification: [docs/spec/charter.md](docs/spec/charter.md).
+**Try the demo corpus:** `examples/e2e-demo/setup.sh ~/cairn-e2e-test`
 
 ---
 
@@ -177,6 +201,8 @@ uv sync --group dev && uv pip install -e .
 uv run pytest -q
 uv run ruff check cairn tests && uv run mypy cairn
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 

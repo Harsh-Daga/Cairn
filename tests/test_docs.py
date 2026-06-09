@@ -19,6 +19,8 @@ def test_readme_covers_primary_workflows() -> None:
         "cairn workflow",
         "cairn report",
         "Project.open",
+        "pip install cairn-workspace",
+        "pypi.org/project/cairn-workspace",
         "curl -fsSL",
     ):
         assert snippet in text
@@ -29,12 +31,17 @@ def test_user_documentation_exists() -> None:
         "docs/README.md",
         "docs/getting-started.md",
         "docs/concepts.md",
-        "docs/cli.md",
-        "docs/sdk.md",
-        "docs/api.md",
+        "docs/guides/e2e-testing.md",
+        "docs/guides/provider-workflows.md",
+        "docs/guides/agent-capture.md",
+        "docs/reference/cli.md",
+        "docs/reference/configuration.md",
+        "docs/reference/sdk.md",
+        "docs/reference/api.md",
         "docs/security.md",
         "CONTRIBUTING.md",
         "LICENSE",
+        "examples/e2e-demo/setup.sh",
     ):
         assert (ROOT / rel).is_file(), rel
 
@@ -46,6 +53,7 @@ def test_internal_planning_docs_removed() -> None:
         "docs/phase-0-vision-validation.md",
         "docs/engineering-reference-legacy.md",
         "CHARTER.md",
+        "docs/adr",
     ):
         assert not (ROOT / rel).exists(), f"obsolete doc still present: {rel}"
     assert (ROOT / "docs" / "spec" / "charter.md").is_file()

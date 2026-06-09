@@ -30,6 +30,8 @@ uv publish   # requires PyPI token or trusted publishing context
 ## Install for users
 
 ```bash
-uv tool install cairn-workspace
+pip install cairn-workspace
+# or: pipx install cairn-workspace
+# or: uv tool install cairn-workspace
 cairn --version
 ```

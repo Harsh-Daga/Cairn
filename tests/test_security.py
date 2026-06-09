@@ -9,9 +9,21 @@ import urllib.request
 from pathlib import Path
 
 from cairn.api.server import ApiServer
+from cairn.cli.main import main
 from cairn.security.audit import run_security_audit
 from cairn.security.auth import authorize_bearer
 from cairn.security.encrypt import decrypt_bytes, encrypt_bytes
+
+
+def test_security_encrypt_decrypt_cli(tmp_path: Path, monkeypatch) -> None:
+    src = tmp_path / "bundle.zip"
+    enc = tmp_path / "bundle.zip.enc"
+    dec = tmp_path / "restored.zip"
+    src.write_bytes(b"zip payload")
+    monkeypatch.setenv("CAIRN_ENCRYPTION_KEY", "test-passphrase")
+    assert main(["security", "encrypt", str(src), str(enc)]) == 0
+    assert main(["security", "decrypt", str(enc), str(dec)]) == 0
+    assert dec.read_bytes() == b"zip payload"
 
 
 def test_encrypt_round_trip() -> None:

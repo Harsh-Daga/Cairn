@@ -123,7 +123,8 @@ Cairn is ready. Try:
   cairn build --yes --provider-mode recorded
   cairn help
 
-Docs: https://github.com/Harsh-Daga/Cairn/blob/main/docs/README.md
+PyPI:  pip install cairn-workspace  (https://pypi.org/project/cairn-workspace/)
+Docs:  https://github.com/Harsh-Daga/Cairn/blob/main/docs/README.md
 EOF
 }
 

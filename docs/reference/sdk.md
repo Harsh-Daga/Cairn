@@ -4,15 +4,17 @@ Cairn exposes a stable Python API from the `cairn` package (SemVer from 1.0).
 
 ## Install
 
-The SDK ships with the CLI:
+The SDK ships with the CLI ([PyPI](https://pypi.org/project/cairn-workspace/)):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.sh | bash
+pip install cairn-workspace
 ```
 
 For library use in another project:
 
 ```bash
+pip install cairn-workspace
+# or with uv:
 uv add cairn-workspace
 # or from git:
 uv add "cairn-workspace @ git+https://github.com/Harsh-Daga/Cairn.git"
@@ -98,4 +100,21 @@ print(cairn.__version__)
 ## HTTP API alternative
 
 If you prefer REST over embedded Python, run `cairn api serve` and use the [HTTP API](api.md).
+
+## E2E verification
+
+```bash
+cd ~/cairn-e2e-test
+python3 << 'PY'
+import cairn
+from cairn.workflow import run as workflow_run
+from cairn.render import html, report_json
+
+project = cairn.Project.open(".")
+run = workflow_run(project=project, yes=True, provider_mode="recorded")
+print("kind:", report_json(run)["kind"])
+html(run, output=project.root / "outputs" / "sdk-bundle")
+print("Wrote outputs/sdk-bundle/index.html")
+PY
+```
 OpenAPI spec at `/v1/openapi.json`.

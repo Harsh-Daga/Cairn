@@ -38,7 +38,7 @@ docs/            # User and contributor documentation
 ## Design references
 
 - [Technical charter](docs/spec/charter.md) — full product and implementation specification
-- [Architecture Decision Records](docs/adr/) — accepted design decisions
+- [Documentation index](docs/README.md) — user guides and CLI reference
 
 Read the charter before large changes. New parsers, providers, and report fields should follow
 existing patterns and extend the registry model rather than branching core logic.

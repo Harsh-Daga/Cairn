@@ -1,0 +1,34 @@
+# E2E demo project — local Ollama (ollama serve + ollama pull llama3.2)
+# setup.sh rewrites model for --provider cloud or --model overrides
+
+[project]
+name = "cairn-e2e-demo"
+version = "0.1.0"
+
+[defaults]
+model = "ollama/llama3.2"
+params = { temperature = 0.2, max_tokens = 1024 }
+
+[sources.notes]
+include = ["inputs/notes/**/*.md"]
+
+[sources.spec]
+include = ["inputs/spec.md"]
+
+[steps.summaries]
+prompt = "prompts/summarize.md"
+over = "source('notes')"
+output = "outputs/summaries/{{ item.stem }}.md"
+materialization = "cached"
+
+[steps.synthesis]
+prompt = "prompts/synthesize.md"
+inputs = ["ref('summaries')", "source('spec')"]
+output = "outputs/synthesis.md"
+materialization = "cached"
+
+[steps.report]
+prompt = "prompts/polish.md"
+inputs = ["ref('synthesis')"]
+output = "outputs/report.md"
+materialization = "cached"
