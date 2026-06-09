@@ -1,0 +1,4 @@
+{"session_id":"agent-mini-001","timestamp":"2026-06-01T10:00:00Z","cwd":"/tmp/cairn-fixture","git_branch":"main","type":"user_message","content":"Add a helper function"}
+{"session_id":"agent-mini-001","timestamp":"2026-06-01T10:00:01Z","type":"assistant_message","model":"test-model","content":"I'll write the file.","usage":{"input_tokens":12,"output_tokens":6}}
+{"session_id":"agent-mini-001","timestamp":"2026-06-01T10:00:02Z","type":"tool_call","tool_id":"tool-1","name":"write","input":{"path":"/tmp/cairn-fixture/src/app.py","content":"def helper(): pass"}}
+{"session_id":"agent-mini-001","timestamp":"2026-06-01T10:00:03Z","type":"tool_result","tool_id":"tool-1","content":"wrote file"}

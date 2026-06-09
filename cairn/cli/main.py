@@ -92,7 +92,16 @@ def main(argv: list[str] | None = None) -> int:
     ingest_p.add_argument(
         "--source",
         default="claude-code",
-        choices=["claude-code", "codex", "cursor", "hermes", "all"],
+        choices=[
+            "claude-code",
+            "codex",
+            "cursor",
+            "hermes",
+            "aider",
+            "openhands",
+            "goose",
+            "all",
+        ],
     )
     ingest_p.add_argument("--claude-project-dir", type=Path, default=None)
     ingest_p.add_argument("--cursor-workspace", type=Path, default=None)
@@ -105,7 +114,19 @@ def main(argv: list[str] | None = None) -> int:
     graph_p.add_argument("--format", choices=["json", "dot"], default="json")
     graph_p.set_defaults(func=graph_cmd.run)
 
-    sessions_p = sub.add_parser("sessions", help="List captured sessions")
+    sessions_p = sub.add_parser("sessions", help="Captured sessions")
+    sessions_sub = sessions_p.add_subparsers(dest="sessions_command")
+    sessions_list = sessions_sub.add_parser("list", help="List captured sessions")
+    sessions_list.add_argument("project", nargs="?", default=".", type=Path)
+    sessions_list.add_argument("--limit", type=int, default=20)
+    sessions_list.add_argument("--source", default=None)
+    sessions_list.add_argument("--json", action="store_true")
+    sessions_list.set_defaults(func=sessions_cmd.run)
+    sessions_replay = sessions_sub.add_parser("replay", help="Replay session to bundle")
+    sessions_replay.add_argument("session_id")
+    sessions_replay.add_argument("project", nargs="?", default=".", type=Path)
+    sessions_replay.add_argument("-o", "--output", type=Path, default=None)
+    sessions_replay.set_defaults(func=sessions_cmd.run)
     sessions_p.add_argument("project", nargs="?", default=".", type=Path)
     sessions_p.add_argument("--limit", type=int, default=20)
     sessions_p.add_argument("--source", default=None)

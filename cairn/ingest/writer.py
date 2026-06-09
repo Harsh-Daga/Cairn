@@ -17,6 +17,7 @@ from cairn.ingest.parsers.codex import ParsedCodexSession
 from cairn.ingest.parsers.cursor import ParsedCursorSession
 from cairn.ingest.parsers.hermes import ParsedHermesSession
 from cairn.ingest.project_paths import path_rel_to_repo, try_git_branch, try_git_commit
+from cairn.ingest.types import ParsedAgentSession
 from cairn.ingest.usage import ObservedUsage, extract_usage_dict
 from cairn.ledger.ledger import new_run_id
 from cairn.ledger.schema import migrate
@@ -116,6 +117,21 @@ class CaptureWriter:
             external_id=parsed.external_id,
             cwd=parsed.cwd,
             git_branch=None,
+            started_at=parsed.started_at,
+            ended_at=parsed.ended_at,
+            model=parsed.model,
+            events=parsed.events,
+            tool_calls=parsed.tool_calls,
+            file_artifacts=parsed.file_artifacts,
+            usage=parsed.usage.usage,
+        )
+
+    def ingest_agent_session(self, parsed: ParsedAgentSession) -> IngestResult:
+        return self._ingest_session(
+            source=parsed.source,
+            external_id=parsed.external_id,
+            cwd=parsed.cwd,
+            git_branch=parsed.git_branch,
             started_at=parsed.started_at,
             ended_at=parsed.ended_at,
             model=parsed.model,

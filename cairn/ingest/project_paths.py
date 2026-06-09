@@ -390,6 +390,62 @@ def discover_hermes_sessions(
     return ordered
 
 
+def aider_sessions_root() -> Path:
+    return Path.home() / ".aider" / "sessions"
+
+
+def openhands_sessions_root() -> Path:
+    return Path.home() / ".openhands" / "sessions"
+
+
+def goose_sessions_root() -> Path:
+    return Path.home() / ".goose" / "sessions"
+
+
+def discover_agent_jsonl_sessions(
+    sessions_root: Path,
+    *,
+    since: datetime | None = None,
+) -> list[Path]:
+    if not sessions_root.is_dir():
+        return []
+    paths: list[Path] = []
+    for path in sorted(sessions_root.glob("**/*.jsonl")):
+        if not path.is_file():
+            continue
+        if since is not None and path.stat().st_mtime < since.timestamp():
+            continue
+        paths.append(path.resolve())
+    return paths
+
+
+def discover_aider_sessions(
+    repo_root: Path,
+    *,
+    since: datetime | None = None,
+) -> list[Path]:
+    del repo_root
+    return discover_agent_jsonl_sessions(aider_sessions_root(), since=since)
+
+
+def discover_openhands_sessions(
+    repo_root: Path,
+    *,
+    since: datetime | None = None,
+) -> list[Path]:
+    del repo_root
+    return discover_agent_jsonl_sessions(openhands_sessions_root(), since=since)
+
+
+def discover_goose_sessions(
+    repo_root: Path,
+    *,
+    since: datetime | None = None,
+) -> list[Path]:
+    del repo_root
+    return discover_agent_jsonl_sessions(goose_sessions_root(), since=since)
+
+
 def path_rel_to_repo(repo_root: Path, file_path: str) -> str | None:
     """Return repo-relative path if ``file_path`` is under ``repo_root``."""
     try:

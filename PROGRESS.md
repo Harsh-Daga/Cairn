@@ -1,6 +1,6 @@
 # Cairn — Build Progress
 
-**Current phase:** Phase 7 — Workflow Engine ✅; Phase 8 next  
+**Current phase:** Phase 8 — Agent Integration Framework ✅; Phase 9 next  
 **Charter:** [CHARTER.md](CHARTER.md) v3.0 — inference workspace
 
 ---
@@ -17,7 +17,8 @@
 | 5 | Project Context System | ✅ `cairn/context/`, `cairn context` CLI + tests |
 | 6 | Prompt Registry | ✅ `cairn/prompts/`, schema v5, `cairn prompt` CLI + tests |
 | 7 | Workflow Engine | ✅ `cairn/workflow/`, `cairn workflow` CLI + tests |
-| 8–22 | See CHARTER.md §20 | 🔲 Planned |
+| 8 | Agent Integration Framework | ✅ parsers, registry, replay, `cairn sessions replay` |
+| 9–22 | See CHARTER.md §20 | 🔲 Planned |
 
 ---
 
@@ -46,3 +47,4 @@ Phases 0–5.5 from the capture-first charter are **implemented**:
 | 2026-06-09 | 5 | Context registry: scan/list/show, ledger-backed index |
 | 2026-06-09 | 6 | Prompt registry: versioned prompts in CAS + `cairn prompt sync` |
 | 2026-06-09 | 7 | Workflow engine: validate/run/history via build executor |
+| 2026-06-09 | 8 | Agent framework: Aider/OpenHands/Goose parsers + session replay |

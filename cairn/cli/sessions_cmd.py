@@ -1,15 +1,24 @@
-"""cairn sessions — list captured sessions."""
+"""cairn sessions — list and replay captured sessions."""
 
 from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 
+from cairn.agents.replay import replay_session
 from cairn.ingest.project_paths import resolve_git_root
 from cairn.ingest.writer import CaptureWriter, SessionSummary
 
 
 def run(args: argparse.Namespace) -> int:
+    command = getattr(args, "sessions_command", None) or "list"
+    if command == "replay":
+        return run_replay(args)
+    return run_list(args)
+
+
+def run_list(args: argparse.Namespace) -> int:
     project = args.project.resolve()
     root = resolve_git_root(project) or project
     db_path = root / ".cairn" / "ledger.db"
@@ -37,6 +46,20 @@ def run(args: argparse.Namespace) -> int:
         print(
             f"{s.external_id:<38} {s.source:<12} {s.event_count:>6}  {s.started_at}"
         )
+    return 0
+
+
+def run_replay(args: argparse.Namespace) -> int:
+    project = args.project.resolve()
+    root = resolve_git_root(project) or project
+    output = getattr(args, "output", None)
+    out_path = Path(output) if output is not None else None
+    try:
+        index = replay_session(root, args.session_id, output=out_path)
+    except KeyError as exc:
+        print(str(exc))
+        return 1
+    print(f"Replay bundle: {index}")
     return 0
 
 

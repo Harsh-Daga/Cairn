@@ -6,16 +6,22 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from cairn.ingest.parsers.aider import parse_aider_jsonl
 from cairn.ingest.parsers.claude_code import parse_jsonl_file
 from cairn.ingest.parsers.codex import parse_rollout_file
 from cairn.ingest.parsers.cursor import ParsedCursorSession, parse_transcript_file
+from cairn.ingest.parsers.goose import parse_goose_jsonl
 from cairn.ingest.parsers.hermes import parse_session_file
+from cairn.ingest.parsers.openhands import parse_openhands_jsonl
 from cairn.ingest.project_paths import (
     cursor_subagent_external_id,
+    discover_aider_sessions,
     discover_claude_jsonl,
     discover_codex_rollouts,
     discover_cursor_transcripts,
+    discover_goose_sessions,
     discover_hermes_sessions,
+    discover_openhands_sessions,
     resolve_git_root,
 )
 from cairn.ingest.writer import CaptureWriter, IngestResult
@@ -64,7 +70,22 @@ def run_ingest(
             )
         if source in ("hermes", "all"):
             reports.append(_ingest_hermes(writer, root, since=since))
-        if source not in ("claude-code", "codex", "cursor", "hermes", "all"):
+        if source in ("aider", "all"):
+            reports.append(_ingest_aider(writer, root, since=since))
+        if source in ("openhands", "all"):
+            reports.append(_ingest_openhands(writer, root, since=since))
+        if source in ("goose", "all"):
+            reports.append(_ingest_goose(writer, root, since=since))
+        if source not in (
+            "claude-code",
+            "codex",
+            "cursor",
+            "hermes",
+            "aider",
+            "openhands",
+            "goose",
+            "all",
+        ):
             msg = f"unsupported ingest source: {source!r}"
             raise ValueError(msg)
     finally:
@@ -189,3 +210,72 @@ def _ingest_hermes(
             report.skipped += 1
         report.results.append(result)
     return report
+
+
+def _ingest_agent_jsonl(
+    writer: CaptureWriter,
+    repo_root: Path,
+    *,
+    source: str,
+    paths: list[Path],
+    parse: object,
+) -> IngestReport:
+    report = IngestReport(source=source)
+    for path in paths:
+        report.scanned += 1
+        parsed = parse(path, repo_root=repo_root)  # type: ignore[operator]
+        if parsed is None:
+            report.skipped += 1
+            continue
+        result = writer.ingest_agent_session(parsed)
+        if result.inserted:
+            report.inserted += 1
+        else:
+            report.skipped += 1
+        report.results.append(result)
+    return report
+
+
+def _ingest_aider(
+    writer: CaptureWriter,
+    repo_root: Path,
+    *,
+    since: datetime | None,
+) -> IngestReport:
+    return _ingest_agent_jsonl(
+        writer,
+        repo_root,
+        source="aider",
+        paths=discover_aider_sessions(repo_root, since=since),
+        parse=parse_aider_jsonl,
+    )
+
+
+def _ingest_openhands(
+    writer: CaptureWriter,
+    repo_root: Path,
+    *,
+    since: datetime | None,
+) -> IngestReport:
+    return _ingest_agent_jsonl(
+        writer,
+        repo_root,
+        source="openhands",
+        paths=discover_openhands_sessions(repo_root, since=since),
+        parse=parse_openhands_jsonl,
+    )
+
+
+def _ingest_goose(
+    writer: CaptureWriter,
+    repo_root: Path,
+    *,
+    since: datetime | None,
+) -> IngestReport:
+    return _ingest_agent_jsonl(
+        writer,
+        repo_root,
+        source="goose",
+        paths=discover_goose_sessions(repo_root, since=since),
+        parse=parse_goose_jsonl,
+    )
