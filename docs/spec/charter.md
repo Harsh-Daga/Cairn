@@ -5,7 +5,7 @@
 > Cairn unifies project context, workflows, agent capture, provider execution, artifacts, and
 > explainable reports — connected through lineage. Local-first by default. Git-native. One binary.
 
-**Status:** v3.0 — inference workspace charter (Phases 0–1 complete; implementation in progress)  
+**Status:** v3.0 — inference workspace charter (Phases 0–22 complete; release 1.0)  
 **License:** Apache-2.0  
 **Audience:** contributors, integrators, and users building on Cairn without reading source first.
 

@@ -1,4 +1,4 @@
-"""Documentation consistency checks (Phase 21)."""
+"""Documentation consistency checks."""
 
 from __future__ import annotations
 
@@ -7,9 +7,11 @@ from pathlib import Path
 import cairn
 from cairn.api.openapi import openapi_spec
 
+ROOT = Path(__file__).parent.parent
+
 
 def test_readme_covers_primary_workflows() -> None:
-    text = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
     for snippet in (
         "cairn ingest",
         "cairn live serve",
@@ -17,19 +19,40 @@ def test_readme_covers_primary_workflows() -> None:
         "cairn workflow",
         "cairn report",
         "Project.open",
+        "curl -fsSL",
     ):
         assert snippet in text
 
 
-def test_getting_started_and_api_docs_exist() -> None:
-    root = Path(__file__).parent.parent
-    assert (root / "docs" / "getting-started.md").is_file()
-    assert (root / "docs" / "api.md").is_file()
-    assert (root / "docs" / "security.md").is_file()
+def test_user_documentation_exists() -> None:
+    for rel in (
+        "docs/README.md",
+        "docs/getting-started.md",
+        "docs/concepts.md",
+        "docs/cli.md",
+        "docs/sdk.md",
+        "docs/api.md",
+        "docs/security.md",
+        "CONTRIBUTING.md",
+        "LICENSE",
+    ):
+        assert (ROOT / rel).is_file(), rel
+
+
+def test_internal_planning_docs_removed() -> None:
+    for rel in (
+        "PROGRESS.md",
+        "docs/architecture-audit.md",
+        "docs/phase-0-vision-validation.md",
+        "docs/engineering-reference-legacy.md",
+        "CHARTER.md",
+    ):
+        assert not (ROOT / rel).exists(), f"obsolete doc still present: {rel}"
+    assert (ROOT / "docs" / "spec" / "charter.md").is_file()
 
 
 def test_release_version_matches_pyproject() -> None:
-    pyproject = (Path(__file__).parent.parent / "pyproject.toml").read_text(encoding="utf-8")
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'version = "1.0.0"' in pyproject
     assert cairn.__version__ == "1.0.0"
 
