@@ -1,0 +1,121 @@
+server/store/repos/context_regions.py
+  s_bfc339e2409596::t_44d9cbae77545b 29-30
+  s_bfc339e2409596::t_2a23545dd4caa0 1-28,31-50
+tests/test_analyze_diagnose.py
+  s_92eaebdf437101::t_6e220336dd5b82 1-59
+server/analyze/diagnose_localize.py
+  s_92eaebdf437101::t_60afe50aaa7c8c 1-54
+server/analyze/difficulty.py
+  s_bfc339e2409596::t_fe40128e1ed8f0 2-62,66-138
+  s_bfc339e2409596::t_958ad6f0282f93 63-65
+docs/superpowers/plans/2026-07-04-v4-completion.md
+  s_b0c0d87e8b3feb::t_f4213663d9842e 1-246
+server/analyze/views.py
+  s_0330e4a9f49f8b::t_c9f3727af43a69 21
+server/analyze/fingerprint_math.py
+  s_92eaebdf437101::t_62f9fe8dfa3ca0 1-175
+tests/test_analyze_fingerprint.py
+  s_92eaebdf437101::t_53d9a155650941 1-4,6-9,11-50,52-60
+  s_92eaebdf437101::t_2f7c9926eb9fdd 5,51
+  s_bfc339e2409596::t_9eb077d57ea4ee 10
+tests/test_analyze_outcomes.py
+  s_9069bf5115cd62::t_408950ac883491 1-58
+server/analyze/__init__.py
+  s_92eaebdf437101::t_aeb199fcd980fe 1-4,6
+  s_0330e4a9f49f8b::t_36b5242311cd4c 5,7
+server/analyze/events.py
+  s_bfc339e2409596::t_27cb6924998db5 32
+server/analyze/diagnose.py
+  s_92eaebdf437101::t_0e800e6fa93154 64-66
+  s_92eaebdf437101::t_efdd7e4101bf69 16-17,26-27,33-36,38,59
+  s_92eaebdf437101::t_6ed41e3defa1ea 1-14,18-25,28-32,37,39-58,60-63,67-105
+  s_bfc339e2409596::t_9eb077d57ea4ee 15
+server/analyze/outcomes.py
+  s_0330e4a9f49f8b::t_24af395823b09a 2-4,6-24,32,34-42,100-226,230-235,241-244,249-259,261-262,264-272,276-322
+  s_9069bf5115cd62::t_e4a632fbe1c56d 25-31,33,43-99,245-248
+  s_0330e4a9f49f8b::t_8ab6bc6058e08e 227-229,236-240,273-275
+  s_0330e4a9f49f8b::t_a7cb46cb6a0c95 260,263
+  s_0330e4a9f49f8b::t_b6272f1668c4d1 5
+server/analyze/dirty.py
+  s_0330e4a9f49f8b::t_f6f0949a13b431 17
+server/analyze/registry.py
+  s_bfc339e2409596::t_d28e58847dee2e 6,9,19,22
+  s_0330e4a9f49f8b::t_e9139cc011a09c 5,7-8,21,23-24
+server/analyze/diagnose_ideal.py
+  s_92eaebdf437101::t_b1e728de1817fd 1-22,26-52
+  s_92eaebdf437101::t_0e800e6fa93154 23-25
+tests/test_analyze_incremental.py
+  s_9069bf5115cd62::t_9452c48386f916 102-104
+  s_0330e4a9f49f8b::t_f1539285c44771 13,19,66-67,85-96,98-101,105-120
+  s_0330e4a9f49f8b::t_4bdeb57393bef7 10,97
+  s_0330e4a9f49f8b::t_32e773a4e6f2ae 121-122
+server/analyze/fingerprint.py
+  s_92eaebdf437101::t_8bac7f0c59c12a 1-98,102-106,110-387
+  s_92eaebdf437101::t_0e800e6fa93154 99-101,107-109
+server/analyze/regions.py
+  s_92eaebdf437101::t_0efadc5ad34d75 269-280
+  s_bfc339e2409596::t_9a1f7e33bb4110 8,13,266-268,281-284,316
+  s_bfc339e2409596::t_6558fbdd98c5b8 14,56,62,106
+  s_bfc339e2409596::t_2a1ef1cc4cf427 153-157
+  s_bfc339e2409596::t_d23797eb91858a 2-7,9-12,15-55,57-61,63-105,107-152,158-265,285-315,317-326
+server/analyze/diagnose_cascade.py
+  s_92eaebdf437101::t_0e800e6fa93154 52-54
+  s_92eaebdf437101::t_05afc6275b1a7c 1-51,55-63
+tests/test_analyze_regions.py
+  s_bfc339e2409596::t_ff1a2cc0fe8528 57-58
+  s_bfc339e2409596::t_f7091d20c7fe91 1-56,59-63
+server/store/repos/__init__.py
+  s_bfc339e2409596::t_9fd7b7aa991fe6 5,23
+tests/test_analyze_difficulty.py
+  s_bfc339e2409596::t_f53cabd4318201 1-76
+server/analyze/diagnose_taxonomy.py
+  s_92eaebdf437101::t_784e7b710d07e8 1-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "14f747e32197047d060c6b8dd95a235109b48745",
+  "prompts": {},
+  "sessions": {
+    "s_0330e4a9f49f8b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "477d5f40-0228-42ec-8268-6f134d03ad8c",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_9069bf5115cd62": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "52b6951b-7d38-4095-8c6c-d5e906f937fe",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_92eaebdf437101": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "744f2f28-e0d3-4d66-b5b3-a1ccd32a87a7",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_bfc339e2409596": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "799d0cd1-17be-4976-bff7-9ff6b7932d73",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
