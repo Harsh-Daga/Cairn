@@ -1,0 +1,34 @@
+server/mcp/server.py
+  s_b0c0d87e8b3feb::t_dc4b243e447a49 1-103
+docs/getting-started.md
+  s_b0c0d87e8b3feb::t_c851c548257e84 11
+CHANGELOG.md
+  s_b0c0d87e8b3feb::t_f3c085da59ddec 3,6-9,12
+server/cli.py
+  s_b0c0d87e8b3feb::t_9c53ae419a658d 222-235
+server/mcp/tools.py
+  s_b0c0d87e8b3feb::t_d437b50ea82b38 1-6,8-9,12-304,309-337
+  s_b0c0d87e8b3feb::t_05ae8f0e367819 7
+  s_b0c0d87e8b3feb::t_3e8632a8b042dd 10-11
+  s_b0c0d87e8b3feb::t_34b285589effc1 305-308
+tests/test_mcp.py
+  s_b0c0d87e8b3feb::t_240b36b26522b3 1-84
+docs/concepts.md
+  s_b0c0d87e8b3feb::t_2edcb510c5b342 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f9b2c30b1d05135136ada49c4a40a6b3c792d57d",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
