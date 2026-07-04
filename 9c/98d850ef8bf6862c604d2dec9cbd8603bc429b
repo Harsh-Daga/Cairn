@@ -1,0 +1,76 @@
+ui/src/test/ui.test.tsx
+  s_b0c0d87e8b3feb::t_b1f78aefbdd670 1,5-7,9-10,16-87,96-99,103-104
+  s_b0c0d87e8b3feb::t_212c41b76b6215 2-4,8,11-15,88-93
+  s_b0c0d87e8b3feb::t_154d79994f53bb 94-95,100-102
+ui/src/components/waterfall/Waterfall.tsx
+  s_b0c0d87e8b3feb::t_ad093ed2d5d967 1-2,5-21,23-26,28-109
+  s_b0c0d87e8b3feb::t_41f39c8bc00c07 4
+  s_b0c0d87e8b3feb::t_f5a60e3341e187 22,27
+  s_b0c0d87e8b3feb::t_4aa714bfcd1b1c 3
+ui/src/pages/Overview.tsx
+  s_b0c0d87e8b3feb::t_a050b13341f67c 7
+  s_b0c0d87e8b3feb::t_b2624f7cea93e1 2-5,10-13,15-16,27,31,37-40,43-111,116-130
+  s_b0c0d87e8b3feb::t_7f1cc8a0cc1878 131-132
+ui/src/components/insights/InsightCard.tsx
+  s_b0c0d87e8b3feb::t_61a8a9caf5a5f4 1-79
+ui/package.json
+  s_b0c0d87e8b3feb::t_9615223ba0fdaa 41
+ui/src/components/common/CommandPalette.tsx
+  s_b0c0d87e8b3feb::t_d24029a3b9a9ac 1-2,4,9-15,31-37,51-52,55,57-73
+ui/src/lib/api.ts
+  s_b0c0d87e8b3feb::t_a0126a86390a63 1-10,20,24-25,36-103
+ui/src/components/common/Toast.tsx
+  s_b0c0d87e8b3feb::t_f92955bf0ecb1c 1-40
+ui/src/pages/SessionDetail.tsx
+  s_b0c0d87e8b3feb::t_9c7a673ba388d6 1-5,7-11,15-71,74-111
+ui/src/test/palette.test.tsx
+  s_b0c0d87e8b3feb::t_486a224d8b51e5 32
+  s_b0c0d87e8b3feb::t_f8d56381e97d62 1-31,33-38
+scripts/build_ui.py
+  s_b0c0d87e8b3feb::t_cb5e0a64756051 16
+ui/src/lib/types.ts
+  s_b0c0d87e8b3feb::t_a945c49ae31bc3 1-45,50-53,55-58,60-114,117-138,143-145,147-151,154-180
+ui/src/components/session/SpanInspector.tsx
+  s_b0c0d87e8b3feb::t_2185a0de1f1182 26
+  s_b0c0d87e8b3feb::t_077d7fc4f069d7 1-25,27-60
+ui/src/app.tsx
+  s_b0c0d87e8b3feb::t_47035ce3c12f9b 4,9-13
+ui/src/pages/Sessions.tsx
+  s_b0c0d87e8b3feb::t_4c7a3679cbd839 1-5,7,10-38,40-94
+ui/src/test/setup.ts
+  s_b0c0d87e8b3feb::t_6decbb2622f984 1
+ui/src/pages/Insights.tsx
+  s_b0c0d87e8b3feb::t_0a14ed610ed3e4 43
+  s_b0c0d87e8b3feb::t_e21d0a0038970b 1-4,6-14,17-42,44-73,75-109
+ui/vite.config.ts
+  s_b0c0d87e8b3feb::t_dca2f43c02665c 1
+  s_b0c0d87e8b3feb::t_51eb41cec65cab 12-16
+ui/src/state/toast.ts
+  s_b0c0d87e8b3feb::t_7cac74cc6b31b8 1-14
+ui/src/lib/sse.ts
+  s_b0c0d87e8b3feb::t_cf06290ae883df 3,8-11,13
+ui/src/components/common/Chip.tsx
+  s_b0c0d87e8b3feb::t_9317e31360eb0b 19-21
+  s_b0c0d87e8b3feb::t_d3a2383b86c758 1-4,6-18,22-54
+  s_b0c0d87e8b3feb::t_53120d476c4200 5
+ui/src/components/session/ReplayScrubber.tsx
+  s_b0c0d87e8b3feb::t_e9bb1e2ae9ed8b 1-77
+ui/package-lock.json
+  s_b0c0d87e8b3feb::t_3662c02ae0f9d9 37,1673-1682,4429-4435
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9c98d850ef8bf6862c604d2dec9cbd8603bc429b",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
