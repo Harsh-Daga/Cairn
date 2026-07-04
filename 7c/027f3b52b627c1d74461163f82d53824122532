@@ -1,0 +1,23 @@
+tests/conftest.py
+  s_b0c0d87e8b3feb::t_27a7d43ac014bb 5-6,10,13,27-31,72-81
+tests/test_otlp.py
+  s_b0c0d87e8b3feb::t_88684e1570027d 132,136,138-150
+  s_b0c0d87e8b3feb::t_839c4a6ec33b82 6-7,11
+  s_b0c0d87e8b3feb::t_4e29b9ee079181 24-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7c027f3b52b627c1d74461163f82d53824122532",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
