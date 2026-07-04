@@ -147,4 +147,3 @@ def test_otlp_http_endpoint(tmp_path: Path) -> None:
     body = response.json()
     assert body["results"][0]["inserted"] is True
     assert body["results"][0]["span_count"] == 2
-    runtime.database.close()
