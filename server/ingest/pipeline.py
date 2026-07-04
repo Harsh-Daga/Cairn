@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from server.analyze.dirty import mark_trace_dirty, trace_day_key
+from server.analyze.registry import build_views
+from server.analyze.views import ViewScheduler
 from server.api.sse import EventBus
 from server.ingest.contract import Adapter, cursor_for_file
 from server.ingest.contract import IngestCursor as ContractCursor
@@ -155,6 +157,7 @@ class IngestPipeline:
             return mark_trace_dirty(conn, result.trace_id, day=day, project=project or "")
 
         dirty_keys = self._db.write(_mark_dirty)
+        computed = self._run_scheduler(dirty_keys)
         self._bus.publish(
             "trace-updated",
             {
@@ -165,8 +168,21 @@ class IngestPipeline:
             },
         )
         if dirty_keys:
-            self._bus.publish("views-updated", {"keys": dirty_keys, "trace_id": result.trace_id})
+            payload: dict[str, object] = {"keys": dirty_keys, "trace_id": result.trace_id}
+            if computed:
+                payload["computed"] = computed
+            self._bus.publish("views-updated", payload)
         return result
+
+    def _run_scheduler(self, dirty_keys: list[str]) -> list[str]:
+        if not dirty_keys:
+            return []
+
+        def _compute(conn: sqlite3.Connection) -> list[str]:
+            scheduler = ViewScheduler(conn, build_views(self.workspace_id))
+            return scheduler.run(dirty_keys)
+
+        return self._db.write(_compute)
 
     @staticmethod
     def _load_contract_cursor(stored: StoredCursor | None) -> ContractCursor:
