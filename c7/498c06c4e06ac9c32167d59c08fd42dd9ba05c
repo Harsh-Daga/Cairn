@@ -1,0 +1,88 @@
+server/improve/detectors/rebilling_waste.py
+  s_7e840a44ce1aec::t_512a5d7c40c9a5 1-43
+server/improve/reflector.py
+  s_bf9ae8c6dc0e86::t_6f039145b6557f 1-25,31-56,59-133,136-137,140-378
+  s_bf9ae8c6dc0e86::t_ef1b319cd38b54 57-58
+  s_bf9ae8c6dc0e86::t_cc9c23cffb9358 26-30
+  s_bf9ae8c6dc0e86::t_9370474fd47096 134-135,138-139
+tests/test_ingest_codex_tokens.py
+  s_b0c0d87e8b3feb::t_20295d4eb88c64 1-31
+tests/test_ingest_cursor.py
+  s_b0c0d87e8b3feb::t_f9075fc1a23b50 1-29
+server/improve/detectors/oversize_results.py
+  s_7e840a44ce1aec::t_06a2917d3f5a69 1-37
+server/improve/detectors/behavioral_drift.py
+  s_7e840a44ce1aec::t_9a341f9fb1735b 1-36
+server/improve/detectors/_types.py
+  s_7e840a44ce1aec::t_7718c0e7c64267 1-54
+server/improve/detectors/runaway_sessions.py
+  s_7e840a44ce1aec::t_5b2a10957cce85 1-28
+server/improve/detectors/unused_tools.py
+  s_7e840a44ce1aec::t_f4da9b43880e70 1-30
+server/improve/detectors/subagent_heavy.py
+  s_7e840a44ce1aec::t_a18d92a3db2518 1-35
+server/improve/detectors/__init__.py
+  s_7e840a44ce1aec::t_71e86da5dd3308 3
+server/improve/detectors/cache_misuse.py
+  s_7e840a44ce1aec::t_87b3f9754a51d3 1-71
+server/improve/detectors/quality_regression.py
+  s_7e840a44ce1aec::t_dc2da96a7f790c 1-34
+tests/test_reflector.py
+  s_bf9ae8c6dc0e86::t_a2882a7cb7d940 1-220,227,229-267
+  s_bf9ae8c6dc0e86::t_39f3900ca2b0a3 221-226,228
+tests/test_ingest_cline.py
+  s_b0c0d87e8b3feb::t_daea5b125ec527 1-29
+server/improve/detectors/retry_loops.py
+  s_7e840a44ce1aec::t_35eca4e5021c42 1-25
+server/improve/detectors/identical_calls.py
+  s_7e840a44ce1aec::t_6b32f8930a5658 1-40
+server/improve/detectors/multi_model_spread.py
+  s_7e840a44ce1aec::t_a4cced5ffe80b2 1-34
+server/improve/detectors/context_pressure.py
+  s_7e840a44ce1aec::t_671e20ced93a70 1-37
+server/improve/detectors/rules.py
+  s_7e840a44ce1aec::t_49406ff3f96953 1,3-4,6,8-11,13-47
+server/improve/detectors/registry.py
+  s_7e840a44ce1aec::t_3c2c3a434149ef 1-39
+server/improve/reflector_prompt.md
+  s_bf9ae8c6dc0e86::t_fdcb43e43ab210 1-11
+server/improve/detectors/high_file_churn.py
+  s_7e840a44ce1aec::t_2b7651a802d5e5 1-28
+server/improve/evidence_pack.py
+  s_bf9ae8c6dc0e86::t_d7c61f2bcf2a23 226
+  s_bf9ae8c6dc0e86::t_27b1c254d976bb 1-206,208-225,227-229,231-289
+  s_bf9ae8c6dc0e86::t_43554e697f14f6 230
+  s_bf9ae8c6dc0e86::t_9196d9367028f0 207
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c7498c06c4e06ac9c32167d59c08fd42dd9ba05c",
+  "prompts": {},
+  "sessions": {
+    "s_7e840a44ce1aec": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2c6f3f6a-c05d-463c-8198-47d69d242864",
+        "model": "composer-2.5-fast"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_bf9ae8c6dc0e86": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ecc5a26d-622c-4fc0-8492-283ed3056185",
+        "model": "composer-2.5-fast"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
