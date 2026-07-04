@@ -18,6 +18,7 @@ VIEW_ORDER: list[str] = [
     "fingerprint",
     "difficulty",
     "diagnose",
+    "outcomes",
     "rollup",
 ]
 

@@ -29,6 +29,7 @@ def spans_to_events(spans: list[Span]) -> list[dict[str, Any]]:
         events.append(
             {
                 "seq": span.seq,
+                "span_id": span.span_id,
                 "type": event_type,
                 "tool_norm_name": tool_norm,
                 "tool_is_error": span.status == "error",

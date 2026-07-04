@@ -14,6 +14,7 @@ _TRACE_VIEWS = (
     "fingerprint",
     "difficulty",
     "diagnose",
+    "outcomes",
 )
 
 
