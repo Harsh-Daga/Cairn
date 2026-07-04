@@ -11,7 +11,6 @@ from typing import Any
 import numpy as np
 
 from cairn.context.gauge import compute_gauge
-
 from server.analyze.tail import expected_worst
 from server.api.schemas import (
     AgentAggregate,
@@ -26,6 +25,7 @@ from server.api.schemas import (
     InsightsResponse,
     NarrativeSentence,
     OverviewResponse,
+    PlanWindowGauge,
     QualityResponse,
     RegionsAnalyticsResponse,
     ReplayResponse,
@@ -40,7 +40,6 @@ from server.api.schemas import (
     TracesListResponse,
     UsageAnalyticsResponse,
     WasteAnalyticsResponse,
-    PlanWindowGauge,
     WorkspaceAdapter,
     WorkspaceResponse,
 )
