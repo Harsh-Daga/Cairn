@@ -1,4 +1,4 @@
 """Analyzer thresholds — all magic numbers live here (Phase 5)."""
 
-CONTEXT_WARNING_PCT: float = 0.80  # warn when context exceeds 80% of window
-CONTEXT_ROT_WASTE_PCT: float = 0.85  # context rot waste threshold (% of window)
+CONTEXT_WARNING_PCT: float = 80.0  # warn when peak context exceeds 80%
+CONTEXT_ROT_WASTE_PCT: float = 85.0  # context rot error threshold (% of window)
