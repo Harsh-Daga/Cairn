@@ -13,7 +13,7 @@ UI_DIR = ROOT / "ui"
 STATIC_DIR = ROOT / "server" / "static"
 TYPES_OUT = UI_DIR / "src" / "lib" / "types.ts"
 OPENAPI_PLACEHOLDER = (
-    "/** Placeholder types — generated from OpenAPI in scripts/build_ui.py (Phase 7). */\n\n"
+    "/** Placeholder types - generated from OpenAPI in scripts/build_ui.py (Phase 7). */\n\n"
     "export interface TraceRow {\n"
     "  trace_id: string;\n"
     "  title: string | null;\n"
@@ -54,7 +54,6 @@ def generate_types() -> None:
 def build_ui() -> None:
     """Run vite build."""
     ensure_npm_deps()
-    generate_types()
     run(["npm", "run", "build"], UI_DIR)
     if not (STATIC_DIR / "index.html").is_file():
         print("ERROR: build did not produce index.html", file=sys.stderr)

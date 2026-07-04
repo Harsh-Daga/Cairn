@@ -1,20 +1,180 @@
-/** Placeholder types — generated from OpenAPI in scripts/build_ui.py (Phase 7). */
+/** API types aligned with server/api/schemas.py */
+
+export type TimeRange = "24h" | "7d" | "30d" | "90d";
+
+export type SpanKind =
+  | "agent"
+  | "llm_call"
+  | "tool_call"
+  | "tool_result"
+  | "user_msg"
+  | "assistant_msg"
+  | "retrieval"
+  | "subagent"
+  | "compaction"
+  | "system";
+
+export type InsightSeverity = "info" | "suggestion" | "warning" | "error";
+export type InsightLifecycle = "new" | "ack" | "fixed" | "regressed" | "muted";
+
+export interface DataNote {
+  source: string;
+  sessions: number;
+  issue: string;
+  message: string;
+  help_url?: string | null;
+}
+
+export interface NarrativeSentence {
+  text: string;
+  filter?: Record<string, string> | null;
+}
+
+export interface TailRisk {
+  expected_worst_cost?: number | null;
+  exceedance_count: number;
+  threshold?: number | null;
+}
+
+export interface OverviewResponse {
+  days: number;
+  kpis: Record<string, number | null>;
+  narrative: NarrativeSentence[];
+  tail_risk: TailRisk;
+  data_notes: DataNote[];
+}
 
 export interface TraceRow {
   trace_id: string;
-  title: string | null;
   source: string;
+  title: string | null;
+  project: string | null;
+  actor_id: string | null;
+  model: string | null;
   started_at: string | null;
-  cost: number;
+  ended_at: string | null;
+  status: string;
   input_tokens: number;
   output_tokens: number;
+  cost: number;
+  cost_source: string;
+  span_count: number;
+  waste_tokens: number;
+  difficulty: number | null;
+}
+
+export interface TracesListResponse {
+  traces: TraceRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface Span {
+  span_id: string;
+  trace_id: string;
+  parent_span_id: string | null;
+  seq: number;
+  kind: SpanKind;
+  name: string | null;
+  agent_id: string | null;
+  agent_lane: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_ms: number | null;
+  status: "ok" | "error" | "cancelled";
+  model: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  input_estimated: number;
+  output_estimated: number;
+  cache_read_tokens: number | null;
+  cache_creation_tokens: number | null;
+  context_tokens_after: number | null;
+  text_inline: string | null;
+  path_rel: string | null;
+  waste_category: string | null;
+  waste_tokens: number;
+}
+
+export interface SpanNode {
+  span: Span;
+  children: SpanNode[];
+}
+
+export interface Trace {
+  trace_id: string;
+  workspace_id: string;
+  source: string;
+  title: string | null;
+  project: string | null;
+  model: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  status: string;
+  input_tokens: number;
+  output_tokens: number;
+  cost: number;
+  cost_source: string;
+  span_count: number;
+  waste_tokens: number;
+  peak_context_pct: number | null;
+}
+
+export interface TraceDetailResponse {
+  trace: Trace;
+  spans: Span[];
+  tree: SpanNode[];
+  links: { from_span_id: string; to_span_id: string; link_type: string }[];
+  regions: Record<string, unknown>[];
+  diagnostics: Record<string, unknown> | null;
+  quality: Record<string, unknown> | null;
+}
+
+export interface ReplayResponse {
+  trace_id: string;
+  seq: number;
+  spans: Span[];
+  summary: Record<string, unknown>;
 }
 
 export interface InsightRow {
   insight_id: string;
+  fingerprint: string;
+  detector: string;
+  severity: InsightSeverity;
   title: string;
-  severity: string;
-  state: string;
+  body: string;
+  state: InsightLifecycle;
+  savings_estimate: number | null;
+  action: string | null;
+  last_seen_at: string;
 }
 
-export type TimeRange = "24h" | "7d" | "30d" | "90d";
+export interface InsightsResponse {
+  insights: InsightRow[];
+  total: number;
+}
+
+export interface EvidenceChainResponse {
+  insight_id: string;
+  evidence_id: string;
+  producer: string;
+  produced_at: string;
+  trace_ids: string[];
+  span_ids: string[] | null;
+  metrics: Record<string, unknown>;
+  spans: Span[];
+}
+
+export interface ActionManifestEntry {
+  name: string;
+  title: string;
+  category: string;
+  params_schema: Record<string, unknown>;
+  async_job: boolean;
+}
+
+export interface ActionsManifestResponse {
+  actions: ActionManifestEntry[];
+}
