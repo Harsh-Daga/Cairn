@@ -1,0 +1,50 @@
+ui/src/pages/Optimize.tsx
+  s_b0c0d87e8b3feb::t_096550dff27523 4
+  s_b0c0d87e8b3feb::t_987894a0362169 13
+  s_b0c0d87e8b3feb::t_87776f47eb336e 1-3,6-9,12,14-78,80-143
+ui/src/pages/Agents.tsx
+  s_b0c0d87e8b3feb::t_c004f60abf077f 1-5,7-8,11-48,50-129
+ui/src/lib/api.ts
+  s_b0c0d87e8b3feb::t_de633ba1eb88d9 3-4,6,9-10,12,15-16
+  s_b0c0d87e8b3feb::t_c229fdd8b14891 112-144
+ui/src/pages/Live.tsx
+  s_b0c0d87e8b3feb::t_7f2b5bff67fc1a 1-4,6-16,20-135
+  s_b0c0d87e8b3feb::t_1625222b67ecb7 19
+ui/src/pages/Settings.tsx
+  s_b0c0d87e8b3feb::t_5e3d9df946469b 10
+  s_b0c0d87e8b3feb::t_b89045ce460dc2 4
+  s_b0c0d87e8b3feb::t_77934be514b596 1-3,6-7,11-33,35-146
+ui/src/test/live.test.ts
+  s_b0c0d87e8b3feb::t_033d7f017cd6b9 1-50
+ui/src/pages/Context.tsx
+  s_b0c0d87e8b3feb::t_7f638da3ffa150 106
+  s_b0c0d87e8b3feb::t_4307c44770e4e7 1-5,7-17,20-65,67-105,107-119
+ui/src/components/common/DataViews.tsx
+  s_b0c0d87e8b3feb::t_99495685f1c8c2 1-2
+  s_b0c0d87e8b3feb::t_ef3eb8b6ca2f45 32,58-59,61
+  s_b0c0d87e8b3feb::t_3327eee2383874 3-31,33-57,60,62-70
+ui/src/pages/Search.tsx
+  s_b0c0d87e8b3feb::t_caac269a59a1aa 1-5,7-24,27-122
+ui/src/pages/Behavior.tsx
+  s_b0c0d87e8b3feb::t_ccd76eca1f1e4b 1-4,6-7,10-105
+ui/src/pages/Quality.tsx
+  s_b0c0d87e8b3feb::t_5dfef182fecae7 1-5,7-8,11-62,64-122
+ui/src/lib/types.ts
+  s_b0c0d87e8b3feb::t_2c1bf2f1076eca 181-267
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "18608d77044552542504da91fca877272b4603fb",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
