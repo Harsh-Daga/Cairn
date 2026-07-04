@@ -119,16 +119,15 @@ def test_otlp_receiver_round_trip(otlp_setup: tuple[Database, str, EventBus]) ->
     assert len(spans) == 2
 
 
-def test_otlp_http_endpoint(otlp_setup: tuple[Database, str, EventBus]) -> None:
-    db, ws_id, bus = otlp_setup
-    app = create_app()
-    app.state.database = db
-    app.state.workspace_id = ws_id
-    app.state.event_bus = bus
+def test_otlp_http_endpoint(tmp_path: Path) -> None:
+    from server.config import Settings
 
-    client = TestClient(app)
-    response = client.post("/v1/traces", content=json.dumps(SAMPLE_OTLP))
-    assert response.status_code == 200
-    body = response.json()
-    assert body["results"][0]["inserted"] is True
-    assert body["results"][0]["span_count"] == 2
+    settings = Settings(workspace_root=tmp_path)
+    app = create_app(settings)
+
+    with TestClient(app) as client:
+        response = client.post("/v1/traces", content=json.dumps(SAMPLE_OTLP))
+        assert response.status_code == 200
+        body = response.json()
+        assert body["results"][0]["inserted"] is True
+        assert body["results"][0]["span_count"] == 2
