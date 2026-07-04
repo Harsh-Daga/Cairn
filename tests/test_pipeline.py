@@ -1,0 +1,122 @@
+"""Phase 3 pipeline e2e tests."""
+
+from __future__ import annotations
+
+import json
+import queue
+import shutil
+import threading
+import time
+from pathlib import Path
+
+import pytest
+
+from server.api.sse import EventBus
+from server.ingest.adapters.claude_code_adapter import ClaudeCodeAdapter
+from server.ingest.pipeline import IngestPipeline
+from server.models.workspace import Workspace
+from server.store.db import Database
+from server.store.repos.traces import TraceRepo
+from server.store.repos.workspaces import WorkspaceRepo
+from server.util.ids import new_ulid
+
+FIXTURES = Path(__file__).parent / "fixtures" / "ingest"
+
+
+@pytest.fixture
+def workspace_bundle(tmp_path: Path) -> tuple[Database, str, Path]:
+    root = tmp_path / "proj"
+    root.mkdir()
+    db = Database(tmp_path / "cairn.db")
+    ws_id = new_ulid()
+    WorkspaceRepo.create(
+        db.reader,
+        Workspace(
+            workspace_id=ws_id,
+            root_path=str(root),
+            name="proj",
+            created_at="2026-01-01T00:00:00Z",
+        ),
+    )
+    db.reader.commit()
+    return db, ws_id, root
+
+
+def _collect_sse(bus: EventBus) -> tuple[queue.Queue[object], threading.Thread]:
+    received: queue.Queue[object] = queue.Queue()
+
+    def _reader() -> None:
+        client_id, iterator = bus.subscribe()
+        try:
+            for event in iterator:
+                received.put(event)
+                if received.qsize() >= 2:
+                    break
+        finally:
+            bus.unsubscribe(client_id)
+
+    thread = threading.Thread(target=_reader, daemon=True)
+    thread.start()
+    return received, thread
+
+
+def test_pipeline_ingest_trace_and_sse(workspace_bundle: tuple[Database, str, Path]) -> None:
+    db, ws_id, root = workspace_bundle
+    bus = EventBus()
+    received, _thread = _collect_sse(bus)
+
+    fixture = FIXTURES / "wasteful_session.jsonl"
+    pipeline = IngestPipeline(db, ws_id, root, bus)
+    adapter = ClaudeCodeAdapter(root, ws_id)
+    pipeline._path_adapter[fixture.resolve()] = (adapter, "claude_code")
+
+    result = pipeline.ingest_path(fixture)
+    assert result is not None
+    assert result.inserted
+    assert result.span_count > 0
+
+    trace = TraceRepo.get(db.reader, result.trace_id)
+    assert trace is not None
+    assert trace.input_tokens > 0
+
+    event = received.get(timeout=2)
+    assert event.event == "trace-updated"
+    payload = event.data
+    assert payload["trace_id"] == result.trace_id
+
+
+def test_watcher_detects_appended_log(workspace_bundle: tuple[Database, str, Path]) -> None:
+    db, ws_id, root = workspace_bundle
+    bus = EventBus()
+    log_path = root / "live_session.jsonl"
+    shutil.copy(FIXTURES / "claude_code_mini.jsonl", log_path)
+
+    pipeline = IngestPipeline(db, ws_id, root, bus)
+    adapter = ClaudeCodeAdapter(root, ws_id)
+    pipeline._path_adapter[log_path.resolve()] = (adapter, "claude_code")
+    pipeline._watcher.add_path(log_path)
+    pipeline._watcher.start()
+
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(
+            json.dumps(
+                {
+                    "type": "assistant",
+                    "message": {"content": [{"type": "text", "text": "extra line"}]},
+                }
+            )
+            + "\n"
+        )
+
+    deadline = time.time() + 3
+    result = None
+    while time.time() < deadline:
+        result = pipeline.ingest_path(log_path)
+        if result is not None:
+            break
+        time.sleep(0.2)
+        pipeline._watcher._scan_once()
+
+    pipeline.stop()
+    assert result is not None
+    assert TraceRepo.get(db.reader, result.trace_id) is not None
