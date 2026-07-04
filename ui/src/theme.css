@@ -1,0 +1,239 @@
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/500.css";
+@import "@fontsource/space-grotesk/400.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* §7.0 Design DNA — mineral-slate tokens (FINAL) */
+:root {
+  --anthracite: #14161a;
+  --slate: #1b1e23;
+  --shale: #23272e;
+  --granite: #2d323a;
+  --quartz-vein: #3a4049;
+  --bone: #e8e4dc;
+  --cinder: #8a8f98;
+  --ash: #5b6068;
+  --copper: #d08c4f;
+  --copper-dim: #8a5a30;
+  --patina: #6fa8b8;
+  --malachite: #7bae6b;
+  --ochre: #c98a3a;
+  --cinnabar: #c75b5b;
+  --lapis: #8b8fd4;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --shadow-stone: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --r-chip: 4px;
+  --r-sm: 8px;
+  --r-card: 12px;
+  --r-modal: 16px;
+  --rail-w: 240px;
+  --rail-collapsed: 72px;
+
+  /* Series map */
+  --s-system: var(--copper);
+  --s-tool: var(--patina);
+  --s-result: var(--ochre);
+  --s-cache: var(--lapis);
+  --s-assistant: var(--malachite);
+  --s-retrieved: var(--cinder);
+  --s-error: var(--cinnabar);
+  --s-good: var(--malachite);
+
+  /* Contour field — tileable isobaths @ 5.5% opacity */
+  --contour: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'><g fill='none' stroke='%23D08C4F' stroke-width='1' opacity='0.055'><path d='M-20 60 Q 90 10 210 70 T 440 60'/><path d='M-20 130 Q 110 80 210 140 T 440 130'/><path d='M-20 200 Q 80 150 210 210 T 440 200'/><path d='M-20 270 Q 120 220 210 280 T 440 270'/><path d='M-20 340 Q 90 290 210 350 T 440 340'/><path d='M60 -20 Q 110 90 70 210 T 60 440'/><path d='M150 -20 Q 200 90 160 210 T 150 440'/><path d='M250 -20 Q 300 90 260 210 T 250 440'/><path d='M340 -20 Q 390 90 350 210 T 340 440'/></g></svg>");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background-color: var(--anthracite);
+  background-image: var(--contour);
+  background-attachment: fixed;
+  background-repeat: repeat;
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(208, 140, 79, 0.32);
+  color: var(--bone);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(208, 140, 79, 0.6);
+  outline-offset: 2px;
+  border-radius: var(--r-chip);
+}
+
+/* Cairn glyph + stone-drop animation */
+.cairn-glyph {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 22px;
+  height: 22px;
+}
+
+.cairn-glyph .stone {
+  width: 100%;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--granite);
+  clip-path: polygon(14% 0, 86% 0, 72% 100%, 28% 100%);
+  opacity: 0;
+  transform: translateY(-14px);
+}
+
+.cairn-glyph .stone.mid {
+  width: 80%;
+  background: var(--shale);
+}
+
+.cairn-glyph .stone.top {
+  width: 58%;
+  background: var(--copper);
+}
+
+@keyframes stone-drop {
+  0% {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+body.ready .cairn-glyph .stone.base {
+  animation: stone-drop 0.14s ease-out 0s forwards;
+}
+
+body.ready .cairn-glyph .stone.mid {
+  animation: stone-drop 0.14s ease-out 0.08s forwards;
+}
+
+body.ready .cairn-glyph .stone.top {
+  animation: stone-drop 0.14s ease-out 0.16s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cairn-glyph .stone {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
+
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Motion vocabulary */
+@keyframes strata-rise {
+  from {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
+@keyframes contour-draw {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pulse-once {
+  0% {
+    box-shadow: 0 0 0 0 rgba(208, 140, 79, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(208, 140, 79, 0);
+  }
+}
+
+/* Utility classes */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-family: var(--font-display);
+}
+
+.card {
+  background: var(--shale);
+  border: 1px solid var(--quartz-vein);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-stone);
+}
+
+.page-enter {
+  animation: stone-drop 0.18s ease-out forwards;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 26px;
+  color: var(--bone);
+  margin: 0 0 8px;
+}
+
+.page-question {
+  font-size: 15px;
+  color: var(--cinder);
+  margin: 0 0 24px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--cinder);
+}
+
+.empty-state h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--bone);
+  margin: 0 0 8px;
+}
+
+.estimated-chip {
+  border-left: 2px dashed var(--cinder);
+  padding-left: 6px;
+}

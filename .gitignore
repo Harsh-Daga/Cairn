@@ -23,3 +23,7 @@ build/
 .vscode/
 cairn-demo-live/*
 cairn-e2e-test/
+ui/node_modules/
+ui/dist/
+server/static/*
+!server/static/.gitkeep
