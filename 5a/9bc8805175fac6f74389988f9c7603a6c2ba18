@@ -1,0 +1,41 @@
+server/improve/detectors/rules.py
+  s_b0c0d87e8b3feb::t_9e7db8e76527de 8-17
+  s_b0c0d87e8b3feb::t_e40b90abfe35dd 1-7,18-523
+server/improve/engine.py
+  s_b0c0d87e8b3feb::t_c0414754310b36 1-38
+tests/test_insights.py
+  s_b0c0d87e8b3feb::t_c09c2c7333ef5a 13
+  s_b0c0d87e8b3feb::t_e5518bb9ccb756 1-12,14-154
+server/improve/detectors/__init__.py
+  s_b0c0d87e8b3feb::t_ce1ebeed87e5e9 1-5
+server/improve/context.py
+  s_b0c0d87e8b3feb::t_7227666cc6876d 1-257
+server/improve/lifecycle.py
+  s_b0c0d87e8b3feb::t_1e93f2c576655c 1-29,31-57,59-107
+  s_b0c0d87e8b3feb::t_13ff17e5938456 58
+  s_b0c0d87e8b3feb::t_fe4bfb41bdb16f 30
+server/improve/evidence.py
+  s_b0c0d87e8b3feb::t_5585f3064fe151 1-6,9,11-20,22-60,62-69
+  s_b0c0d87e8b3feb::t_ef8f90663d2b30 7-8
+  s_b0c0d87e8b3feb::t_c09c2c7333ef5a 10
+  s_b0c0d87e8b3feb::t_bd75a9b3e315cd 61
+  s_b0c0d87e8b3feb::t_ab01d76ba01b39 21
+server/analyze/constants.py
+  s_b0c0d87e8b3feb::t_d081c17611c444 3-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5a9bc8805175fac6f74389988f9c7603a6c2ba18",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
