@@ -219,6 +219,20 @@ def mcp_install(workspace: Annotated[Path | None, typer.Option("--workspace")] =
     typer.echo(json.dumps(result, indent=2))
 
 
+@mcp_app.callback(invoke_without_command=True)
+def mcp_main(
+    ctx: typer.Context,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Run the Cairn MCP stdio server."""
+    if ctx.invoked_subcommand is not None:
+        return
+    from server.mcp.server import serve
+
+    root = workspace or Path.cwd()
+    raise typer.Exit(serve(root))
+
+
 config_app = typer.Typer(help="Runtime configuration.")
 app.add_typer(config_app, name="config")
 
