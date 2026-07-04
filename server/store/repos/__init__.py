@@ -2,6 +2,7 @@
 
 from server.store.repos.actors import ActorRepo
 from server.store.repos.annotations import AnnotationRepo
+from server.store.repos.context_regions import ContextRegionRepo
 from server.store.repos.data_quality import DataQualityRepo
 from server.store.repos.diagnostics import DiagnosticRepo
 from server.store.repos.evidence import EvidenceRepo
@@ -19,6 +20,7 @@ from server.store.repos.workspaces import WorkspaceRepo
 __all__ = [
     "ActorRepo",
     "AnnotationRepo",
+    "ContextRegionRepo",
     "DataQualityRepo",
     "DiagnosticRepo",
     "EvidenceRepo",
