@@ -1,0 +1,41 @@
+tests/test_improve.py
+  s_b0c0d87e8b3feb::t_0956fe21cc7fdf 109-133
+  s_b0c0d87e8b3feb::t_50566bd7863fb0 14-16
+  s_b0c0d87e8b3feb::t_06ea2e485cfe22 43,45
+  s_b0c0d87e8b3feb::t_e9614d4f2f872e 1-12,19-42,44,46-108
+  s_b0c0d87e8b3feb::t_677b6fab846f2b 13
+  s_b0c0d87e8b3feb::t_22c955ff6628a9 17-18
+server/improve/apply.py
+  s_b0c0d87e8b3feb::t_ec675e0e376177 1-80
+server/improve/bandit.py
+  s_b0c0d87e8b3feb::t_87167675f4743b 1-63
+server/improve/experiments.py
+  s_b0c0d87e8b3feb::t_b4c1d17dbbe672 1-10,12-136
+  s_b0c0d87e8b3feb::t_def508b65017b3 11
+server/improve/proposals.py
+  s_b0c0d87e8b3feb::t_63e08a65780f96 33-35
+  s_b0c0d87e8b3feb::t_3748bc9f110d38 1-32,36-51
+server/improve/stats.py
+  s_b0c0d87e8b3feb::t_ba47ea31bfac89 29-33
+  s_b0c0d87e8b3feb::t_f1f192bb98ce26 120-138,142-144,147-148
+  s_b0c0d87e8b3feb::t_54d816c0d3629c 2-10,12-28,34-119,139-141,145-146,149-157,160-173
+  s_b0c0d87e8b3feb::t_7ba90238d4280e 174
+  s_b0c0d87e8b3feb::t_ccc3737a479375 1,11
+  s_b0c0d87e8b3feb::t_b1b9c93edd40c3 158-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3577106e8366b728e9d2aa4117a2f3c6fd7c4e47",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
