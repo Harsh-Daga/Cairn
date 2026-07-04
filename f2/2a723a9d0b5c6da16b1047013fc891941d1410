@@ -1,0 +1,58 @@
+server/ingest/pipeline.py
+  s_b0c0d87e8b3feb::t_9a3182711288ec 90,92
+  s_b0c0d87e8b3feb::t_824695cfd2769d 105-107,109-110,112-113,119-123,126-130,132
+  s_b0c0d87e8b3feb::t_3658c0218459b2 1-12,15-21,23-49,51-60,62-75,79-89,91,93-104,108,111,114-118,124-125,131,133-197
+  s_b0c0d87e8b3feb::t_4f40e074c5e0aa 61
+  s_b0c0d87e8b3feb::t_b08dfc297d4216 50
+  s_b0c0d87e8b3feb::t_e60a034754cff0 13-14,22
+  s_b0c0d87e8b3feb::t_f295fb4e6a1afe 76-78
+server/ingest/watcher.py
+  s_b0c0d87e8b3feb::t_49f78a50e788b6 67
+  s_b0c0d87e8b3feb::t_ba387a67fb03b8 1-4,6-11,14-66,68-113,115-116,120-121,123
+  s_b0c0d87e8b3feb::t_9a6d73d567948b 5
+  s_b0c0d87e8b3feb::t_791fdec151015c 114,117-119
+  s_b0c0d87e8b3feb::t_73152155121d84 122
+server/app.py
+  s_b0c0d87e8b3feb::t_14f2396b8d34e6 5
+  s_b0c0d87e8b3feb::t_852ac8b06f9bd1 8-9,12,14,31-32,38,40-78
+  s_b0c0d87e8b3feb::t_45b3c0b400059a 39
+  s_b0c0d87e8b3feb::t_b5a76c179ea358 79
+server/analyze/dirty.py
+  s_b0c0d87e8b3feb::t_e287b2c62a9481 1-19,23-25,28,31-38
+  s_b0c0d87e8b3feb::t_52df88e78924e2 20-22
+  s_b0c0d87e8b3feb::t_0564f8179f1936 26-27,29-30
+tests/test_otlp.py
+  s_b0c0d87e8b3feb::t_c9d24d7ecbbdbc 1-134
+server/api/sse.py
+  s_b0c0d87e8b3feb::t_8f46c375bfc416 1-8,10-12,15-129,132-138
+  s_b0c0d87e8b3feb::t_db24839e9ede5a 9
+  s_b0c0d87e8b3feb::t_227adbac400c23 130-131
+server/ingest/otlp.py
+  s_b0c0d87e8b3feb::t_319892e946dbb5 168
+  s_b0c0d87e8b3feb::t_8dc0ba0f6ca6e0 188,198
+  s_b0c0d87e8b3feb::t_c10130740b6e38 1-106,124-142,144,149-151,154-167,169,171-187,189-197,199-207,209-248,250-263
+  s_b0c0d87e8b3feb::t_82e6010aceca9e 249,264-275
+  s_b0c0d87e8b3feb::t_def85345ed6f48 143,145-148,170
+  s_b0c0d87e8b3feb::t_4a451b82b0158a 107-123
+  s_b0c0d87e8b3feb::t_20b3c78c895aa3 152-153
+  s_b0c0d87e8b3feb::t_9bb4f1848e59db 208
+tests/test_pipeline.py
+  s_b0c0d87e8b3feb::t_289a9745efe390 1-82,85-122
+  s_b0c0d87e8b3feb::t_e60a034754cff0 83-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f22a723a9d0b5c6da16b1047013fc891941d1410",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
