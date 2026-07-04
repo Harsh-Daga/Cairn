@@ -1,11 +1,19 @@
 import type {
   ActionsManifestResponse,
+  AgentsResponse,
+  BehaviorResponse,
   EvidenceChainResponse,
+  ExperimentsResponse,
   InsightsResponse,
   OverviewResponse,
+  QualityResponse,
+  RegionsAnalyticsResponse,
   ReplayResponse,
+  SearchResponse,
   TraceDetailResponse,
   TracesListResponse,
+  WasteAnalyticsResponse,
+  WorkspaceResponse,
 } from "./types";
 
 const API_BASE = "/api";
@@ -100,4 +108,37 @@ export function runAction(name: string, params: Record<string, unknown> = {}): P
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
+}
+
+export function fetchAgents(days: number): Promise<AgentsResponse> {
+  return fetchJson(`/agents?days=${days}`);
+}
+
+export function fetchBehavior(days: number): Promise<BehaviorResponse> {
+  return fetchJson(`/behavior?days=${days}`);
+}
+
+export function fetchQuality(days: number): Promise<QualityResponse> {
+  return fetchJson(`/quality?days=${days}`);
+}
+
+export function fetchRegions(days: number): Promise<RegionsAnalyticsResponse> {
+  return fetchJson(`/analytics/regions?days=${days}`);
+}
+
+export function fetchWaste(days: number): Promise<WasteAnalyticsResponse> {
+  return fetchJson(`/analytics/waste?days=${days}`);
+}
+
+export function fetchExperiments(): Promise<ExperimentsResponse> {
+  return fetchJson("/experiments");
+}
+
+export function fetchSearch(q: string, limit = 20): Promise<SearchResponse> {
+  const qs = new URLSearchParams({ q, limit: String(limit) });
+  return fetchJson(`/search?${qs}`);
+}
+
+export function fetchWorkspace(): Promise<WorkspaceResponse> {
+  return fetchJson("/workspace");
 }

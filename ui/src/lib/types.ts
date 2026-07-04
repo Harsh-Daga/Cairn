@@ -178,3 +178,90 @@ export interface ActionManifestEntry {
 export interface ActionsManifestResponse {
   actions: ActionManifestEntry[];
 }
+
+export interface AgentAggregate {
+  agent_id: string | null;
+  actor_id: string | null;
+  traces: number;
+  input_tokens: number;
+  output_tokens: number;
+  cost: number;
+}
+
+export interface AgentsResponse {
+  days: number;
+  agents: AgentAggregate[];
+  handoff_matrix: Record<string, unknown>[];
+}
+
+export interface BehaviorResponse {
+  days: number;
+  series: Record<string, unknown>[];
+  drift: Record<string, unknown>[];
+  radar: Record<string, unknown> | null;
+  data_notes: DataNote[];
+}
+
+export interface QualityResponse {
+  days: number;
+  outcomes: Record<string, unknown>[];
+  histogram: { bucket: string; count: number }[];
+  cost_per_success: Record<string, unknown>[];
+  data_notes: DataNote[];
+}
+
+export interface RegionsAnalyticsResponse {
+  days: number;
+  regions: { region: string; tokens: number; spans: number }[];
+}
+
+export interface WasteAnalyticsResponse {
+  days: number;
+  categories: { category: string; tokens: number; events: number }[];
+  total_waste_tokens: number;
+}
+
+export interface ExperimentRow {
+  experiment_id: string;
+  status: string;
+  target_file: string | null;
+  created_at: string;
+  verdict: string | null;
+  lift_pct: number | null;
+}
+
+export interface ExperimentsResponse {
+  experiments: ExperimentRow[];
+}
+
+export interface ExperimentDetailResponse {
+  experiment: Record<string, unknown>;
+}
+
+export interface SearchHit {
+  trace_id: string;
+  span_id: string | null;
+  title: string | null;
+  snippet: string;
+  kind: "trace" | "span";
+}
+
+export interface SearchResponse {
+  q: string;
+  hits: SearchHit[];
+  total: number;
+}
+
+export interface WorkspaceAdapter {
+  source: string;
+  streams: number;
+  cursor_updated_at: string | null;
+}
+
+export interface WorkspaceResponse {
+  workspace_id: string;
+  root_path: string;
+  name: string;
+  adapters: WorkspaceAdapter[];
+  health: Record<string, unknown>;
+}

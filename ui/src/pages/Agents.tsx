@@ -1,7 +1,131 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { fetchAgents, timeRangeDays } from "@/lib/api";
+import { formatCost, formatTokens } from "@/lib/format";
+import { useUiStore } from "@/state/ui";
 import { PageShell } from "@/components/common/PageShell";
+import { Chip } from "@/components/common/Chip";
+import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
 
 export function AgentsPage() {
+  const timeRange = useUiStore((s) => s.timeRange);
+  const days = timeRangeDays(timeRange);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["agents", days],
+    queryFn: () => fetchAgents(days),
+  });
+
+  if (isLoading) {
+    return (
+      <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+        <div className="card h-32 animate-pulse bg-granite/30" />
+      </PageShell>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+        <ErrorCard />
+      </PageShell>
+    );
+  }
+
+  const uniqueAgents = new Set(data.agents.map((a) => a.agent_id ?? "default")).size;
+  const handoffs = data.handoff_matrix;
+
+  if (data.agents.length === 0) {
+    return (
+      <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+        <EmptyCard
+          title="No agent activity"
+          detail="Run cairn sync to ingest multi-agent sessions."
+        />
+      </PageShell>
+    );
+  }
+
   return (
-    <PageShell title="Agents" question="Who's doing what, and how do they hand off?" />
+    <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+      <div className="space-y-6">
+        {uniqueAgents <= 1 ? (
+          <div className="card p-4 text-sm text-cinder">
+            All sessions in this window are single-agent. Multi-agent handoffs appear here
+            automatically when subagents or handoff links are detected.
+          </div>
+        ) : null}
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {data.agents.slice(0, 12).map((agent, i) => (
+            <div key={`${agent.agent_id}-${agent.actor_id}-${i}`} className="card p-4">
+              <div className="flex items-center gap-2">
+                <Chip label={agent.agent_id ?? "default"} tone="patina" />
+                {agent.actor_id ? <Chip label={agent.actor_id.slice(0, 8)} /> : null}
+              </div>
+              <dl className="mt-3 space-y-1 font-mono text-xs text-cinder">
+                <div className="flex justify-between">
+                  <dt>Sessions</dt>
+                  <dd className="text-bone">{agent.traces}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt>Tokens</dt>
+                  <dd className="text-bone">
+                    {formatTokens(agent.input_tokens + agent.output_tokens)}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt>Spend</dt>
+                  <dd className="text-bone">{formatCost(agent.cost)}</dd>
+                </div>
+              </dl>
+              <Link
+                to={`/sessions?agent=${encodeURIComponent(agent.agent_id ?? "")}`}
+                className="mt-3 inline-block text-xs text-copper hover:underline"
+              >
+                Filter sessions →
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        <div className="card overflow-hidden">
+          <div className="border-b border-quartz-vein px-4 py-3">
+            <h3 className="font-display text-sm text-bone">Handoff map</h3>
+            <p className="font-mono text-[10px] text-cinder">
+              {handoffs.length} handoff{handoffs.length === 1 ? "" : "s"} observed
+            </p>
+          </div>
+          {handoffs.length > 0 ? (
+            <table className="w-full text-left text-sm">
+              <thead className="font-mono text-[10px] uppercase tracking-wide text-cinder">
+                <tr>
+                  <th className="px-4 py-2">From</th>
+                  <th className="px-4 py-2">To</th>
+                  <th className="px-4 py-2">Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {handoffs.map((h, i) => (
+                  <tr key={i} className="border-t border-quartz-vein/50">
+                    <td className="px-4 py-2 font-mono text-xs text-bone">
+                      {String(h.from_agent ?? h.from_span_id ?? "—")}
+                    </td>
+                    <td className="px-4 py-2 font-mono text-xs text-bone">
+                      {String(h.to_agent ?? h.to_span_id ?? "—")}
+                    </td>
+                    <td className="px-4 py-2 font-mono text-xs text-cinder">
+                      {String(h.link_type ?? "handoff")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="p-4 text-sm text-cinder">No handoff links in this window.</p>
+          )}
+        </div>
+      </div>
+    </PageShell>
   );
 }
