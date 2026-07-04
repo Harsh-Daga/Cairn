@@ -258,10 +258,19 @@ export interface WorkspaceAdapter {
   cursor_updated_at: string | null;
 }
 
+export interface PlanWindowGauge {
+  window_hours: number;
+  total_tokens: number;
+  by_source: Record<string, number>;
+  limit: number | null;
+  exceeded: boolean;
+}
+
 export interface WorkspaceResponse {
   workspace_id: string;
   root_path: string;
   name: string;
   adapters: WorkspaceAdapter[];
   health: Record<string, unknown>;
+  gauge?: PlanWindowGauge | null;
 }

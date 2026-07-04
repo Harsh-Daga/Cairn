@@ -58,6 +58,10 @@ jobs:
         working-directory: ui
         run: npx tsc --noEmit
 
+      - name: Vitest
+        working-directory: ui
+        run: npm run test
+
       - name: Build UI
         run: python scripts/build_ui.py
 
