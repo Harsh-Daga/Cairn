@@ -1,0 +1,54 @@
+tests/test_analyze_incremental.py
+  s_b0c0d87e8b3feb::t_5442662e5c9306 83,86-87
+  s_b0c0d87e8b3feb::t_7e01d6701735cf 84-85
+  s_b0c0d87e8b3feb::t_9c91d898472749 11
+  s_b0c0d87e8b3feb::t_fc3f0dbb043af4 13
+  s_b0c0d87e8b3feb::t_c98190887c5366 1-10,12,14-45,49-70,73-74,76-82
+  s_b0c0d87e8b3feb::t_d5b9f89a57623c 71-72,75
+  s_b0c0d87e8b3feb::t_a2930ac52437c4 46-48
+server/analyze/constants.py
+  s_b0c0d87e8b3feb::t_6a201cca9db8f3 4
+server/analyze/waste.py
+  s_b0c0d87e8b3feb::t_7bf6d036004152 1,9-10,17,21
+  s_b0c0d87e8b3feb::t_25a60e3970f9e0 2-8,11-16,18-20,22-361
+server/ingest/pipeline.py
+  s_b0c0d87e8b3feb::t_1f5285d473beec 12-13
+  s_b0c0d87e8b3feb::t_4fcc59f42fbbfe 160,171-174,177-185
+  s_b0c0d87e8b3feb::t_7f5ef25dc21019 186
+server/analyze/waste_view.py
+  s_b0c0d87e8b3feb::t_a5f5a9f978a956 1-9,11-64
+  s_b0c0d87e8b3feb::t_11f8a59210a9c3 10
+server/analyze/registry.py
+  s_b0c0d87e8b3feb::t_916ef1f2d409b1 1-16
+server/analyze/views.py
+  s_b0c0d87e8b3feb::t_f79af853817418 83-84,88-89,92,94-95
+  s_b0c0d87e8b3feb::t_c8be2ba6f0f8e7 1,5,7-22,37-42,45-73,75-82,85-87,90-91,93,96-116
+  s_b0c0d87e8b3feb::t_d57e801b6c4621 74
+server/analyze/events.py
+  s_b0c0d87e8b3feb::t_b0f25549aba0f7 1-48
+server/analyze/tail.py
+  s_b0c0d87e8b3feb::t_8649ac0115a21b 1-29
+  s_b0c0d87e8b3feb::t_6e4c4cfdcc6afa 30
+server/analyze/usage.py
+  s_b0c0d87e8b3feb::t_bc7c2e010f2b8e 1-5,7-14,16-112,114-115,117-130,132-151
+  s_b0c0d87e8b3feb::t_90c97bfbe65def 15
+  s_b0c0d87e8b3feb::t_cc7e1b5043a12b 6
+  s_b0c0d87e8b3feb::t_a63848655ad263 113,116
+  s_b0c0d87e8b3feb::t_08c6cd6ace48f4 131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "06a7897ccdb97a5847c66e0e4761e92a1c16d7f0",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
