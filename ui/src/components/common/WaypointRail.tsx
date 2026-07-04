@@ -1,6 +1,10 @@
 import { NavLink } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useUiStore } from "@/state/ui";
+import { fetchExperiments, fetchInsights, fetchWorkspace } from "@/lib/api";
+import { formatTokens } from "@/lib/format";
 import { CairnGlyph } from "./CairnGlyph";
+import { Gauge } from "@/components/charts/Gauge";
 
 interface NavItem {
   to: string;
@@ -16,15 +20,74 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/agents", label: "Agents", icon: "⬡" },
   { to: "/behavior", label: "Behavior", icon: "〜" },
   { to: "/quality", label: "Quality", icon: "✦" },
-  { to: "/insights", label: "Insights", icon: "◈", badge: 0 },
+  { to: "/insights", label: "Insights", icon: "◈" },
   { to: "/optimize", label: "Optimize", icon: "↻" },
   { to: "/live", label: "Live", icon: "●" },
   { to: "/search", label: "Search", icon: "⌕" },
 ];
 
+function NavBadge({ badge }: { badge: number | "dot" | "pulse" }) {
+  if (badge === "dot") {
+    return <span className="ml-auto h-1.5 w-1.5 rounded-full bg-copper" aria-hidden="true" />;
+  }
+  if (badge === "pulse") {
+    return (
+      <span
+        className="ml-auto h-1.5 w-1.5 rounded-full bg-malachite animate-[pulse-once_1s_ease-out_infinite]"
+        aria-hidden="true"
+      />
+    );
+  }
+  if (badge > 0) {
+    return (
+      <span className="ml-auto rounded-chip bg-copper/20 px-1.5 font-mono text-[10px] text-copper">
+        {badge}
+      </span>
+    );
+  }
+  return null;
+}
+
 export function WaypointRail() {
   const collapsed = useUiStore((s) => s.railCollapsed);
+  const watchEnabled = useUiStore((s) => s.watchEnabled);
   const toggleRail = useUiStore((s) => s.toggleRail);
+
+  const { data: insights } = useQuery({
+    queryKey: ["insights", "rail"],
+    queryFn: () => fetchInsights(),
+    staleTime: 30_000,
+  });
+  const { data: experiments } = useQuery({
+    queryKey: ["experiments", "rail"],
+    queryFn: fetchExperiments,
+    staleTime: 30_000,
+  });
+  const { data: workspace } = useQuery({
+    queryKey: ["workspace"],
+    queryFn: fetchWorkspace,
+    staleTime: 60_000,
+  });
+
+  const newInsights = (insights?.insights ?? []).filter((i) => i.state === "new").length;
+  const proposedCount = (experiments?.experiments ?? []).filter((e) => e.status === "proposed").length;
+  const gauge = workspace?.gauge;
+  const gaugePct =
+    gauge?.limit && gauge.limit > 0
+      ? Math.min(100, (gauge.total_tokens / gauge.limit) * 100)
+      : 0;
+  const gaugeDetail = gauge?.limit
+    ? `${formatTokens(gauge.total_tokens)} / ${formatTokens(gauge.limit)}`
+    : gauge
+      ? `${formatTokens(gauge.total_tokens)} tok · no limit`
+      : undefined;
+
+  const navItems: NavItem[] = NAV_ITEMS.map((item) => {
+    if (item.to === "/insights") return { ...item, badge: newInsights || undefined };
+    if (item.to === "/optimize") return { ...item, badge: proposedCount > 0 ? "dot" : undefined };
+    if (item.to === "/live") return { ...item, badge: watchEnabled ? "pulse" : undefined };
+    return item;
+  });
 
   return (
     <aside
@@ -48,7 +111,7 @@ export function WaypointRail() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -64,7 +127,8 @@ export function WaypointRail() {
             <span className="text-sm" aria-hidden="true">
               {item.icon}
             </span>
-            {!collapsed && <span>{item.label}</span>}
+            {!collapsed && <span className="flex-1">{item.label}</span>}
+            {!collapsed && item.badge !== undefined ? <NavBadge badge={item.badge} /> : null}
           </NavLink>
         ))}
 
@@ -83,6 +147,17 @@ export function WaypointRail() {
           {!collapsed && <span>Settings</span>}
         </NavLink>
       </nav>
+
+      {!collapsed && gauge && (gauge.total_tokens > 0 || gauge.limit != null) ? (
+        <div className="border-t border-quartz-vein px-3 py-3">
+          <Gauge
+            value={gaugePct}
+            label={`plan window · ${gauge.window_hours}h${gauge.exceeded ? " · exceeded" : ""}`}
+            detail={gaugeDetail}
+            width={216}
+          />
+        </div>
+      ) : null}
 
       <button
         type="button"

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { CommandPalette } from "@/components/common/CommandPalette";
 import { useUiStore } from "@/state/ui";
 
@@ -23,9 +24,11 @@ describe("command palette", () => {
     const { runAction } = await import("@/lib/api");
     const client = new QueryClient();
     render(
-      <QueryClientProvider client={client}>
-        <CommandPalette />
-      </QueryClientProvider>,
+      <MemoryRouter>
+        <QueryClientProvider client={client}>
+          <CommandPalette />
+        </QueryClientProvider>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -33,6 +36,6 @@ describe("command palette", () => {
     });
 
     fireEvent.click(screen.getByText("Sync agent logs"));
-    expect(runAction).toHaveBeenCalledWith("sync");
+    expect(runAction).toHaveBeenCalledWith("sync", {});
   });
 });

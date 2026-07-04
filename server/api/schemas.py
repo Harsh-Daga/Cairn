@@ -212,12 +212,21 @@ class WorkspaceAdapter(BaseModel):
     cursor_updated_at: str | None
 
 
+class PlanWindowGauge(BaseModel):
+    window_hours: int
+    total_tokens: int
+    by_source: dict[str, int]
+    limit: int | None
+    exceeded: bool
+
+
 class WorkspaceResponse(BaseModel):
     workspace_id: str
     root_path: str
     name: str
     adapters: list[WorkspaceAdapter]
     health: dict[str, Any]
+    gauge: PlanWindowGauge | None = None
 
 
 class ActionManifestEntry(BaseModel):

@@ -5,10 +5,12 @@ from __future__ import annotations
 import sqlite3
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from cairn.context.gauge import compute_gauge
 from server.analyze.tail import expected_worst
 from server.api.schemas import (
     AgentAggregate,
@@ -23,6 +25,7 @@ from server.api.schemas import (
     InsightsResponse,
     NarrativeSentence,
     OverviewResponse,
+    PlanWindowGauge,
     QualityResponse,
     RegionsAnalyticsResponse,
     ReplayResponse,
@@ -717,6 +720,16 @@ def build_workspace(
         "SELECT COUNT(*) AS n FROM traces WHERE workspace_id = ?",
         (workspace_id,),
     ).fetchone()
+    raw_gauge = compute_gauge(Path(root_path)).as_dict()
+    gauge: PlanWindowGauge | None = None
+    if raw_gauge.get("total_tokens") or raw_gauge.get("limit") is not None:
+        gauge = PlanWindowGauge(
+            window_hours=int(raw_gauge.get("window_hours") or 5),
+            total_tokens=int(raw_gauge.get("total_tokens") or 0),
+            by_source={str(k): int(v) for k, v in (raw_gauge.get("by_source") or {}).items()},
+            limit=raw_gauge.get("limit"),
+            exceeded=bool(raw_gauge.get("exceeded")),
+        )
     return WorkspaceResponse(
         workspace_id=workspace_id,
         root_path=root_path,
@@ -726,4 +739,5 @@ def build_workspace(
             "trace_count": int(trace_count["n"] or 0) if trace_count else 0,
             "fts_available": FTS_AVAILABLE,
         },
+        gauge=gauge,
     )
