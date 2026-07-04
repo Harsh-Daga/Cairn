@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from server.api.sse import EventBus
@@ -17,6 +20,12 @@ from server.store.repos.spans import SpanRepo
 from server.store.repos.traces import TraceRepo
 from server.store.repos.workspaces import WorkspaceRepo
 from server.util.ids import new_ulid
+
+
+@asynccontextmanager
+async def _noop_lifespan(_application: FastAPI) -> AsyncIterator[None]:
+    yield
+
 
 SAMPLE_OTLP = {
     "resourceSpans": [
@@ -119,12 +128,18 @@ def test_otlp_receiver_round_trip(otlp_setup: tuple[Database, str, EventBus]) ->
     assert len(spans) == 2
 
 
-def test_otlp_http_endpoint(otlp_setup: tuple[Database, str, EventBus]) -> None:
-    db, ws_id, bus = otlp_setup
-    app = create_app()
-    app.state.database = db
-    app.state.workspace_id = ws_id
-    app.state.event_bus = bus
+def test_otlp_http_endpoint(tmp_path: Path) -> None:
+    from server.api.bootstrap import bootstrap_runtime
+    from server.config import Settings
+
+    settings = Settings(workspace_root=tmp_path)
+    runtime = bootstrap_runtime(settings)
+    app = create_app(settings)
+    app.router.lifespan_context = _noop_lifespan
+    app.state.runtime = runtime
+    app.state.database = runtime.database
+    app.state.workspace_id = runtime.workspace_id
+    app.state.event_bus = runtime.event_bus
 
     client = TestClient(app)
     response = client.post("/v1/traces", content=json.dumps(SAMPLE_OTLP))
@@ -132,3 +147,4 @@ def test_otlp_http_endpoint(otlp_setup: tuple[Database, str, EventBus]) -> None:
     body = response.json()
     assert body["results"][0]["inserted"] is True
     assert body["results"][0]["span_count"] == 2
+    runtime.database.close()
