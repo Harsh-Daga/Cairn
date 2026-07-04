@@ -1,0 +1,115 @@
+server/api/actions.py
+  s_b0c0d87e8b3feb::t_b7ed6bd7b41631 97-103,108-114,119-125,135-140,150-155,160-165,170-175,180-185,190-195,205-211
+  s_b0c0d87e8b3feb::t_e94213f390dec0 76-78
+  s_b0c0d87e8b3feb::t_be3666bce67f7a 1,7-48,58-60,66,71-73,79-91,104-107,115-118,126-134,141-149,156-157,166-169,176-179,186-189,196-204,212-225,229-250
+  s_b0c0d87e8b3feb::t_5fabfd304cb632 158-159
+server/api/context.py
+  s_b0c0d87e8b3feb::t_116cc22a020286 1-23
+server/api/schemas.py
+  s_b0c0d87e8b3feb::t_0b974380f43be9 1-242
+server/api/routers/analytics.py
+  s_b0c0d87e8b3feb::t_be2b2a39aaec6f 1-99
+server/api/bootstrap.py
+  s_b0c0d87e8b3feb::t_12612cc6eef1ff 1-70
+server/api/payloads.py
+  s_b0c0d87e8b3feb::t_94cf4539ea1968 634-640
+  s_b0c0d87e8b3feb::t_81d2e146a47c2b 262
+  s_b0c0d87e8b3feb::t_a50415e4f64f92 617
+  s_b0c0d87e8b3feb::t_72e187a509caae 316,324
+  s_b0c0d87e8b3feb::t_f831c3b6f3d473 379
+  s_b0c0d87e8b3feb::t_dcf0052d3912c8 132
+  s_b0c0d87e8b3feb::t_82f52e83a9cea6 317-319
+  s_b0c0d87e8b3feb::t_055511cd224c4b 1-131,133-261,263-315,321-322,325-378,380-616,618-633,641-729
+  s_b0c0d87e8b3feb::t_0e59486bad3f12 320,323
+server/api/routers/experiments.py
+  s_b0c0d87e8b3feb::t_48661b26f9ae62 1-37
+server/app.py
+  s_b0c0d87e8b3feb::t_f03b3b8a1eb446 14-15,23,25-34,46,49,56-60,63-65,74-75,80
+  s_b0c0d87e8b3feb::t_643d31cdedecf1 24
+  s_b0c0d87e8b3feb::t_a8cfd3bab50c0e 7
+  s_b0c0d87e8b3feb::t_07b5b695c4ace3 6
+server/api/jobs.py
+  s_b0c0d87e8b3feb::t_40e0f48f06411a 69
+  s_b0c0d87e8b3feb::t_9123856ffdd488 1-6,8-68,70-95
+  s_b0c0d87e8b3feb::t_36834b1c652f7b 7
+server/cli.py
+  s_b0c0d87e8b3feb::t_827409331882b2 251
+  s_b0c0d87e8b3feb::t_4da6bf4b8a1dca 7
+  s_b0c0d87e8b3feb::t_d7b342b44994cf 1,5,9,16-17,27-52,60,63,75,79-133,140-247,250,252-261,263-264,266-267,269-271
+  s_b0c0d87e8b3feb::t_b5b7df93c715f7 15
+  s_b0c0d87e8b3feb::t_f91f2dc19fbf32 134-139
+  s_b0c0d87e8b3feb::t_d61165967b7e15 8
+  s_b0c0d87e8b3feb::t_b174746811e964 248-249,262,265,268
+  s_b0c0d87e8b3feb::t_546d95785f86f8 14
+  s_b0c0d87e8b3feb::t_66c4e3321dae14 272-273
+tests/conftest.py
+  s_b0c0d87e8b3feb::t_78d41fe9089500 32
+  s_b0c0d87e8b3feb::t_a1ce9fce363f09 64-65
+  s_b0c0d87e8b3feb::t_6288402c2b089c 5,9-18,21,27-31,33-63,66
+server/api/deps.py
+  s_b0c0d87e8b3feb::t_bcb86c59bd97f1 25
+  s_b0c0d87e8b3feb::t_d1b039903914cb 20
+  s_b0c0d87e8b3feb::t_71f3543403a82d 7
+  s_b0c0d87e8b3feb::t_dd9604872b8dbd 19,21-23
+  s_b0c0d87e8b3feb::t_2137b4a4691a40 5
+  s_b0c0d87e8b3feb::t_c20c2fc4069fa9 1-4,6,8-18,24,26-40
+tests/test_parity.py
+  s_b0c0d87e8b3feb::t_8461b1b7311e0c 1-97
+tests/test_otlp.py
+  s_b0c0d87e8b3feb::t_c884bc6af79142 122-133
+server/api/show.py
+  s_b0c0d87e8b3feb::t_9aecae6d7b60a8 1-6,9-19,21-35,37-58
+  s_b0c0d87e8b3feb::t_614653c4a6a1cc 8
+  s_b0c0d87e8b3feb::t_77018bc876d306 36
+  s_b0c0d87e8b3feb::t_39c7a65865a461 7
+  s_b0c0d87e8b3feb::t_d3d27bcd03c68a 20
+server/api/action_handlers.py
+  s_b0c0d87e8b3feb::t_c78969071f34f5 220-222,228-239,245-277,279-285
+  s_b0c0d87e8b3feb::t_028c48a49f814b 303-306
+  s_b0c0d87e8b3feb::t_69ddeeecfb0fef 311-312,315-318
+  s_b0c0d87e8b3feb::t_42fe8a50ed74e5 166-167,169
+  s_b0c0d87e8b3feb::t_45ab9c45ff7278 1-141,148-165,168,170-219,223-227,240-244,278,286-302,307-310,313-314,319-338
+  s_b0c0d87e8b3feb::t_4ef73ed1a148f8 142-147
+server/api/routers/overview.py
+  s_b0c0d87e8b3feb::t_78be48d46f13c2 1-9,11-23
+  s_b0c0d87e8b3feb::t_d660141aeecde0 10
+server/api/routers/insights.py
+  s_b0c0d87e8b3feb::t_eb56889edafd36 1-37
+server/api/routers/traces.py
+  s_b0c0d87e8b3feb::t_7e5075130e05f3 1-70
+server/api/routers/actions.py
+  s_b0c0d87e8b3feb::t_022c0fd3facc75 5
+  s_b0c0d87e8b3feb::t_cef12e597120b9 1-4,6-44,46-61
+  s_b0c0d87e8b3feb::t_8a3bc7dcab9849 45
+server/api/routers/workspace.py
+  s_b0c0d87e8b3feb::t_a71c50b9d85039 1-26
+server/api/routers/__init__.py
+  s_b0c0d87e8b3feb::t_0b266761ac4380 1-29
+server/api/routers/search.py
+  s_b0c0d87e8b3feb::t_c69f6551f1006b 1-24
+tests/test_cli_show.py
+  s_b0c0d87e8b3feb::t_b88ffc58e729e4 1-79
+tests/test_api.py
+  s_b0c0d87e8b3feb::t_d5b7ba2878c8ef 9
+  s_b0c0d87e8b3feb::t_023832f9bf936e 20
+  s_b0c0d87e8b3feb::t_bf0602df756934 1-8,10-19,21-49,51-161
+  s_b0c0d87e8b3feb::t_dc916f1f539c71 50
+server/api/routers/live.py
+  s_b0c0d87e8b3feb::t_0ed9d4bfe67afd 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "acf365c8ce63ffc4ce228fdd2c4519132b01032d",
+  "prompts": {},
+  "sessions": {
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
