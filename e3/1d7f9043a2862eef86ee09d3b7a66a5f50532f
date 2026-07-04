@@ -1,0 +1,79 @@
+ui/src/components/charts/ControlChart.tsx
+  s_24953ef95df497::t_e8cc777d5fdacb 1-67
+server/api/schemas.py
+  s_24953ef95df497::t_b57f152b2a202c 215-222,229
+ui/src/components/charts/StackedArea.tsx
+  s_24953ef95df497::t_c529aa773cba3b 1-64
+ui/src/components/charts/index.ts
+  s_24953ef95df497::t_620b412167d06d 1-7
+ui/src/components/common/WaypointRail.tsx
+  s_24953ef95df497::t_109ed139a13e29 2,4-5,7,23,29-50,53,56-91,114,130-131,151-160
+  s_24953ef95df497::t_e214af275cb597 161
+ui/src/components/common/CommandPalette.tsx
+  s_b0c0d87e8b3feb::t_1410d206bff216 1,3,6-8,16-19,21-29,35-36,56-70,73,77-85,89-143,164-166,168,172,174,178,183,185-188
+  s_24953ef95df497::t_f2e573e9f99aaa 9-15,20,71,74,86-88,157,163,167,169-171,173,175-177,179-182,184
+.github/workflows/ci.yml
+  s_24953ef95df497::t_281957ac0b2f8b 61-64
+ui/src/components/charts/Sparkline.tsx
+  s_24953ef95df497::t_72690804e432e5 1-61
+ui/src/lib/types.ts
+  s_b0c0d87e8b3feb::t_27b67b987b91b6 261-268,275
+ui/src/components/charts/HorizontalBars.tsx
+  s_24953ef95df497::t_db8582d770dff7 1-76
+ui/src/test/palette.test.tsx
+  s_24953ef95df497::t_76bede21d4eb56 27-31
+  s_24953ef95df497::t_09aae701ff9c8c 39
+  s_24953ef95df497::t_b1808601e3ae50 4
+ui/src/theme.css
+  s_b0c0d87e8b3feb::t_27b67b987b91b6 187-227
+ui/src/state/toast.ts
+  s_b0c0d87e8b3feb::t_27b67b987b91b6 3-4,7,9,15-17
+ui/src/components/common/Toast.tsx
+  s_24953ef95df497::t_8433e3c4bbe28b 6,12-13,33,35
+  s_b0c0d87e8b3feb::t_da1a193a1845f6 15-32,34
+ui/src/components/charts/charts.test.tsx
+  s_24953ef95df497::t_8c5b10b4f5f44c 1-86
+ui/src/components/charts/chartTheme.ts
+  s_24953ef95df497::t_87bd66032510fb 1-14,17-33
+  s_b0c0d87e8b3feb::t_524dac9e07184e 15-16
+ui/src/components/charts/IntervalPlot.tsx
+  s_24953ef95df497::t_06b2d68eff86dd 1-62
+ui/src/components/common/PlaqueTopbar.tsx
+  s_24953ef95df497::t_ee00cb64da9b24 5
+  s_24953ef95df497::t_bb5519b6d57221 1-2,4,6-7,12,18-60,65-82,122-124,126
+ui/src/components/charts/Gauge.tsx
+  s_24953ef95df497::t_188265a9977b24 1-45
+server/api/payloads.py
+  s_24953ef95df497::t_f90c9239f74f2a 8,13
+  s_24953ef95df497::t_6609c1801ed4bd 43
+  s_24953ef95df497::t_05d13e70fc2709 724-733,743
+  s_24953ef95df497::t_6c714ee1c10c77 14
+ui/src/components/charts/Radar.tsx
+  s_24953ef95df497::t_5a42ce57bbf12a 34,37,44,46-48
+  s_24953ef95df497::t_e142c95fa38709 1-33,35-36,38-43,45,49-54,57-84
+  s_24953ef95df497::t_ee00b1e4e7f345 55-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e31d7f9043a2862eef86ee09d3b7a66a5f50532f",
+  "prompts": {},
+  "sessions": {
+    "s_24953ef95df497": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "837c622c-a22e-4b64-abe4-42fb1c16ace2",
+        "model": "composer-2.5-fast"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
