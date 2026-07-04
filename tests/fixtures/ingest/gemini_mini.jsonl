@@ -1,0 +1,4 @@
+{"role":"user","timestamp":"2026-06-01T10:00:00Z","cwd":"/tmp/cairn-fixture","content":"Fix the gemini parser test"}
+{"role":"assistant","timestamp":"2026-06-01T10:00:01Z","model":"gemini-2.0-flash","content":"I'll read the file.","usage":{"input_tokens":12,"output_tokens":8}}
+{"type":"tool_call","timestamp":"2026-06-01T10:00:02Z","tool_use_id":"g-tool-1","tool_name":"read_file","input":{"path":"/tmp/cairn-fixture/src/app.py"}}
+{"type":"tool_result","timestamp":"2026-06-01T10:00:03Z","tool_use_id":"g-tool-1","content":"export function app() { return 1; }"}

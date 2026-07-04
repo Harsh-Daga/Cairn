@@ -1,0 +1,7 @@
+{"timestamp":"2026-06-01T10:00:00Z","type":"session_meta","payload":{"id":"codex-sess-tokens","cwd":"/tmp/cairn-codex-tokens","originator":"codex-tui","model_provider":"openai"}}
+{"timestamp":"2026-06-01T10:00:01Z","type":"event_msg","payload":{"type":"task_started"}}
+{"timestamp":"2026-06-01T10:00:02Z","type":"turn_context","payload":{"model":"gpt-5.3-codex","turn_id":"t1"}}
+{"timestamp":"2026-06-01T10:00:03Z","type":"event_msg","payload":{"type":"user_message","message":"Refactor the parser"}}
+{"timestamp":"2026-06-01T10:00:04Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":1200,"cached_input_tokens":800,"output_tokens":300,"reasoning_output_tokens":150,"total_tokens":2300},"model_context_window":200000},"rate_limits":{"primary":{"used_percent":42,"window_minutes":300,"resets_at":"2026-06-01T10:05:00Z"},"plan_type":"pro"}}}
+{"timestamp":"2026-06-01T10:00:05Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":1400,"cached_input_tokens":900,"output_tokens":350,"reasoning_output_tokens":200,"total_tokens":2650},"model_context_window":200000},"rate_limits":{"primary":{"used_percent":55,"window_minutes":300,"resets_at":"2026-06-01T10:05:00Z"},"plan_type":"pro"}}}
+{"timestamp":"2026-06-01T10:00:06Z","type":"event_msg","payload":{"type":"task_complete","usage":{"input_tokens":1400,"output_tokens":350}}}

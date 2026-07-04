@@ -1,0 +1,32 @@
+{
+  "session_id": "hermes-sess-redacted",
+  "model": "hermes-test",
+  "session_start": "2026-04-19T09:00:00Z",
+  "last_updated": "2026-04-19T09:01:00Z",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Fix the hermes parser test"
+    },
+    {
+      "role": "assistant",
+      "content": "I will edit the file.",
+      "tool_calls": [
+        {
+          "id": "functions.write_file:0",
+          "call_id": "functions.write_file:0",
+          "type": "function",
+          "function": {
+            "name": "write_file",
+            "arguments": "{\"path\":\"/tmp/cairn-hermes-fixture/src/app.py\",\"content\":\"after\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "File written",
+      "tool_call_id": "functions.write_file:0"
+    }
+  ]
+}

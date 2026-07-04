@@ -1,0 +1,4 @@
+.cairn/
+outputs/
+__pycache__/
+.venv/

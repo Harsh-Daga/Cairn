@@ -1,0 +1,4 @@
+{"event":"user_message","timestamp":"2026-06-01T10:00:00Z","cwd":"/tmp/cairn-fixture","content":"Patch openclaw handler"}
+{"event":"assistant_message","timestamp":"2026-06-01T10:00:01Z","model":"openclaw-test","content":"Applying patch.","usage":{"input_tokens":15,"output_tokens":6}}
+{"event":"tool_call","timestamp":"2026-06-01T10:00:02Z","tool_use_id":"oc-1","tool_name":"write_file","tool_input":{"path":"src/handler.py","content":"ok"}}
+{"event":"tool_result","timestamp":"2026-06-01T10:00:03Z","tool_use_id":"oc-1","content":"written"}

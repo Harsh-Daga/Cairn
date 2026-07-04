@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cairn — Inference observability for AI agents</title>
+  <link rel="stylesheet" href="/assets/dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="cairn-glyph" aria-hidden="true"><span class="stone base"></span><span class="stone mid"></span><span class="stone top"></span></span>
+        <div>
+          <div class="brand-name">CAIRN</div>
+          <div class="brand-sub">field notebook</div>
+        </div>
+      </div>
+      <button class="rail-toggle" id="rail-toggle" title="Toggle labels">⇆</button>
+      <nav class="nav" id="nav">
+        <button class="nav-item active" data-page="overview">
+          <svg viewBox="0 0 24 24"><path d="M4 20 L12 4 L20 20"/><path d="M9 20 L12 13 L15 20"/></svg><span class="label">Overview</span>
+        </button>
+        <button class="nav-item" data-page="context">
+          <svg viewBox="0 0 24 24"><path d="M3 8h18M3 13h18M3 18h18"/><path d="M6 8v5M10 13v5"/></svg><span class="label">Context</span>
+        </button>
+        <button class="nav-item" data-page="behavior">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="M12 12l4-2"/></svg><span class="label">Behavior</span>
+        </button>
+        <button class="nav-item" data-page="quality">
+          <svg viewBox="0 0 24 24"><path d="M5 4l2 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1z" transform="translate(6 4)"/></svg><span class="label">Quality</span>
+        </button>
+        <button class="nav-item" data-page="charts">
+          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-6"/></svg><span class="label">Charts</span>
+        </button>
+        <button class="nav-item" data-page="insights">
+          <svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-3 11v3h6v-3a6 6 0 0 0-3-11z"/><path d="M9 20h6"/></svg><span class="label">Insights</span>
+        </button>
+        <button class="nav-item" data-page="optimize">
+          <svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h14M4 18h8"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="label">Optimize</span>
+        </button>
+        <button class="nav-item" data-page="sessions">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span class="label">Sessions</span>
+        </button>
+        <button class="nav-item" data-page="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="label">Search</span>
+        </button>
+        <div class="nav-spacer"></div>
+        <div class="nav-hairline"></div>
+        <button class="nav-item" data-page="settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><span class="label">Settings</span>
+        </button>
+      </nav>
+      <div class="gauge-widget" id="gauge-widget">
+        <div class="gauge-label" id="gauge-label">plan window</div>
+        <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+        <div class="gauge-value" id="gauge-value">—</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <span class="plaque-name" id="plaque-name">project</span>
+          <span class="plaque-meta" id="plaque-meta">0 runs · surveyed just now</span>
+        </div>
+        <div class="topbar-right">
+          <label class="toggle on" id="watch-toggle" title="Live updates via SSE"><span class="track"></span><span>watch</span></label>
+          <button class="ghost-btn" id="btn-sync"><span class="spinner" style="display:none"></span>Sync now</button>
+          <button class="btn btn-sm" id="btn-actions" title="Action panel">jobs</button>
+        </div>
+        <div class="action-panel" id="action-panel">
+          <div class="ap-head">running &amp; recent jobs</div>
+          <div id="action-panel-body"><div class="ap-row"><div class="ap-title" style="color:var(--cinder)">No jobs yet.</div></div></div>
+        </div>
+      </div>
+
+      <div class="content" id="content">
+        <div id="data-notes"></div>
+
+        <!-- Overview -->
+        <section id="page-overview" class="page active">
+          <div class="eyebrow">overview</div>
+          <h1 class="page-h1">Field summary</h1>
+          <div class="narrative-hero" id="narrative-hero" hidden>
+            <h2 class="narrative-headline" id="narrative-headline"></h2>
+            <div class="narrative-sentences" id="narrative-sentences"></div>
+            <button type="button" class="btn btn-primary" id="narrative-cta"></button>
+          </div>
+          <div class="kpi-grid" id="kpi-row"></div>
+          <div class="charts-grid">
+            <div class="chart-card"><div><span class="chart-title">14-day spend</span><span class="chart-sub">copper · null-gaps</span></div><div class="chart-canvas-wrap" id="chart-overview-cost"></div></div>
+            <div class="chart-card"><div><span class="chart-title">Agent mix</span><span class="chart-sub">outcrop treemap</span></div><div class="treemap" id="overview-treemap" style="height:240px;margin-top:10px"></div></div>
+          </div>
+          <div class="chart-card"><div><span class="chart-title">Waste strata</span><span class="chart-sub">by category</span></div><div class="chart-canvas-wrap" id="chart-overview-waste"></div></div>
+          <div class="panel">
+            <div class="eyebrow">recent</div>
+            <h2>Recent sessions</h2>
+            <div class="table-wrap"><table class="data-table" id="recent-sessions"><thead><tr>
+              <th>When</th><th>Source</th><th>Mix</th><th>Turns</th><th>Tokens</th><th>Cost</th><th>Waste</th>
+            </tr></thead><tbody></tbody></table></div>
+          </div>
+        </section>
+
+        <!-- Context -->
+        <section id="page-context" class="page">
+          <div class="eyebrow">pillar 1 · context</div>
+          <h1 class="page-h1">Stratigraphic column</h1>
+          <div class="charts-grid">
+            <div class="chart-card"><div><span class="chart-title">Context strata over turns</span><span class="chart-sub">thickness = token share</span></div><div class="strata-column" id="context-column" style="margin-top:10px"></div></div>
+            <div class="chart-card"><div><span class="chart-title">Outcrop map</span><span class="chart-sub">context mix treemap</span></div><div class="treemap" id="context-treemap" style="height:280px;margin-top:10px"></div></div>
+          </div>
+          <div class="strata-legend-rail" id="strata-legend" style="margin:14px 0"></div>
+          <div class="eyebrow">findings</div>
+          <h2>Re-billing &amp; waste findings</h2>
+          <div id="context-findings"></div>
+          <div class="eyebrow" style="margin-top:18px">timeline</div>
+          <h2>Re-billing over time</h2>
+          <div class="chart-card"><div class="chart-canvas-wrap" id="chart-rebilling"></div></div>
+        </section>
+
+        <!-- Behavior -->
+        <section id="page-behavior" class="page">
+          <div class="eyebrow">pillar 2 · behavior</div>
+          <h1 class="page-h1">Agent fingerprint</h1>
+          <div id="behavior-drift-eyebrow"></div>
+          <div class="charts-grid">
+            <div class="chart-card"><div><span class="chart-title">Fingerprint radar</span><span class="chart-sub">copper vs patina baseline</span></div><div class="radar-wrap" id="behavior-radar"></div></div>
+            <div class="chart-card"><div><span class="chart-title">Drift over time</span><span class="chart-sub">cairn-stone glyphs on contour</span></div><div class="chart-canvas-wrap" id="chart-drift"></div></div>
+          </div>
+          <div class="panel" id="behavior-signals"></div>
+        </section>
+
+        <!-- Quality / Outcomes -->
+        <section id="page-quality" class="page">
+          <div class="eyebrow">pillar 3 · outcomes</div>
+          <h1 class="page-h1">Agent quality</h1>
+          <div class="kpi-grid" id="quality-kpis"></div>
+          <div class="charts-grid">
+            <div class="chart-card"><div><span class="chart-title">Cost per success</span><span class="chart-sub">malachite improving · ochre rising</span></div><div class="chart-canvas-wrap" id="chart-cps"></div></div>
+            <div class="chart-card"><div><span class="chart-title">Quality score</span><span class="chart-sub">cooper ring</span></div><div class="radar-wrap" id="quality-ring" style="height:240px"></div></div>
+          </div>
+          <div class="panel" id="quality-git"></div>
+        </section>
+
+        <!-- Charts -->
+        <section id="page-charts" class="page">
+          <div class="eyebrow">charts</div>
+          <h1 class="page-h1">Trend lines</h1>
+          <div class="charts-grid">
+            <div class="chart-card"><div><span class="chart-title">Daily cost by model</span></div><div class="chart-canvas-wrap" id="chart-cost-model"></div><div class="legend" id="legend-cost-model"></div></div>
+            <div class="chart-card"><div><span class="chart-title">Daily tokens</span><span class="chart-sub">stacked</span></div><div class="chart-canvas-wrap" id="chart-tokens-stack"></div><div class="legend" id="legend-tokens"></div></div>
+            <div class="chart-card"><div><span class="chart-title">Waste by category</span></div><div class="chart-canvas-wrap" id="chart-waste"></div></div>
+            <div class="chart-card"><div><span class="chart-title">Context pressure</span><span class="chart-sub">mean peak %</span></div><div class="chart-canvas-wrap" id="chart-context"></div></div>
+          </div>
+        </section>
+
+        <!-- Insights -->
+        <section id="page-insights" class="page">
+          <div class="eyebrow">insights</div>
+          <h1 class="page-h1">Findings feed</h1>
+          <div id="insights-feed"></div>
+          <div class="panel" style="margin-top:18px">
+            <div class="eyebrow">attribution</div>
+            <h2>Top files by cost</h2>
+            <div id="top-files"></div>
+          </div>
+        </section>
+
+        <!-- Optimize -->
+        <section id="page-optimize" class="page">
+          <div class="eyebrow">optimize loop</div>
+          <h1 class="page-h1">Instruction effectiveness</h1>
+          <div id="optimize-content"></div>
+        </section>
+
+        <!-- Sessions -->
+        <section id="page-sessions" class="page">
+          <div class="eyebrow">sessions</div>
+          <h1 class="page-h1">Surveyor's log</h1>
+          <div class="panel">
+            <div class="table-wrap"><table class="data-table" id="all-sessions"><thead><tr>
+              <th>When</th><th>Source</th><th>Mix</th><th>Turns</th><th>Tokens</th><th>Cost</th><th>Waste</th><th>Errors</th><th>Model</th><th>Project</th><th></th>
+            </tr></thead><tbody></tbody></table></div>
+          </div>
+        </section>
+
+        <!-- Search -->
+        <section id="page-search" class="page">
+          <div class="eyebrow">search</div>
+          <h1 class="page-h1">Search the ledger</h1>
+          <div class="search-wrap">
+            <div class="search-input-wrap"><span class="search-icon">⌕</span><input type="search" class="search-input" id="search-input" placeholder="Search prompts, tool calls, file paths…"></div>
+            <div id="search-results"></div>
+          </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="page-settings" class="page">
+          <div class="eyebrow">settings</div>
+          <h1 class="page-h1">Configuration</h1>
+          <div class="settings-col" id="settings-content"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-stack"></div>
+  <div id="onboard-mount"></div>
+  <div class="chart-tip" id="chart-tip"></div>
+
+  <script src="/assets/dashboard.js"></script>
+</body>
+</html>

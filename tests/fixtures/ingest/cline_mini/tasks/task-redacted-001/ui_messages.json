@@ -1,0 +1,6 @@
+[
+  {"type": "say", "say": "text", "text": "Update the cline fixture parser"},
+  {"type": "say", "say": "api_req_started", "text": "{\"tokensIn\":120,\"tokensOut\":40,\"model\":\"claude-sonnet-4-5\",\"cost\":0.01}"},
+  {"type": "say", "say": "tool", "tool": "read_file", "toolUseId": "c-tool-1", "toolInput": {"path": "src/app.py"}},
+  {"type": "say", "say": "tool_result", "toolUseId": "c-tool-1", "text": "module exports app"}
+]
