@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from server.models.trace import TraceSummary
+from server.models.span import Span
+from server.models.trace import Trace
 
 
 class Adapter(Protocol):
@@ -16,6 +17,6 @@ class Adapter(Protocol):
         """Return stream references for this adapter."""
         ...
 
-    def to_spans(self, raw: bytes) -> tuple[TraceSummary, list[object]]:
+    def to_spans(self, raw: bytes) -> tuple[Trace, list[Span]]:
         """Parse raw bytes into trace and spans."""
         ...
