@@ -1,0 +1,421 @@
+.gitignore
+  s_eb8dc544bb96d2::t_740d72cec99593 1-25
+CONTRIBUTING.md
+  s_eb8dc544bb96d2::t_2f755e561402ee 1-55
+SECURITY.md
+  s_eb8dc544bb96d2::t_2f3387ae9f7337 1-39
+cairn/assets/dashboard.css
+  s_eb8dc544bb96d2::t_06a9f889abbe47 1-363
+cairn/assets/dashboard.js
+  s_eb8dc544bb96d2::t_825eecd17bfc90 1-815
+cairn/assets/index.html
+  s_eb8dc544bb96d2::t_fb223da0a9e681 1-221
+cairn/assets/session.css
+  s_eb8dc544bb96d2::t_068613eb8e3799 1-136
+cairn/assets/session.html
+  s_eb8dc544bb96d2::t_fc392b5d8e40d2 1-34
+cairn/assets/session.js
+  s_eb8dc544bb96d2::t_f97028417070b9 1-394
+cairn/cli/guard.py
+  s_eb8dc544bb96d2::t_8343c693378bb4 1-424
+cairn/cli/main.py
+  s_eb8dc544bb96d2::t_f981c97de07784 1-2320
+cairn/config.py
+  s_eb8dc544bb96d2::t_7a39c895f1c5d5 1-240
+cairn/context/__init__.py
+  s_eb8dc544bb96d2::t_9930809cc78363 1-12
+cairn/context/gauge.py
+  s_eb8dc544bb96d2::t_aa875ea53f9baf 1-71
+cairn/data/model_prices.json
+  s_eb8dc544bb96d2::t_5e76c66907a82b 1-30
+cairn/diagnose/__init__.py
+  s_eb8dc544bb96d2::t_b8badca9b83d97 1-5
+cairn/diagnose/cascade.py
+  s_eb8dc544bb96d2::t_7851ab763bced2 1-62
+cairn/diagnose/engine.py
+  s_eb8dc544bb96d2::t_c82e13496a943e 1-145
+cairn/diagnose/ideal.py
+  s_eb8dc544bb96d2::t_e1d96e4693cb28 1-49
+cairn/diagnose/localize.py
+  s_eb8dc544bb96d2::t_fab4bc32f29601 1-52
+cairn/diagnose/should_stop.py
+  s_eb8dc544bb96d2::t_cb5faf408e93f7 1-72
+cairn/diagnose/taxonomy.py
+  s_eb8dc544bb96d2::t_01982fb972cf04 1-68
+cairn/fleet/__init__.py
+  s_eb8dc544bb96d2::t_d4b811113c26ad 1-5
+cairn/fleet/export.py
+  s_eb8dc544bb96d2::t_1bea87673b26d2 1-128
+cairn/ingest/backfill.py
+  s_eb8dc544bb96d2::t_0b408c81e2644d 1-267
+cairn/ingest/data_quality.py
+  s_eb8dc544bb96d2::t_17528d3172efad 1-78
+cairn/ingest/detect.py
+  s_eb8dc544bb96d2::t_02044619428862 1-98
+cairn/ingest/ingest.py
+  s_eb8dc544bb96d2::t_49be6afef2585a 1-435
+cairn/ingest/normalizer.py
+  s_eb8dc544bb96d2::t_aca6b157a30a80 1-69
+cairn/ingest/parsers/agent_jsonl.py
+  s_eb8dc544bb96d2::t_18954e6fa38ead 1-178
+cairn/ingest/parsers/aider.py
+  s_eb8dc544bb96d2::t_0de4b3ab72d335 1-16
+cairn/ingest/parsers/claude_code.py
+  s_eb8dc544bb96d2::t_807efebfd4266f 1-443
+cairn/ingest/parsers/cline_family.py
+  s_eb8dc544bb96d2::t_420dd62634b6a7 1-194
+cairn/ingest/parsers/codex.py
+  s_eb8dc544bb96d2::t_fb6332a98de4ca 1-437
+cairn/ingest/parsers/cursor.py
+  s_eb8dc544bb96d2::t_b5ad60404258d8 1-568
+cairn/ingest/parsers/gemini_cli.py
+  s_eb8dc544bb96d2::t_7a08ea08fe06b1 1-247
+cairn/ingest/parsers/goose.py
+  s_eb8dc544bb96d2::t_50c9aab0bbda62 1-16
+cairn/ingest/parsers/hermes.py
+  s_eb8dc544bb96d2::t_13421059f84480 1-386
+cairn/ingest/parsers/openclaw.py
+  s_eb8dc544bb96d2::t_4abef8b3346676 1-202
+cairn/ingest/parsers/opencode.py
+  s_eb8dc544bb96d2::t_0b61dc67332343 1-16
+cairn/ingest/project_paths.py
+  s_eb8dc544bb96d2::t_81563949e1eaa9 1-493
+cairn/ingest/tokenize.py
+  s_eb8dc544bb96d2::t_04f93e44b84d48 1-118
+cairn/ingest/tokenizer_audit.py
+  s_eb8dc544bb96d2::t_15604f2b6f4457 1-54
+cairn/ingest/types.py
+  s_eb8dc544bb96d2::t_d8eef12f0f62d9 1-36
+cairn/ingest/usage.py
+  s_eb8dc544bb96d2::t_4065a8ed6b8514 1-243
+cairn/ingest/verify.py
+  s_eb8dc544bb96d2::t_7022b576c027e8 1-166
+cairn/ingest/watch.py
+  s_eb8dc544bb96d2::t_81adbd4033fca4 1-344
+cairn/ingest/writer.py
+  s_eb8dc544bb96d2::t_2923917380dd14 1-1011
+cairn/insights/__init__.py
+  s_eb8dc544bb96d2::t_b2166ded01e439 1-6
+cairn/insights/engine.py
+  s_eb8dc544bb96d2::t_4104f5aa14e8fa 1-647
+cairn/insights/rules.py
+  s_eb8dc544bb96d2::t_e3cdc6c3925e4b 1-515
+cairn/ledger/__init__.py
+  s_eb8dc544bb96d2::t_bbd4affc6ce16b 1-6
+cairn/ledger/ledger.py
+  s_eb8dc544bb96d2::t_f2b40d25f271b6 1-175
+cairn/ledger/resolve.py
+  s_eb8dc544bb96d2::t_28307164dd32e6 1-123
+cairn/ledger/schema.py
+  s_eb8dc544bb96d2::t_9721e11f5b835e 1-301
+cairn/live/__init__.py
+  s_eb8dc544bb96d2::t_88251bfccf40a9 1-5
+cairn/live/server.py
+  s_eb8dc544bb96d2::t_119646a88cc443 1-863
+cairn/mcp/__init__.py
+  s_eb8dc544bb96d2::t_7b9de2f3d3e8c8 1-8
+cairn/mcp/tools.py
+  s_eb8dc544bb96d2::t_00674d72f77e75 1-776
+cairn/metrics/__init__.py
+  s_eb8dc544bb96d2::t_e3e7ec41658592 1-7
+cairn/metrics/compute.py
+  s_eb8dc544bb96d2::t_33d0a26e5f329e 1-22
+cairn/metrics/constants.py
+  s_eb8dc544bb96d2::t_637f82098c5938 1-277
+cairn/metrics/difficulty.py
+  s_eb8dc544bb96d2::t_7256b9088b3385 1-101
+cairn/metrics/fingerprint.py
+  s_eb8dc544bb96d2::t_1e27e084bb7e40 1-765
+cairn/metrics/normalized.py
+  s_eb8dc544bb96d2::t_40dbaff0030379 1-179
+cairn/metrics/waste.py
+  s_eb8dc544bb96d2::t_a31fd477ce0307 1-363
+cairn/optimize/__init__.py
+  s_eb8dc544bb96d2::t_9e424a099576d2 1
+cairn/optimize/apply.py
+  s_eb8dc544bb96d2::t_265b5cab1355f1 1-494
+cairn/optimize/causal.py
+  s_eb8dc544bb96d2::t_9fa45378f09836 1-153
+cairn/optimize/engine.py
+  s_eb8dc544bb96d2::t_c93a69e0d6f14d 1-613
+cairn/optimize/evidence.py
+  s_eb8dc544bb96d2::t_4372374f741a25 1-249
+cairn/optimize/impact.py
+  s_eb8dc544bb96d2::t_ca34d5d698920e 1-818
+cairn/optimize/memory.py
+  s_eb8dc544bb96d2::t_fd055bbe70b5f5 1-114
+cairn/optimize/reflector.py
+  s_eb8dc544bb96d2::t_8cafb258142169 1-271
+cairn/optimize/reflector_prompt.md
+  s_eb8dc544bb96d2::t_3558c27664947c 1-11
+cairn/optimize/targets.py
+  s_eb8dc544bb96d2::t_6204151f7c9014 1-101
+cairn/outcomes/__init__.py
+  s_eb8dc544bb96d2::t_014e82884f55a6 1-300
+cairn/outcomes/git.py
+  s_eb8dc544bb96d2::t_a6ee8ffdcc52e9 1-213
+cairn/outcomes/labels.py
+  s_eb8dc544bb96d2::t_5b7fe2fd8d603f 1-36
+cairn/outcomes/score.py
+  s_eb8dc544bb96d2::t_490b97b925be07 1-331
+cairn/outcomes/tests.py
+  s_eb8dc544bb96d2::t_9cd8b9bdc6199d 1-127
+cairn/pricing/__init__.py
+  s_eb8dc544bb96d2::t_e425714be8cb3c 1-7
+cairn/pricing/data.py
+  s_eb8dc544bb96d2::t_b272a46922fbe3 1-109
+cairn/pricing/engine.py
+  s_eb8dc544bb96d2::t_d763b827cf3560 1-171
+cairn/profile/__init__.py
+  s_eb8dc544bb96d2::t_bc635508b3780a 1-7
+cairn/profile/compute.py
+  s_eb8dc544bb96d2::t_912c91f5cc540f 1-240
+cairn/profile/decompose.py
+  s_eb8dc544bb96d2::t_529ba2817b6d7c 1-260
+cairn/profile/detectors.py
+  s_eb8dc544bb96d2::t_ea47784002e65f 1-384
+cairn/render/__init__.py
+  s_eb8dc544bb96d2::t_2c4a3e4b02b295 1-21
+cairn/render/dash_payload.py
+  s_eb8dc544bb96d2::t_b9778bf3865761 1-772
+cairn/render/diff.py
+  s_eb8dc544bb96d2::t_a1b9dfca4495d2 1-47
+cairn/render/narrative.py
+  s_eb8dc544bb96d2::t_4a058d3890fa5b 1-77
+cairn/render/scrub.py
+  s_eb8dc544bb96d2::t_9612e13caeb90f 1-43
+cairn/render/session_payload.py
+  s_eb8dc544bb96d2::t_2bdf797470baac 1-406
+docs/README.md
+  s_eb8dc544bb96d2::t_6c39772623de80 1-36
+docs/concepts.md
+  s_eb8dc544bb96d2::t_71fb0d2fe82f67 1-55
+docs/getting-started.md
+  s_eb8dc544bb96d2::t_8c19b76e701a7f 1-63
+docs/guides/agent-capture.md
+  s_eb8dc544bb96d2::t_3f55dc71998ae0 1-100
+docs/guides/ci.md
+  s_eb8dc544bb96d2::t_8b113bdec1050f 1-46
+docs/guides/dashboard.md
+  s_eb8dc544bb96d2::t_a0a3be0ec33021 1-59
+docs/guides/optimize.md
+  s_eb8dc544bb96d2::t_7ba327eb4d7063 1-56
+docs/reference/cli.md
+  s_eb8dc544bb96d2::t_afd1bc9b2774ab 1-75
+docs/spec/charter.md
+  s_eb8dc544bb96d2::t_0e667993ae4896 1-47
+install.sh
+  s_eb8dc544bb96d2::t_05df0b1a1fee6a 1-89
+scripts/install.sh
+  s_eb8dc544bb96d2::t_d2648f0ebcb032 1-89
+tests/conftest.py
+  s_eb8dc544bb96d2::t_49781741327903 1-52
+tests/fixtures/ingest/claude_code_mini.jsonl
+  s_eb8dc544bb96d2::t_210ae0092f657e 1-6
+tests/fixtures/ingest/claude_estimation.jsonl
+  s_eb8dc544bb96d2::t_29eb91045f6611 1-4
+tests/fixtures/ingest/claude_sidechain_mini.jsonl
+  s_eb8dc544bb96d2::t_b8b6105abc23b0 1-4
+tests/fixtures/ingest/cline_mini/tasks/task-redacted-001/ui_messages.json
+  s_eb8dc544bb96d2::t_670e82922dcf08 1-6
+tests/fixtures/ingest/codex_tokens.jsonl
+  s_eb8dc544bb96d2::t_40e2f6c28d5656 1-7
+tests/fixtures/ingest/gemini_mini.jsonl
+  s_eb8dc544bb96d2::t_b3cbaf12e9beea 1-4
+tests/fixtures/ingest/openclaw_mini.jsonl
+  s_eb8dc544bb96d2::t_adbaf87350885f 1-4
+tests/fixtures/ingest/wasteful_session.jsonl
+  s_eb8dc544bb96d2::t_9ba2908d262f80 1-28
+tests/test_api_behavior.py
+  s_eb8dc544bb96d2::t_fed80ae8ee59ae 1-121
+tests/test_api_charts.py
+  s_eb8dc544bb96d2::t_19715825224218 1-50
+tests/test_api_config.py
+  s_eb8dc544bb96d2::t_01ea995c1fa828 1-91
+tests/test_api_outcomes.py
+  s_eb8dc544bb96d2::t_598d395ec84c09 1-138
+tests/test_api_overview.py
+  s_eb8dc544bb96d2::t_3e6229a7b44863 1-44
+tests/test_api_profile.py
+  s_eb8dc544bb96d2::t_6c16d9ddc4ce6a 1-127
+tests/test_api_session.py
+  s_eb8dc544bb96d2::t_cb4ae2240e9d7c 1-47
+tests/test_api_setup_scan.py
+  s_eb8dc544bb96d2::t_73b649e99656b0 1-39
+tests/test_assets_design.py
+  s_eb8dc544bb96d2::t_8eeb1b6f88d420 1-159
+tests/test_cascade_scaling.py
+  s_eb8dc544bb96d2::t_d0edb8b3d541bc 1-50
+tests/test_causal.py
+  s_eb8dc544bb96d2::t_c64e4cc90067bf 1-49
+tests/test_check_cmd.py
+  s_eb8dc544bb96d2::t_c56fd2d1cf1dff 1-290
+tests/test_cli_surface.py
+  s_eb8dc544bb96d2::t_9c60119aa4b517 1-113
+tests/test_cursor_capture.py
+  s_eb8dc544bb96d2::t_5fa9cee7503c63 1-118
+tests/test_dash_payload.py
+  s_eb8dc544bb96d2::t_08d05bda55ab1c 1-326
+tests/test_dashboard_startup.py
+  s_eb8dc544bb96d2::t_5ec2d83501eea9 1-168
+tests/test_data_quality.py
+  s_eb8dc544bb96d2::t_877d0b5632de64 1-61
+tests/test_detect.py
+  s_eb8dc544bb96d2::t_9bb6f1715c1174 1-47
+tests/test_diagnose.py
+  s_eb8dc544bb96d2::t_7a9f60a6528c46 1-102
+tests/test_difficulty.py
+  s_eb8dc544bb96d2::t_732ab39b1ec9d8 1-43
+tests/test_docs.py
+  s_eb8dc544bb96d2::t_31abc90b86d17f 1-68
+tests/test_e2e_cli.py
+  s_eb8dc544bb96d2::t_92b4ff68604d3e 1-56
+tests/test_fingerprint.py
+  s_eb8dc544bb96d2::t_2de12de16c2681 1-165
+tests/test_fleet.py
+  s_eb8dc544bb96d2::t_c359172bc1059b 1-39
+tests/test_frontend_wiring.py
+  s_eb8dc544bb96d2::t_b962694698cc11 1-69
+tests/test_gauge.py
+  s_eb8dc544bb96d2::t_cfeb2091506375 1-90
+tests/test_guard_hook.py
+  s_eb8dc544bb96d2::t_db4dfccb2021ac 1-243
+tests/test_ingest.py
+  s_eb8dc544bb96d2::t_09c0a7c8abca26 1-203
+tests/test_ingest_aider.py
+  s_eb8dc544bb96d2::t_c692d799fcecce 1-29
+tests/test_ingest_claude.py
+  s_eb8dc544bb96d2::t_45deaceedcccf0 1-107
+tests/test_ingest_cline.py
+  s_eb8dc544bb96d2::t_57c764be8d912f 1-47
+tests/test_ingest_codex.py
+  s_eb8dc544bb96d2::t_f904bb4526d4a0 1-82
+tests/test_ingest_cursor.py
+  s_eb8dc544bb96d2::t_4db623aadde364 1-342
+tests/test_ingest_gemini.py
+  s_eb8dc544bb96d2::t_ed364f71d4a090 1-23
+tests/test_ingest_goose.py
+  s_eb8dc544bb96d2::t_0ec53ce8f893d2 1-32
+tests/test_ingest_hermes.py
+  s_eb8dc544bb96d2::t_7d0c977c805d83 1-31
+tests/test_ingest_openclaw.py
+  s_eb8dc544bb96d2::t_46ffcf84fe8b35 1-23
+tests/test_ingest_opencode.py
+  s_eb8dc544bb96d2::t_9896be191beec7 1-33
+tests/test_ingest_parity.py
+  s_eb8dc544bb96d2::t_84e137eb1c3feb 1-117
+tests/test_insights.py
+  s_eb8dc544bb96d2::t_59de9557ae8d61 1-656
+tests/test_install_script.py
+  s_eb8dc544bb96d2::t_d7f61e0f7076df 1-47
+tests/test_live_server.py
+  s_eb8dc544bb96d2::t_c499043ce0a191 1-160
+tests/test_mcp.py
+  s_eb8dc544bb96d2::t_a829e0e1593432 1-257
+tests/test_optimize.py
+  s_eb8dc544bb96d2::t_eeaab9ff5070fb 1-355
+tests/test_optimize_block.py
+  s_eb8dc544bb96d2::t_3edaac4a7523d3 1-117
+tests/test_outcomes.py
+  s_eb8dc544bb96d2::t_b080b4c0d6a92f 1-204
+tests/test_pricing.py
+  s_eb8dc544bb96d2::t_12f2b79beba908 1-163
+tests/test_profile.py
+  s_eb8dc544bb96d2::t_f1d12cceecbf5e 1-231
+tests/test_reflector_evidence.py
+  s_eb8dc544bb96d2::t_7d359eb6a89d63 1-222
+tests/test_resolve_id.py
+  s_eb8dc544bb96d2::t_0e53f8bd820f4b 1-87
+tests/test_rewind_primer.py
+  s_eb8dc544bb96d2::t_2373b732d02961 1-109
+tests/test_schema.py
+  s_eb8dc544bb96d2::t_d233b50f161630 1-208
+tests/test_should_stop.py
+  s_eb8dc544bb96d2::t_0c2b754b68b450 1-138
+tests/test_stop_hook.py
+  s_eb8dc544bb96d2::t_8758562e3949e6 1-97
+tests/test_tokenize.py
+  s_eb8dc544bb96d2::t_f5084eb75c5539 1-70
+tests/test_tokenizer_audit.py
+  s_eb8dc544bb96d2::t_f82be13ca70145 1-29
+tests/test_tool_coverage.py
+  s_eb8dc544bb96d2::t_1f670bdeff7a48 1-23
+tests/test_waste.py
+  s_eb8dc544bb96d2::t_811dccc52ccb56 1-225
+tests/test_watch.py
+  s_eb8dc544bb96d2::t_318ee84547a957 1-38
+.github/workflows/ci.yml
+  s_eb8dc544bb96d2::t_248c19dcb3614a 1-39
+.github/workflows/publish.yml
+  s_eb8dc544bb96d2::t_ac2d4bea0857be 1-24
+.pre-commit-config.yaml
+  s_eb8dc544bb96d2::t_9b8b06cb2b8441 1-13
+CHANGELOG.md
+  s_eb8dc544bb96d2::t_2b5720044eec3c 1-45
+LICENSE
+  s_eb8dc544bb96d2::t_ab3603e86ffe2a 1-191
+README.md
+  s_eb8dc544bb96d2::t_5242f152213d74 1-151
+cairn/__init__.py
+  s_eb8dc544bb96d2::t_94fc7d9a279824 1-7
+cairn/__main__.py
+  s_eb8dc544bb96d2::t_1f7d6f76c15eb9 1-3
+cairn/ingest/__init__.py
+  s_eb8dc544bb96d2::t_c6320c7951450c 1
+cairn/ingest/parsers/__init__.py
+  s_eb8dc544bb96d2::t_9e9f92ba474551 1
+cairn/mcp/server.py
+  s_eb8dc544bb96d2::t_376212973fb994 1-104
+docs/reference/configuration.md
+  s_eb8dc544bb96d2::t_e081ea69ee3eb7 1-133
+examples/e2e-demo/.gitignore
+  s_eb8dc544bb96d2::t_7df072e93f2a24 1-4
+examples/e2e-demo/README.md
+  s_eb8dc544bb96d2::t_e74fad74676498 1-26
+examples/e2e-demo/cairn.toml
+  s_eb8dc544bb96d2::t_200eab6fed9898 1-34
+examples/e2e-demo/inputs/notes/alpha.md
+  s_eb8dc544bb96d2::t_b7786d7ce5d46f 1-9
+examples/e2e-demo/inputs/notes/beta.md
+  s_eb8dc544bb96d2::t_c980903cebbc24 1-10
+examples/e2e-demo/inputs/notes/gamma.md
+  s_eb8dc544bb96d2::t_50ad0a30f4a330 1-11
+examples/e2e-demo/inputs/spec.md
+  s_eb8dc544bb96d2::t_99e96b4cc6736b 1-11
+examples/e2e-demo/prompts/polish.md
+  s_eb8dc544bb96d2::t_9d855bd8bf02ba 1-11
+examples/e2e-demo/prompts/summarize.md
+  s_eb8dc544bb96d2::t_4a53bc53fdeb3d 1-8
+examples/e2e-demo/prompts/synthesize.md
+  s_eb8dc544bb96d2::t_28e48c6876b694 1-13
+examples/e2e-demo/setup.sh
+  s_eb8dc544bb96d2::t_ffcb8e996f5014 1-154
+install.ps1
+  s_eb8dc544bb96d2::t_bcbbefa33a2799 1-46
+pyproject.toml
+  s_eb8dc544bb96d2::t_1594ea57298090 1-70
+tests/fixtures/ingest/agent_jsonl_mini.jsonl
+  s_eb8dc544bb96d2::t_f9815c58845af0 1-4
+tests/fixtures/ingest/codex_mini.jsonl
+  s_eb8dc544bb96d2::t_e7d91afd0e5431 1-8
+tests/fixtures/ingest/cursor_mini.jsonl
+  s_eb8dc544bb96d2::t_a1bf5a6a5d3463 1-2
+tests/fixtures/ingest/hermes_mini.json
+  s_eb8dc544bb96d2::t_77b1a3a959f982 1-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7f5201203acbd2737a557f8cc42a6c032858470d",
+  "prompts": {},
+  "sessions": {
+    "s_eb8dc544bb96d2": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "0b4b2405-5e24-4ae7-abac-d74c744183ea",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
