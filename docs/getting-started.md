@@ -8,7 +8,7 @@ cairn
 ```
 
 1. Detects installed agents (Claude Code, Codex, Cursor, OpenCode, Goose, Hermes, Aider, Gemini CLI, Cline/Roo/Kilo, OpenClaw)
-2. Syncs sessions into `.cairn/ledger.db`
+2. Syncs sessions into `.cairn/cairn.db`
 3. Opens `http://127.0.0.1:8787` and backgrounds the server
 
 Stop the dashboard: `cairn stop`  

@@ -26,7 +26,7 @@ Proposals target `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`. Impact is measured o
 
 ## Pillar 5 — MCP self-awareness
 
-Agents call Cairn via MCP: `cairn_have_i_read`, `cairn_project_primer`, `cairn_my_waste_patterns`, `cairn_replay_last`, `cairn_spend_today`.
+Agents call Cairn via MCP stdio (`cairn mcp`): `cairn_have_i_read`, `cairn_project_primer`, `cairn_my_recurring_waste`, `cairn_session_so_far`, `cairn_should_i_stop`, `cairn_project_conventions`.
 
 ## Waste taxonomy
 
