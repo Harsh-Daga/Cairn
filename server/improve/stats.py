@@ -1,4 +1,4 @@
-"""CUPED + sequential test + clustered ESS."""
+"""CUPED + anytime-valid confidence sequences + clustered ESS."""
 
 from __future__ import annotations
 
@@ -7,8 +7,10 @@ import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass
 
-Z_95 = 1.96
 DEFAULT_RHO = 0.3
+DEFAULT_ALPHA = 0.05
+DEFAULT_TAU2 = 1.0
+DEFAULT_PRACTICAL_DELTA_PCT = 0.02
 
 
 @dataclass
@@ -27,8 +29,7 @@ def _model_mix(conn: sqlite3.Connection, run_ids: list[str]) -> dict[str, float]
         return {}
     placeholders = ",".join("?" * len(run_ids))
     sql = (
-        f"SELECT model, COUNT(*) AS n FROM traces "
-        f"WHERE trace_id IN ({placeholders}) GROUP BY model"
+        f"SELECT model, COUNT(*) AS n FROM traces WHERE trace_id IN ({placeholders}) GROUP BY model"
     )
     rows = conn.execute(sql, run_ids).fetchall()
     total = sum(int(r[1]) for r in rows)
@@ -74,14 +75,35 @@ def _se(xs: list[float]) -> float:
     return math.sqrt(var / n)
 
 
-def sequential_verdict(
+def anytime_valid_radius(
+    n: int,
+    sigma: float,
+    *,
+    alpha: float = DEFAULT_ALPHA,
+    tau2: float = DEFAULT_TAU2,
+) -> float:
+    """Always-valid CS half-width for a mean difference (mixture variance tau2)."""
+    if n <= 0:
+        return float("inf")
+    sigma = max(abs(sigma), 1e-9)
+    numer = 2.0 * (n * tau2 + sigma * sigma)
+    denom = n * n * tau2
+    log_term = math.log(math.sqrt(n * tau2 + sigma * sigma) / (alpha * sigma))
+    return sigma * math.sqrt((numer / denom) * log_term)
+
+
+def anytime_valid_verdict(
     effect: float,
     se: float,
     *,
     n: int,
+    baseline: float,
     min_n: int = 5,
+    alpha: float = DEFAULT_ALPHA,
+    tau2: float = DEFAULT_TAU2,
+    practical_delta_pct: float = DEFAULT_PRACTICAL_DELTA_PCT,
 ) -> CausalResult:
-    """Group-sequential style CI; honest inconclusive when evidence thin."""
+    """Verdict from anytime-valid CS; practical band is delta fraction of baseline."""
     notes: list[str] = []
     if n < min_n:
         return CausalResult(
@@ -89,20 +111,22 @@ def sequential_verdict(
             effect_ci_low=None,
             effect_ci_high=None,
             verdict="inconclusive",
-            test_method="group_sequential",
+            test_method="anytime_valid_cs",
             confound_flag=False,
             data_notes=[f"n={n} < {min_n}: inconclusive"],
         )
     if se <= 0:
         se = abs(effect) * 0.1 or 1.0
         notes.append("se estimated from effect magnitude")
-    ci_lo = effect - Z_95 * se
-    ci_hi = effect + Z_95 * se
-    if ci_hi < 0:
+    radius = anytime_valid_radius(n, se, alpha=alpha, tau2=tau2)
+    ci_lo = effect - radius
+    ci_hi = effect + radius
+    delta = abs(baseline) * practical_delta_pct if baseline else practical_delta_pct
+    if ci_hi < -delta:
         verdict = "improved"
-    elif ci_lo > 0:
+    elif ci_lo > delta:
         verdict = "regressed"
-    elif abs(effect) < se:
+    elif ci_lo >= -delta and ci_hi <= delta:
         verdict = "no_effect"
     else:
         verdict = "inconclusive"
@@ -111,7 +135,7 @@ def sequential_verdict(
         effect_ci_low=round(ci_lo, 4),
         effect_ci_high=round(ci_hi, 4),
         verdict=verdict,
-        test_method="group_sequential",
+        test_method="anytime_valid_cs",
         confound_flag=False,
         data_notes=notes,
     )
@@ -146,7 +170,7 @@ def measure_causal_effect(
     """CUPED-adjusted before/after with confounder guard on model mix."""
     pre_out = [metric_fn(tid) for tid in pre_trace_ids]
     post_out = [metric_fn(tid) for tid in post_trace_ids]
-    pre_cov = pre_out  # use pre-period as covariate baseline
+    pre_cov = pre_out
     post_cov = (
         pre_cov[: len(post_out)]
         if len(pre_cov) >= len(post_out)
@@ -163,7 +187,7 @@ def measure_causal_effect(
             effect_ci_low=None,
             effect_ci_high=None,
             verdict="confounded",
-            test_method="cuped+sequential",
+            test_method="cuped+anytime_valid_cs",
             confound_flag=True,
             data_notes=["model/task mix shifted between windows"],
         )
@@ -171,4 +195,9 @@ def measure_causal_effect(
     pre_mean = sum(pre_out) / len(pre_out) if pre_out else 0.0
     adj_post, se = cuped_adjust(post_out, post_cov[: len(post_out)])
     effect = adj_post - pre_mean
-    return sequential_verdict(effect, se, n=len(post_trace_ids))
+    return anytime_valid_verdict(
+        effect,
+        se,
+        n=len(post_trace_ids),
+        baseline=pre_mean,
+    )

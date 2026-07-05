@@ -7,6 +7,8 @@ import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
 import { IntervalPlot } from "@/components/charts";
+import { VerdictPreview } from "@/components/optimize/VerdictPreview";
+import type { VerdictPreviewData } from "@/lib/types";
 
 const STATIONS = ["proposed", "applied", "measuring", "verdict"] as const;
 
@@ -17,6 +19,7 @@ function ExperimentCard({
   verdict,
   liftPct,
   createdAt,
+  preview,
   onApply,
   onRevert,
 }: {
@@ -26,6 +29,7 @@ function ExperimentCard({
   verdict: string | null;
   liftPct: number | null;
   createdAt: string;
+  preview?: VerdictPreviewData | null;
   onApply: () => void;
   onRevert: () => void;
 }) {
@@ -37,6 +41,8 @@ function ExperimentCard({
   });
 
   const exp = detailQ.data?.experiment;
+  const detailPreview = detailQ.data?.preview as VerdictPreviewData | null | undefined;
+  const cardPreview = preview ?? detailPreview;
   const content = typeof exp?.content === "string" ? exp.content : null;
   const liftCiLow = exp?.effect_ci_low != null ? Number(exp.effect_ci_low) : null;
   const liftCiHigh = exp?.effect_ci_high != null ? Number(exp.effect_ci_high) : null;
@@ -52,6 +58,7 @@ function ExperimentCard({
       <p className="mt-2 font-mono text-xs text-cinder">
         {experimentId.slice(0, 12)}… · {formatRelative(createdAt)}
       </p>
+      {status === "proposed" && cardPreview ? <VerdictPreview preview={cardPreview} /> : null}
       {liftEstimate != null ? (
         <p className="mt-1 font-mono text-sm text-bone">
           Effect: {(liftEstimate * 100).toFixed(1)}%

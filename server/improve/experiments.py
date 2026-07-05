@@ -13,6 +13,9 @@ from server.models.experiment import Experiment
 from server.store.repos.experiments import ExperimentRepo
 from server.util.ids import new_ulid
 
+LOOKBACK_DAYS = 14
+MIN_TRACES_PER_WEEK = 5.0
+
 
 @dataclass(frozen=True)
 class MeasureResult:
@@ -21,6 +24,46 @@ class MeasureResult:
     effect_estimate: float | None
     n_effective: float
     gated: bool
+
+
+@dataclass(frozen=True)
+class PreviewResult:
+    expected_days_to_verdict: float | None
+    traces_per_day: float
+    n_effective_needed: float
+    traffic_unknown: bool
+
+
+def preview(
+    conn: sqlite3.Connection,
+    experiment: Experiment,
+    *,
+    workspace_id: str,
+    lookback_days: int = LOOKBACK_DAYS,
+    min_traces_per_week: float = MIN_TRACES_PER_WEEK,
+) -> PreviewResult:
+    """Estimate days to verdict from trailing session traffic."""
+    row = conn.execute(
+        """
+        SELECT COUNT(*) AS n FROM traces
+        WHERE workspace_id = ? AND started_at >= date('now', ?)
+        """,
+        (workspace_id, f"-{lookback_days} days"),
+    ).fetchone()
+    count = int(row[0]) if row else 0
+    traces_per_day = count / lookback_days if lookback_days > 0 else 0.0
+    n_effective_needed = float(experiment.min_holdout)
+    min_per_day = min_traces_per_week / 7.0
+    traffic_unknown = traces_per_day < min_per_day
+    expected_days: float | None = None
+    if not traffic_unknown and traces_per_day > 0:
+        expected_days = n_effective_needed / traces_per_day
+    return PreviewResult(
+        expected_days_to_verdict=expected_days,
+        traces_per_day=round(traces_per_day, 3),
+        n_effective_needed=n_effective_needed,
+        traffic_unknown=traffic_unknown,
+    )
 
 
 def create_experiment(

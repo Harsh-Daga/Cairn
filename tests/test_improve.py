@@ -9,12 +9,12 @@ import pytest
 
 from server.improve.apply import ManagedEntry, apply_entries, revert_from_backup
 from server.improve.bandit import Bandit
-from server.improve.experiments import create_experiment, measure_experiment
+from server.improve.experiments import create_experiment, measure_experiment, preview
 from server.improve.stats import (
+    anytime_valid_verdict,
     clustered_effective_n,
     cuped_adjust,
     measure_causal_effect,
-    sequential_verdict,
 )
 from server.models.evidence import Evidence
 from server.models.workspace import Workspace
@@ -32,9 +32,10 @@ def test_cuped_reduces_variance() -> None:
     assert 9.0 <= adj <= 13.0
 
 
-def test_sequential_improved_when_ci_below_zero() -> None:
-    res = sequential_verdict(-0.5, 0.1, n=10)
+def test_anytime_valid_improved_when_ci_below_practical_band() -> None:
+    res = anytime_valid_verdict(-0.5, 0.05, n=30, baseline=10.0)
     assert res.verdict == "improved"
+    assert res.test_method == "anytime_valid_cs"
     assert res.effect_ci_high is not None and res.effect_ci_high < 0
 
 
@@ -108,6 +109,68 @@ def test_measure_gated_until_holdout(db: Database) -> None:
     assert result.verdict == "inconclusive"
 
 
+def test_preview_estimates_days_from_traffic(db: Database) -> None:
+    ws_row = db.reader.execute("SELECT workspace_id FROM workspaces LIMIT 1").fetchone()
+    assert ws_row is not None
+    ws_id = str(ws_row[0])
+    for i in range(14):
+        db.reader.execute(
+            "INSERT INTO traces (trace_id, workspace_id, source, model, started_at, status) "
+            "VALUES (?, ?, 'claude_code', 'm1', date('now', ?), 'completed')",
+            (new_ulid(), ws_id, f"-{i} days"),
+        )
+    ev = Evidence(
+        evidence_id=new_ulid(),
+        producer="test",
+        produced_at="2026-01-01",
+        trace_ids=["t1"],
+        metrics={},
+    )
+    EvidenceRepo.create(db.reader, ev)
+    exp = create_experiment(
+        db.reader,
+        target_file="AGENTS.md",
+        block_key="k2",
+        kind="rule",
+        content="rule",
+        evidence_id=ev.evidence_id,
+        min_holdout=8,
+    )
+    db.reader.commit()
+    result = preview(db.reader, exp, workspace_id=ws_id)
+    assert result.traces_per_day == 1.0
+    assert result.n_effective_needed == 8.0
+    assert result.expected_days_to_verdict == 8.0
+    assert result.traffic_unknown is False
+
+
+def test_preview_unknown_on_low_traffic(db: Database) -> None:
+    ws_row = db.reader.execute("SELECT workspace_id FROM workspaces LIMIT 1").fetchone()
+    assert ws_row is not None
+    ws_id = str(ws_row[0])
+    ev = Evidence(
+        evidence_id=new_ulid(),
+        producer="test",
+        produced_at="2026-01-01",
+        trace_ids=["t1"],
+        metrics={},
+    )
+    EvidenceRepo.create(db.reader, ev)
+    exp = create_experiment(
+        db.reader,
+        target_file="AGENTS.md",
+        block_key="k3",
+        kind="rule",
+        content="rule",
+        evidence_id=ev.evidence_id,
+        min_holdout=8,
+    )
+    db.reader.commit()
+    result = preview(db.reader, exp, workspace_id=ws_id)
+    assert result.traffic_unknown is True
+    assert result.expected_days_to_verdict is None
+
+
 def test_confounded_on_model_mix_shift(tmp_path: Path) -> None:
     conn = sqlite3.connect(tmp_path / "c.db")
     from server.store.migrate import migrate
@@ -126,8 +189,6 @@ def test_confounded_on_model_mix_shift(tmp_path: Path) -> None:
     def metric(tid: str) -> float:
         return 0.1 if tid == "t1" else 0.2
 
-    res = measure_causal_effect(
-        conn, pre_trace_ids=["t1"], post_trace_ids=["t2"], metric_fn=metric
-    )
+    res = measure_causal_effect(conn, pre_trace_ids=["t1"], post_trace_ids=["t2"], metric_fn=metric)
     assert res.verdict == "confounded"
     conn.close()

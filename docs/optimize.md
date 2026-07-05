@@ -106,4 +106,68 @@ Without LLM config, Cairn uses templated rewrites from evidence.
 | Revert | `cairn experiments revert ID` | Optimize → Revert |
 | List | `cairn experiments ls` | Optimize board |
 
-See also the [Optimize guide](guides/optimize.md) for legacy v3 config keys still referenced in some flows.
+## Appendix — statistics formulas (v4)
+
+Cairn v4 replaces fixed-*z* sequential tests with **anytime-valid confidence sequences** (CS) on CUPED-adjusted holdout effects.
+
+### CUPED adjustment
+
+Given post-period outcomes \(Y_i\) and pre-period covariates \(X_i\):
+
+\[
+\theta = \frac{\mathrm{Cov}(Y, X)}{\mathrm{Var}(X)}, \quad
+\tilde{Y}_i = Y_i - \theta (X_i - \bar{X}), \quad
+\hat{\mu} = \bar{\tilde{Y}}, \quad
+\mathrm{SE} = \sqrt{\mathrm{Var}(\tilde{Y}) / n}
+\]
+
+Effect estimate: \(\hat{\delta} = \hat{\mu}_{\text{post}} - \bar{Y}_{\text{pre}}\).
+
+### Anytime-valid CS radius
+
+Mixture variance \(\tau^2 = 1.0\) (default), significance \(\alpha = 0.05\):
+
+\[
+r_n = \sigma \sqrt{\frac{2(n\tau^2 + \sigma^2)}{n^2\tau^2}
+  \ln\!\left(\frac{\sqrt{n\tau^2 + \sigma^2}}{\alpha\,\sigma}\right)}
+\]
+
+Confidence interval: \([\hat{\delta} - r_n,\; \hat{\delta} + r_n]\).
+
+Practical band: \(\delta = 2\%\) of baseline magnitude (minimum absolute floor when baseline is zero).
+
+| Verdict | Rule |
+|---------|------|
+| `improved` | CI entirely below \(-\delta\) |
+| `regressed` | CI entirely above \(+\delta\) |
+| `no_effect` | CI contained in \([-\delta, +\delta]\) |
+| `inconclusive` | otherwise |
+
+### Clustered effective *n*
+
+\[
+n_{\text{eff}} = \frac{n}{1 + (\bar{m} - 1)\rho}, \quad \rho = 0.3 \text{ default}
+\]
+
+where \(\bar{m}\) is mean cluster size. Measurement gates on `min_holdout` effective sessions.
+
+### Tail return level (EVT)
+
+For session costs \(x_i\), threshold \(u\) at the 90th percentile, GPD fit on exceedances \(y = x - u\):
+
+\[
+\text{return\_level}(n_{\text{future}}) = u + \frac{\sigma}{\xi}\left(n_{\text{future}}^{\xi} - 1\right)
+\]
+
+Shape \(\xi\) is clamped to \([-0.5, 0.9]\). `cairn check --max-tail-cost X` fails when the projected worst session among the next 1000 exceeds \(X\).
+
+### Power preview
+
+From trailing 14-day traffic:
+
+\[
+\text{traces/day} = \frac{\text{count}_{14d}}{14}, \quad
+\text{days to verdict} \approx \frac{n_{\text{eff,needed}}}{\text{traces/day}}
+\]
+
+Shown as “unknown” when traffic is below 5 traces/week.

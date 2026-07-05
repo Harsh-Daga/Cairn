@@ -9,9 +9,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 from server.analyze.registry import build_views
+from server.analyze.tail import return_level
 from server.analyze.views import ViewScheduler
 from server.api.context import ActionCtx
 from server.improve.engine import evaluate as evaluate_insights
@@ -44,6 +46,7 @@ class RebuildViewParams(BaseModel):
 class CheckParams(BaseModel):
     min_quality: float | None = Field(default=None, ge=0.0, le=1.0)
     max_waste_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    max_tail_cost: float | None = Field(default=None, ge=0.0)
 
 
 class ExportBundleParams(BaseModel):
@@ -127,7 +130,7 @@ def _check_action(params: CheckParams, ctx: ActionCtx) -> dict[str, Any]:
     failures: list[str] = []
     rows = ctx.db.reader.execute(
         """
-        SELECT t.trace_id, t.waste_tokens, t.input_tokens, o.quality_score
+        SELECT t.trace_id, t.waste_tokens, t.input_tokens, t.cost, o.quality_score
         FROM traces t
         LEFT JOIN outcomes o ON o.trace_id = t.trace_id
         WHERE t.workspace_id = ?
@@ -150,6 +153,14 @@ def _check_action(params: CheckParams, ctx: ActionCtx) -> dict[str, Any]:
             and float(quality) < params.min_quality
         ):
             failures.append(f"{row['trace_id']}: quality {quality}")
+    if params.max_tail_cost is not None:
+        costs = np.array([float(r["cost"] or 0.0) for r in rows], dtype=float)
+        if costs.size >= 5:
+            worst = return_level(costs, 1000)
+            if worst > params.max_tail_cost:
+                failures.append(
+                    f"projected worst session cost ${worst:.2f} > ${params.max_tail_cost}"
+                )
     return {"ok": len(failures) == 0, "failures": failures}
 
 
