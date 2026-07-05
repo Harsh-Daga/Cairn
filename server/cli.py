@@ -245,9 +245,32 @@ app.add_typer(mcp_app, name="mcp")
 
 
 @mcp_app.command("install")
-def mcp_install(workspace: Annotated[Path | None, typer.Option("--workspace")] = None) -> None:
-    result = _run_action("mcp_install", {}, workspace)
+def mcp_install_cmd(
+    client: Annotated[
+        str,
+        typer.Option("--client", help="Agent client: claude-code, cursor, codex, other"),
+    ] = "cursor",
+    print_only: Annotated[
+        bool,
+        typer.Option("--print", help="Print JSON only; do not write"),
+    ] = False,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Install Cairn MCP config for Claude Code, Cursor, or Codex."""
+    result = _run_action(
+        "mcp_install",
+        {"client": client, "print_only": print_only},
+        workspace,
+    )
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command("setup-prompt")
+def setup_prompt() -> None:
+    """Print the short agent bootstrap prompt for README copy-paste."""
+    from server.mcp.install import BOOTSTRAP_PROMPT
+
+    typer.echo(BOOTSTRAP_PROMPT)
 
 
 @mcp_app.callback(invoke_without_command=True)

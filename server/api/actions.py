@@ -19,6 +19,7 @@ from server.api.action_handlers import (
     ExperimentRevertParams,
     ExportBundleParams,
     InsightSetStateParams,
+    McpInstallParams,
     OptimizeProposeParams,
     RebuildViewParams,
     SyncParams,
@@ -142,8 +143,13 @@ def export_bundle(params: ExportBundleParams, ctx: ActionCtx) -> dict[str, Any]:
     return _export_bundle_action(params, ctx)
 
 
-@action(name="mcp_install", title="Install MCP server config", category="setup", params=EmptyParams)
-def mcp_install(params: EmptyParams, ctx: ActionCtx) -> dict[str, Any]:
+@action(
+    name="mcp_install",
+    title="Install MCP server config",
+    category="setup",
+    params=McpInstallParams,
+)
+def mcp_install(params: McpInstallParams, ctx: ActionCtx) -> dict[str, Any]:
     return _mcp_install_action(params, ctx)
 
 

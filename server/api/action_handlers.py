@@ -85,6 +85,11 @@ class ConfigSetParams(BaseModel):
     value: str
 
 
+class McpInstallParams(BaseModel):
+    client: str = "cursor"
+    print_only: bool = False
+
+
 def _sync_action(params: SyncParams, ctx: ActionCtx) -> dict[str, Any]:
     report = ctx.pipeline.sync_all()
     return {
@@ -169,27 +174,16 @@ def _export_bundle_action(params: ExportBundleParams, ctx: ActionCtx) -> dict[st
     return {"path": str(out_path), "count": len(trace_rows)}
 
 
-def _mcp_install_action(_params: EmptyParams, ctx: ActionCtx) -> dict[str, Any]:
-    config_dir = Path.home() / ".cursor"
-    config_dir.mkdir(parents=True, exist_ok=True)
-    mcp_path = config_dir / "mcp.json"
-    snippet = {
-        "mcpServers": {
-            "cairn": {
-                "command": "cairn",
-                "args": ["mcp"],
-                "cwd": str(ctx.workspace_root),
-            }
-        }
-    }
-    if mcp_path.is_file():
-        existing = json.loads(mcp_path.read_text(encoding="utf-8"))
-        servers = existing.setdefault("mcpServers", {})
-        servers.update(snippet["mcpServers"])
-        mcp_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
-    else:
-        mcp_path.write_text(json.dumps(snippet, indent=2), encoding="utf-8")
-    return {"path": str(mcp_path)}
+def _mcp_install_action(params: McpInstallParams, ctx: ActionCtx) -> dict[str, Any]:
+    from server.mcp.install import install_mcp_config
+
+    allowed = {"claude-code", "cursor", "codex", "other"}
+    client = params.client if params.client in allowed else "cursor"
+    return install_mcp_config(
+        workspace_root=ctx.workspace_root,
+        client=client,  # type: ignore[arg-type]
+        write=not params.print_only,
+    )
 
 
 def _optimize_propose_action(params: OptimizeProposeParams, ctx: ActionCtx) -> dict[str, Any]:
