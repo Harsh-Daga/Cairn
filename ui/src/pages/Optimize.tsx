@@ -1,12 +1,116 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchExperiments, runAction } from "@/lib/api";
+import { useState } from "react";
+import { fetchExperimentDetail, fetchExperiments, runAction } from "@/lib/api";
 import { formatRelative } from "@/lib/format";
 import { useToastStore } from "@/state/toast";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
+import { IntervalPlot } from "@/components/charts";
 
 const STATIONS = ["proposed", "applied", "measuring", "verdict"] as const;
+
+function ExperimentCard({
+  experimentId,
+  status,
+  targetFile,
+  verdict,
+  liftPct,
+  createdAt,
+  onApply,
+  onRevert,
+}: {
+  experimentId: string;
+  status: string;
+  targetFile: string | null;
+  verdict: string | null;
+  liftPct: number | null;
+  createdAt: string;
+  onApply: () => void;
+  onRevert: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const detailQ = useQuery({
+    queryKey: ["experiment", experimentId],
+    queryFn: () => fetchExperimentDetail(experimentId),
+    enabled: expanded,
+  });
+
+  const exp = detailQ.data?.experiment;
+  const content = typeof exp?.content === "string" ? exp.content : null;
+  const liftCiLow = exp?.effect_ci_low != null ? Number(exp.effect_ci_low) : null;
+  const liftCiHigh = exp?.effect_ci_high != null ? Number(exp.effect_ci_high) : null;
+  const liftEstimate = liftPct ?? (exp?.effect_estimate != null ? Number(exp.effect_estimate) : null);
+
+  return (
+    <div className="card p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Chip label={status} tone={status === "verdict" ? "malachite" : "default"} />
+        {targetFile ? <Chip label={targetFile} /> : null}
+        {verdict ? <Chip label={verdict} tone="copper" /> : null}
+      </div>
+      <p className="mt-2 font-mono text-xs text-cinder">
+        {experimentId.slice(0, 12)}… · {formatRelative(createdAt)}
+      </p>
+      {liftEstimate != null ? (
+        <p className="mt-1 font-mono text-sm text-bone">
+          Effect: {(liftEstimate * 100).toFixed(1)}%
+        </p>
+      ) : null}
+      {liftCiLow != null && liftCiHigh != null && liftEstimate != null ? (
+        <div className="mt-3">
+          <IntervalPlot
+            points={[
+              {
+                label: "lift",
+                value: liftEstimate,
+                low: liftCiLow,
+                high: liftCiHigh,
+              },
+            ]}
+            width={320}
+            height={80}
+          />
+        </div>
+      ) : null}
+      <button
+        type="button"
+        className="mt-2 font-mono text-[10px] text-copper hover:underline"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        {expanded ? "Hide diff" : "Preview diff"}
+      </button>
+      {expanded && content ? (
+        <pre className="mt-2 max-h-48 overflow-auto rounded-sm bg-granite/40 p-3 font-mono text-[10px] text-bone">
+          {content.slice(0, 2000)}
+        </pre>
+      ) : null}
+      {expanded && !content && detailQ.isLoading ? (
+        <p className="mt-2 text-xs text-cinder">Loading content…</p>
+      ) : null}
+      <div className="mt-3 flex gap-2">
+        {status === "proposed" ? (
+          <button
+            type="button"
+            className="rounded-sm bg-copper px-3 py-1.5 font-mono text-xs text-anthracite"
+            onClick={onApply}
+          >
+            Apply
+          </button>
+        ) : null}
+        {status === "applied" || status === "measuring" ? (
+          <button
+            type="button"
+            className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone"
+            onClick={onRevert}
+          >
+            Revert
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export function OptimizePage() {
   const queryClient = useQueryClient();
@@ -79,56 +183,50 @@ export function OptimizePage() {
   return (
     <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
       <div className="space-y-6">
-        <div className="flex flex-wrap gap-3">
-          {STATIONS.map((station) => (
-            <div key={station} className="card min-w-[120px] flex-1 p-3 text-center">
-              <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">
-                {station}
-              </p>
-              <p className="mt-1 font-display text-xl text-bone">
-                {byStatus[station].length}
-              </p>
-            </div>
-          ))}
+        <div className="card p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {STATIONS.map((station, i) => (
+              <div key={station} className="flex items-center gap-2">
+                <div
+                  className={`min-w-[100px] rounded-sm border px-3 py-2 text-center ${
+                    byStatus[station].length > 0
+                      ? "border-copper/50 bg-copper/10"
+                      : "border-quartz-vein bg-granite/20"
+                  }`}
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">
+                    {station}
+                  </p>
+                  <p className="mt-0.5 font-display text-xl text-bone">
+                    {byStatus[station].length}
+                  </p>
+                </div>
+                {i < STATIONS.length - 1 ? (
+                  <span className="font-mono text-cinder" aria-hidden="true">
+                    →
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 border-t border-quartz-vein/50 pt-3 font-mono text-[10px] text-cinder">
+            Reflector: proposals flow left-to-right — apply to measure, measure to verdict.
+          </p>
         </div>
 
         <div className="space-y-3">
           {data.experiments.map((exp) => (
-            <div key={exp.experiment_id} className="card p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Chip label={exp.status} tone={exp.status === "verdict" ? "malachite" : "default"} />
-                {exp.target_file ? <Chip label={exp.target_file} /> : null}
-                {exp.verdict ? <Chip label={exp.verdict} tone="copper" /> : null}
-              </div>
-              <p className="mt-2 font-mono text-xs text-cinder">
-                {exp.experiment_id.slice(0, 12)}… · {formatRelative(exp.created_at)}
-              </p>
-              {exp.lift_pct != null ? (
-                <p className="mt-1 font-mono text-sm text-bone">
-                  Effect: {(exp.lift_pct * 100).toFixed(1)}%
-                </p>
-              ) : null}
-              <div className="mt-3 flex gap-2">
-                {exp.status === "proposed" ? (
-                  <button
-                    type="button"
-                    className="rounded-sm bg-copper px-3 py-1.5 font-mono text-xs text-anthracite"
-                    onClick={() => applyMut.mutate(exp.experiment_id)}
-                  >
-                    Apply
-                  </button>
-                ) : null}
-                {exp.status === "applied" || exp.status === "measuring" ? (
-                  <button
-                    type="button"
-                    className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone"
-                    onClick={() => revertMut.mutate(exp.experiment_id)}
-                  >
-                    Revert
-                  </button>
-                ) : null}
-              </div>
-            </div>
+            <ExperimentCard
+              key={exp.experiment_id}
+              experimentId={exp.experiment_id}
+              status={exp.status}
+              targetFile={exp.target_file}
+              verdict={exp.verdict}
+              liftPct={exp.lift_pct}
+              createdAt={exp.created_at}
+              onApply={() => applyMut.mutate(exp.experiment_id)}
+              onRevert={() => revertMut.mutate(exp.experiment_id)}
+            />
           ))}
         </div>
 

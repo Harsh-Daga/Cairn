@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { fetchInsights, runAction } from "@/lib/api";
 import type { InsightLifecycle, InsightRow } from "@/lib/types";
 import { PageShell } from "@/components/common/PageShell";
@@ -15,6 +15,7 @@ const GROUPS: { state: InsightLifecycle; label: string }[] = [
 
 export function InsightsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [severityFilter, setSeverityFilter] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const showToast = useToastStore((s) => s.show);
 
@@ -53,6 +54,19 @@ export function InsightsPage() {
     },
   });
 
+  const insights = data?.insights ?? [];
+  const filtered = useMemo(
+    () =>
+      severityFilter
+        ? insights.filter((i) => i.severity === severityFilter)
+        : insights,
+    [insights, severityFilter],
+  );
+  const severities = useMemo(
+    () => [...new Set(insights.map((i) => i.severity))],
+    [insights],
+  );
+
   if (isLoading) {
     return (
       <PageShell title="Insights" question="What should I fix, and is it worth it?">
@@ -69,19 +83,45 @@ export function InsightsPage() {
     );
   }
 
-  const insights = data?.insights ?? [];
-
   return (
     <PageShell title="Insights" question="What should I fix, and is it worth it?">
       {insights.length === 0 ? (
         <div className="card empty-state">
           <h2>No insights yet</h2>
           <p className="mt-2 text-sm">Sync more sessions, then run detectors via cairn optimize.</p>
+          <p className="mt-2 text-sm text-cinder">
+            Insights surface waste patterns, drift, and optimization opportunities automatically.
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
+          {severities.length > 1 ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className={`rounded-chip border px-2 py-1 font-mono text-[10px] ${
+                  !severityFilter ? "border-copper text-copper" : "border-quartz-vein text-cinder"
+                }`}
+                onClick={() => setSeverityFilter(null)}
+              >
+                all
+              </button>
+              {severities.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`rounded-chip border px-2 py-1 font-mono text-[10px] ${
+                    severityFilter === s ? "border-copper text-copper" : "border-quartz-vein text-cinder"
+                  }`}
+                  onClick={() => setSeverityFilter(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {GROUPS.map((group) => {
-            const items = insights.filter((i) => i.state === group.state);
+            const items = filtered.filter((i) => i.state === group.state);
             if (items.length === 0) return null;
             return (
               <section key={group.state}>

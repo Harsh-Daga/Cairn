@@ -85,14 +85,17 @@ Every dashboard action (sync, export, MCP install, check, optimize apply) is als
 ## Architecture (ASCII)
 
 ```
- agent logs ──► ingest/parsers ──► ledger.db ──► metrics + profile + outcomes
-                                      │                    │
-                                      ▼                    ▼
-                              live/server.py ◄──── dashboard (vanilla JS)
-                                      │
-                                      ├── SSE /v2/events (live refresh)
-                                      ├── MCP stdio bridge (agent tools)
-                                      └── optimize loop → instruction files
+ agent logs ──► server/ingest/adapters ──► .cairn/cairn.db ──► server/analyze (views)
+                                                    │
+                                                    ▼
+                                           server/app.py (FastAPI)
+                                                    │
+                    ┌───────────────────────────────┼───────────────────────────────┐
+                    ▼                               ▼                               ▼
+              ui/ (React)                     GET /api/*                      MCP stdio
+              cairn ui                          SSE /api/live/events            cairn mcp
+                                                    │
+                                                    └── optimize loop → instruction files
 ```
 
 ---
@@ -112,7 +115,7 @@ Nobody else combines all five pillars and closes the loop with holdout measureme
 
 ## Privacy
 
-Local-first. Ledger and dashboard stay on disk / `127.0.0.1`. No telemetry, no accounts, no cloud sync. Export bundles are scrubbed of common secret patterns.
+Local-first. Data stays in `.cairn/cairn.db` on disk; the dashboard binds to `127.0.0.1`. No telemetry, no accounts, no cloud sync. Export bundles are scrubbed of common secret patterns.
 
 ---
 
@@ -132,11 +135,14 @@ Requires Python 3.11+. Runtime deps: `httpx` (optional LLM reflector), `numpy` (
 
 - [Getting started](docs/getting-started.md)
 - [Concepts](docs/concepts.md)
+- [Ingest adapters](docs/adapters.md)
+- [API overview](docs/api.md)
+- [UI tour](docs/ui-tour.md)
+- [Optimize loop](docs/optimize.md)
 - [CLI reference](docs/reference/cli.md)
 - [Agent capture](docs/guides/agent-capture.md)
-- [Dashboard](docs/guides/dashboard.md)
-- [Optimize loop](docs/guides/optimize.md)
 - [CI gates](docs/guides/ci.md)
+- [Legacy v3](docs/legacy-v3.md)
 
 ---
 

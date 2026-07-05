@@ -1,7 +1,44 @@
 # Configuration
 
-Cairn projects are configured with `cairn.toml`. Credentials are **never** stored in config —
-only in environment variables.
+## v4 observability (default)
+
+Cairn v4 stores session data in `.cairn/cairn.db` and configures the server via environment
+variables (prefix `CAIRN_`). The Typer CLI and Settings UI actions map to the same keys.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CAIRN_HOST` | `127.0.0.1` | HTTP bind address |
+| `CAIRN_PORT` | `8787` | HTTP port |
+| `CAIRN_TOKEN` | — | Required when binding outside loopback |
+| `CAIRN_WORKSPACE_ROOT` | cwd | Active git workspace |
+| `CAIRN_LLM_BASE_URL` | — | Optional optimize reflector endpoint |
+| `CAIRN_LLM_MODEL` | — | Reflector model name |
+| `CAIRN_LLM_API_KEY` | — | Reflector API key |
+
+Set runtime values from the CLI:
+
+```bash
+cairn config set outcomes.enabled true
+```
+
+Or from the UI via `POST /api/actions/config_set`.
+
+### Project layout (v4)
+
+```
+your-repo/
+└── .cairn/
+    ├── cairn.db          # SQLite store (traces, spans, insights, experiments)
+    ├── backups/          # instruction-file backups from optimize apply
+    └── watch/            # ingest cursors
+```
+
+---
+
+## Pipeline projects (`cairn.toml`)
+
+Some examples and demos use a **pipeline** layout with `cairn.toml`. Credentials are **never**
+stored in config — only in environment variables.
 
 ## Minimal `cairn.toml`
 
@@ -123,7 +160,7 @@ my-project/
 ├── inputs/
 ├── outputs/              # pipeline outputs (gitignored by default)
 └── .cairn/
-    ├── ledger.db         # append-only SQLite
+    ├── cairn.db          # append-only SQLite (v4 observability store)
     ├── cache/cas/        # content-addressed blobs
     ├── sessions/         # capture session mirrors
     ├── snapshots/        # point-in-time snapshots

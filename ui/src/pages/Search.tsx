@@ -74,13 +74,25 @@ export function SearchPage() {
         </div>
 
         {!debounced ? (
-          <p className="text-sm text-cinder">Try an example query or type a tool name, path, or phrase.</p>
+          <div className="card p-4 text-sm text-cinder">
+            <p>Try an example query or type a tool name, path, or phrase.</p>
+            <p className="mt-2 font-mono text-[10px]">
+              Syntax: <span className="text-bone">tool:read</span>,{" "}
+              <span className="text-bone">source:claude_code</span>,{" "}
+              <span className="text-bone">is:error</span>
+            </p>
+          </div>
         ) : isFetching ? (
           <div className="card h-24 animate-pulse bg-granite/30" />
         ) : (data?.hits.length ?? 0) === 0 ? (
           <div className="card empty-state">
             <h2>No matches</h2>
-            <p className="mt-2 text-sm">Nothing matched &ldquo;{debounced}&rdquo; in this workspace.</p>
+            <p className="mt-2 text-sm">
+              Nothing matched &ldquo;{debounced}&rdquo; in this workspace.
+            </p>
+            <p className="mt-2 text-sm text-cinder">
+              Try a shorter phrase, a tool name, or remove filters like source:.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">

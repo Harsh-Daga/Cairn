@@ -30,6 +30,7 @@ export function SettingsPage() {
   }
 
   const traceCount = Number(data.health.trace_count ?? 0);
+  const insightCount = Number(data.health.insight_count ?? 0);
 
   return (
     <PageShell title="Settings" question="See what Cairn sees; change what it does.">
@@ -48,6 +49,10 @@ export function SettingsPage() {
             <div className="flex justify-between gap-4">
               <dt>Sessions</dt>
               <dd className="text-bone">{traceCount}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt>Insights</dt>
+              <dd className="text-bone">{insightCount || "—"}</dd>
             </div>
           </dl>
         </section>
@@ -80,7 +85,12 @@ export function SettingsPage() {
               </tbody>
             </table>
           ) : (
-            <p className="p-4 text-sm text-cinder">No adapters detected yet — run workspace scan.</p>
+            <div className="p-4">
+              <p className="text-sm text-cinder">No adapters detected yet — run workspace scan.</p>
+              <p className="mt-2 font-mono text-[10px] text-cinder">
+                Adapters appear after cairn sync finds agent log streams in your workspace.
+              </p>
+            </div>
           )}
           <div className="border-t border-quartz-vein px-4 py-3">
             <button

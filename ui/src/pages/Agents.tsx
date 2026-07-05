@@ -6,6 +6,7 @@ import { useUiStore } from "@/state/ui";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
+import { HandoffDag } from "@/components/agents/HandoffDag";
 
 export function AgentsPage() {
   const timeRange = useUiStore((s) => s.timeRange);
@@ -96,34 +97,9 @@ export function AgentsPage() {
               {handoffs.length} handoff{handoffs.length === 1 ? "" : "s"} observed
             </p>
           </div>
-          {handoffs.length > 0 ? (
-            <table className="w-full text-left text-sm">
-              <thead className="font-mono text-[10px] uppercase tracking-wide text-cinder">
-                <tr>
-                  <th className="px-4 py-2">From</th>
-                  <th className="px-4 py-2">To</th>
-                  <th className="px-4 py-2">Type</th>
-                </tr>
-              </thead>
-              <tbody>
-                {handoffs.map((h, i) => (
-                  <tr key={i} className="border-t border-quartz-vein/50">
-                    <td className="px-4 py-2 font-mono text-xs text-bone">
-                      {String(h.from_agent ?? h.from_span_id ?? "—")}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs text-bone">
-                      {String(h.to_agent ?? h.to_span_id ?? "—")}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs text-cinder">
-                      {String(h.link_type ?? "handoff")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="p-4 text-sm text-cinder">No handoff links in this window.</p>
-          )}
+          <div className="overflow-x-auto p-4">
+            <HandoffDag handoffs={handoffs} />
+          </div>
         </div>
       </div>
     </PageShell>

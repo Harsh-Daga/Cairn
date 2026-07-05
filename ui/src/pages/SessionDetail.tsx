@@ -15,6 +15,8 @@ export function SessionDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const seqParam = Number(searchParams.get("seq") ?? "0");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [blameMode, setBlameMode] = useState(false);
+  const [foldSubagents, setFoldSubagents] = useState(false);
 
   const { data: detail, isLoading, isError } = useQuery({
     queryKey: ["trace", id],
@@ -36,9 +38,14 @@ export function SessionDetailPage() {
     return detail?.spans ?? [];
   }, [detail, replay, seq]);
 
+  const allRows = useMemo(
+    () => (detail ? flattenTree(detail.tree, 0, foldSubagents) : []),
+    [detail, foldSubagents],
+  );
+
   const rows = useMemo(
-    () => (detail ? flattenTree(detail.tree) : []).filter((r) => activeSpans.some((s) => s.span_id === r.span.span_id)),
-    [detail, activeSpans],
+    () => allRows.filter((r) => activeSpans.some((s) => s.span_id === r.span.span_id)),
+    [allRows, activeSpans],
   );
 
   const selectedSpan = activeSpans.find((s) => s.span_id === selectedId) ?? null;
@@ -69,6 +76,7 @@ export function SessionDetailPage() {
   }
 
   const { trace } = detail;
+  const wasteCount = activeSpans.filter((s) => s.waste_tokens > 0 || s.waste_category).length;
 
   return (
     <PageShell title={trace.title ?? "Session"} question="Replay, inspect, and understand what happened.">
@@ -93,12 +101,38 @@ export function SessionDetailPage() {
         onChange={setSeq}
       />
 
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
+            blameMode
+              ? "border-ochre/60 bg-ochre/10 text-ochre"
+              : "border-quartz-vein text-cinder hover:text-bone"
+          }`}
+          onClick={() => setBlameMode((v) => !v)}
+        >
+          Blame {wasteCount > 0 ? `(${wasteCount})` : ""}
+        </button>
+        <button
+          type="button"
+          className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
+            foldSubagents
+              ? "border-patina/60 bg-patina/10 text-patina"
+              : "border-quartz-vein text-cinder hover:text-bone"
+          }`}
+          onClick={() => setFoldSubagents((v) => !v)}
+        >
+          {foldSubagents ? "Expand subagents" : "Fold subagents"}
+        </button>
+      </div>
+
       <div className="mt-4 grid gap-4 lg:grid-cols-[58%_42%] lg:grid-rows-[minmax(280px,1fr)_auto]">
         <div className="min-h-[280px] lg:row-span-2">
           <Waterfall
-            rows={rows.length > 0 ? rows : flattenTree(detail.tree)}
+            rows={rows.length > 0 ? rows : allRows}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            blameMode={blameMode}
           />
         </div>
         <ContextTimeline

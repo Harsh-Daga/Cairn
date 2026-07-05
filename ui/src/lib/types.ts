@@ -221,6 +221,26 @@ export interface WasteAnalyticsResponse {
   total_waste_tokens: number;
 }
 
+export interface UsageSeriesRow {
+  key: string;
+  input_tokens: number;
+  output_tokens: number;
+  cost: number;
+  traces: number;
+}
+
+export interface UsageAnalyticsResponse {
+  days: number;
+  group_by: string;
+  series: UsageSeriesRow[];
+}
+
+export interface TailAnalyticsResponse {
+  days: number;
+  tail_risk: TailRisk;
+  exceedances: number[];
+}
+
 export interface ExperimentRow {
   experiment_id: string;
   status: string;

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { fetchBehavior, timeRangeDays } from "@/lib/api";
@@ -5,6 +6,49 @@ import { useUiStore } from "@/state/ui";
 import { PageShell } from "@/components/common/PageShell";
 import { ChartFrame } from "@/components/common/Chip";
 import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
+import { ControlChart, Radar, Sparkline, type RadarPoint } from "@/components/charts";
+
+const FINGERPRINT_AXES = ["read_write", "explore", "retry", "entropy", "turns"] as const;
+
+function vectorNorm(vector: unknown): number {
+  if (!Array.isArray(vector) || vector.length === 0) return 0;
+  return Math.sqrt(vector.reduce((sum: number, v) => sum + Number(v) ** 2, 0));
+}
+
+function ewma(values: number[], alpha = 0.3): number[] {
+  if (values.length === 0) return [];
+  const out = [values[0] ?? 0];
+  for (let i = 1; i < values.length; i += 1) {
+    out.push(alpha * (values[i] ?? 0) + (1 - alpha) * (out[i - 1] ?? 0));
+  }
+  return out;
+}
+
+function radarFromBaseline(radar: Record<string, unknown>): RadarPoint[] {
+  const axes = radar.axes;
+  if (Array.isArray(axes)) {
+    return axes.map((a) => {
+      if (typeof a === "object" && a !== null && "axis" in a && "value" in a) {
+        return {
+          axis: String((a as { axis: unknown }).axis),
+          value: Number((a as { value: unknown }).value),
+        };
+      }
+      return { axis: "?", value: 0 };
+    });
+  }
+  const mean = radar.mean_vector;
+  if (Array.isArray(mean) && mean.length > 0) {
+    return mean.slice(0, 6).map((v, i) => ({
+      axis: FINGERPRINT_AXES[i] ?? `d${i}`,
+      value: Math.abs(Number(v)),
+    }));
+  }
+  return FINGERPRINT_AXES.map((axis) => ({
+    axis,
+    value: Math.abs(Number(radar[`${axis}_ratio`] ?? radar[axis] ?? 0)),
+  })).filter((p) => p.value > 0);
+}
 
 export function BehaviorPage() {
   const timeRange = useUiStore((s) => s.timeRange);
@@ -14,6 +58,13 @@ export function BehaviorPage() {
     queryKey: ["behavior", days],
     queryFn: () => fetchBehavior(days),
   });
+
+  const metricSeries = useMemo(() => {
+    if (!data) return [];
+    return data.series.map((row) => vectorNorm(row.vector));
+  }, [data]);
+
+  const ewmaSeries = useMemo(() => ewma(metricSeries), [metricSeries]);
 
   if (isLoading) {
     return (
@@ -50,6 +101,8 @@ export function BehaviorPage() {
     );
   }
 
+  const radarPoints = data.radar ? radarFromBaseline(data.radar) : [];
+
   return (
     <PageShell title="Behavior" question="Has my agent changed?">
       <div className="space-y-6">
@@ -60,6 +113,24 @@ export function BehaviorPage() {
               : `No drift — behavior within baseline for ${days} days.`}
           </p>
         </div>
+
+        {radarPoints.length >= 3 ? (
+          <ChartFrame title="Baseline radar" subtitle="Current vs baseline fingerprint">
+            <Radar points={radarPoints} width={280} height={280} />
+          </ChartFrame>
+        ) : null}
+
+        {metricSeries.length > 2 ? (
+          <ChartFrame title="Fingerprint drift" subtitle="Vector norm over sessions">
+            <ControlChart data={metricSeries} width={640} height={200} />
+          </ChartFrame>
+        ) : null}
+
+        {ewmaSeries.length > 1 ? (
+          <ChartFrame title="EWMA smoothed" subtitle="Exponentially weighted moving average">
+            <Sparkline data={ewmaSeries} width={640} height={64} />
+          </ChartFrame>
+        ) : null}
 
         <ChartFrame title="Fingerprint sessions" subtitle={`${sessionCount} sessions fingerprinted`}>
           <ul className="max-h-64 space-y-1 overflow-auto font-mono text-xs">
@@ -76,22 +147,6 @@ export function BehaviorPage() {
             ))}
           </ul>
         </ChartFrame>
-
-        {data.radar ? (
-          <ChartFrame title="Baseline radar" subtitle="Current vs baseline fingerprint">
-            <dl className="grid gap-2 sm:grid-cols-2 font-mono text-xs text-cinder">
-              {Object.entries(data.radar)
-                .filter(([k]) => !k.endsWith("_json"))
-                .slice(0, 8)
-                .map(([key, value]) => (
-                  <div key={key} className="flex justify-between border-b border-quartz-vein/40 py-1">
-                    <dt>{key}</dt>
-                    <dd className="text-bone">{String(value)}</dd>
-                  </div>
-                ))}
-            </dl>
-          </ChartFrame>
-        ) : null}
 
         {data.data_notes.length > 0 ? (
           <div className="card p-4 text-sm text-cinder">
