@@ -55,6 +55,11 @@ KEY_SCHEMAS = (
 
 def run(cmd: list[str], cwd: Path) -> None:
     """Run a subprocess command, exiting on failure."""
+    executable = cmd[0]
+    if executable == "npm" and sys.platform == "win32":
+        npm = shutil.which("npm") or shutil.which("npm.cmd")
+        if npm:
+            cmd = [npm, *cmd[1:]]
     print(f"$ {' '.join(cmd)}")
     subprocess.run(cmd, cwd=cwd, check=True)
 
