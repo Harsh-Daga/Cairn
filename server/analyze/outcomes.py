@@ -9,9 +9,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from cairn.outcomes.labels import derive_outcome_label
-from cairn.outcomes.tests import TestResult, run_tests, test_command_for
 from server.analyze.events import spans_to_events
+from server.analyze.outcome_labels import derive_outcome_label
+from server.analyze.outcome_tests import TestResult, run_tests, test_command_for
 from server.analyze.views import IncrementalView, trace_input_hash
 from server.analyze.waste import compute_waste
 from server.models.outcome import Outcome

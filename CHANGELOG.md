@@ -1,5 +1,31 @@
 # Changelog
 
+## 4.0.0 (2026-07-05)
+
+Launch release — v4 rewrite ships as the only supported tree.
+
+### Added
+- **Packaging** — PyPI wheel bundles React UI; hatch build hook + publish CI gate
+- **Installers** — unified `scripts/install.sh` / `install.ps1` (PyPI chain); `cairn doctor`
+- **Agent setup** — `AGENT_SETUP.md`, `cairn setup-prompt`, multi-client `cairn mcp install`
+- **Golden path** — bare `cairn` runs sync + dashboard
+- **Docs** — rewritten README, docs tree, auto-generated `docs/cli.md`
+
+### Changed
+- **Version** — `4.0.0` across pyproject, UI, API health
+- **Package layout** — `server/` + `ui/` only; CLI entry `server.cli:app`
+- **Database** — fresh v4 schema at `.cairn/cairn.db` (no v3 ledger migration)
+
+### Removed
+- Legacy `cairn/` Python package (snapshot on git tag `v3-final`)
+- `tests/_legacy/`, stale docs under `docs/spec`, `docs/superpowers`, `docs/guides`, `docs/reference`
+- v3 CLI verbs (`init`, `validate`, `build`, `profile`, …)
+
+### Breaking
+- v3 `ledger.db` is not migrated — re-run `cairn sync` to ingest logs. See [docs/legacy-v3.md](docs/legacy-v3.md).
+
+---
+
 ## v0.1.0 (2026-07-04)
 
 First v4 release — trace-native observability, measured self-improvement, and a 12-page React UI.
@@ -28,12 +54,11 @@ First v4 release — trace-native observability, measured self-improvement, and 
 - Playwright smoke tests (Overview→Sessions→replay, insight ack, live SSE)
 - Waterfall perf test (10k spans), initial JS bundle budget in CI
 - OpenAPI type generation from `/api/openapi.json`
-- CI: ruff, mypy, pytest, UI typecheck/build, CDN-grep (excludes legacy `cairn/` tree)
+- CI: ruff, mypy, pytest, UI typecheck/build, CDN-grep
 
 ### Wave 6 — Docs + Cleanup
 - Rewrote getting-started, concepts; added adapters, api, ui-tour, optimize, legacy-v3 docs
 - Fixed `ledger.db` → `cairn.db` in configuration reference and README architecture
-- Documented v3 `cairn/` tree as port-only legacy (not deleted; excluded from CDN scan)
 
 ### Added (cross-cutting)
 - v4 trace-native data model with ingest adapters and OTLP receiver

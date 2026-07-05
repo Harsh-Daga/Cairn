@@ -11,18 +11,42 @@ from typing import Annotated, Any
 import typer
 import uvicorn
 
+from server import __version__
 from server.api.actions import build_manifest, get_action
 from server.api.bootstrap import bootstrap_runtime
 from server.api.context import ActionCtx
 from server.api.show import render_waterfall
 from server.app import create_app
 from server.config import Settings
+from server.doctor import print_doctor
 
 app = typer.Typer(
     name="cairn",
     help="Local-first observability and self-improvement for AI coding agents.",
-    no_args_is_help=True,
+    invoke_without_command=True,
 )
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main_callback(
+    ctx: typer.Context,
+    version: Annotated[
+        bool | None,
+        typer.Option("--version", callback=_version_callback, is_eager=True),
+    ] = None,
+) -> None:
+    """Cairn CLI — local-first agent observability."""
+    if ctx.invoked_subcommand is not None or version:
+        return
+    _run_action("sync", {}, None)
+    ui()
+
 
 action_app = typer.Typer(help="Run any registered action by name.")
 app.add_typer(action_app, name="action")
@@ -84,6 +108,16 @@ def sync(
     """Sync agent logs into the local store."""
     result = _run_action("sync", {"source": source}, workspace)
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command()
+def doctor(
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    port: Annotated[int, typer.Option("--port", "-p")] = 8787,
+    json_out: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Verify install, environment, and workspace readiness."""
+    raise typer.Exit(print_doctor(workspace=workspace, port=port, as_json=json_out))
 
 
 @app.command()
@@ -214,9 +248,32 @@ app.add_typer(mcp_app, name="mcp")
 
 
 @mcp_app.command("install")
-def mcp_install(workspace: Annotated[Path | None, typer.Option("--workspace")] = None) -> None:
-    result = _run_action("mcp_install", {}, workspace)
+def mcp_install_cmd(
+    client: Annotated[
+        str,
+        typer.Option("--client", help="Agent client: claude-code, cursor, codex, other"),
+    ] = "cursor",
+    print_only: Annotated[
+        bool,
+        typer.Option("--print", help="Print JSON only; do not write"),
+    ] = False,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Install Cairn MCP config for Claude Code, Cursor, or Codex."""
+    result = _run_action(
+        "mcp_install",
+        {"client": client, "print_only": print_only},
+        workspace,
+    )
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command("setup-prompt")
+def setup_prompt() -> None:
+    """Print the short agent bootstrap prompt for README copy-paste."""
+    from server.mcp.install import BOOTSTRAP_PROMPT
+
+    typer.echo(BOOTSTRAP_PROMPT)
 
 
 @mcp_app.callback(invoke_without_command=True)

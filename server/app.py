@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from server.api.bootstrap import bootstrap_runtime
@@ -40,7 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application = FastAPI(
         title="Cairn",
         description="Local-first observability for AI coding agents",
-        version="0.1.0",
+        version="4.0.0",
         docs_url=f"{API_PREFIX}/docs",
         openapi_url=f"{API_PREFIX}/openapi.json",
         lifespan=_lifespan,
@@ -50,7 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @application.get(f"{API_PREFIX}/health")
     def health() -> JSONResponse:
-        return JSONResponse({"status": "ok", "version": "0.1.0"})
+        return JSONResponse({"status": "ok", "version": "4.0.0"})
 
     @application.get(f"{API_PREFIX}/live/events")
     def legacy_live_events(request: Request) -> StreamingResponse:
@@ -100,31 +100,46 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     static_dir = cfg.static_dir
-    if static_dir.is_dir():
+    index_html = static_dir / "index.html"
+    ui_built = index_html.is_file()
+
+    if ui_built:
         assets_dir = static_dir / "assets"
         if assets_dir.is_dir():
             application.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-        index_html = static_dir / "index.html"
+    _DEV_BUILD_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Cairn — UI not built</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 42rem;
+           margin: 4rem auto; padding: 0 1rem; }
+    code { background: #f4f4f5; padding: 0.15rem 0.35rem; border-radius: 4px; }
+    pre { background: #18181b; color: #fafafa; padding: 1rem; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Cairn dashboard UI not bundled</h1>
+  <p>The API is running, but static assets are missing from this install.
+     Build the UI once, then restart:</p>
+  <pre>python scripts/build_ui.py
+cairn ui --no-open</pre>
+  <p>API health: <a href="/api/health">/api/health</a></p>
+</body>
+</html>"""
 
-        @application.get("/{full_path:path}", response_model=None)
-        def spa_fallback(full_path: str) -> FileResponse | JSONResponse:
-            if full_path.startswith("api/"):
-                return JSONResponse(
-                    status_code=404,
-                    content={"error": {"code": "not_found", "message": "API route not found"}},
-                )
-            if index_html.is_file():
-                return FileResponse(index_html)
+    @application.get("/{full_path:path}", response_model=None)
+    def spa_fallback(full_path: str) -> FileResponse | HTMLResponse | JSONResponse:
+        if full_path.startswith("api/"):
             return JSONResponse(
-                status_code=503,
-                content={
-                    "error": {
-                        "code": "ui_not_built",
-                        "message": "UI not built — run scripts/build_ui.py",
-                    }
-                },
+                status_code=404,
+                content={"error": {"code": "not_found", "message": "API route not found"}},
             )
+        if ui_built:
+            return FileResponse(index_html)
+        return HTMLResponse(_DEV_BUILD_HTML, status_code=503)
 
     return application
 

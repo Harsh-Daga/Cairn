@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from cairn.config import get_diagnose_setting
+from server.util.user_config import get_diagnose_setting
 
 
 def detect_cascade(events: list[dict[str, Any]]) -> tuple[int | None, int, int]:

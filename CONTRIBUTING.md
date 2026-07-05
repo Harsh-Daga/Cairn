@@ -1,55 +1,52 @@
 # Contributing
 
-Thanks for helping improve Cairn. The project is a local-first Python tool with a bundled vanilla-JS dashboard — keep changes small, tested, and stdlib-first.
+Thanks for helping improve Cairn. v4 lives under `server/` (Python) and `ui/` (React/Vite).
 
 ## Dev setup
 
 ```bash
 git clone https://github.com/Harsh-Daga/Cairn.git && cd Cairn
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-python3 -m pytest tests/ -q
+uv venv && source .venv/bin/activate
+uv pip install -e ".[dev]"
+python scripts/build_ui.py
+uv run pytest -q
+uv run ruff check .
+uv run mypy --strict server
 ```
 
-Requires Python 3.11+. Runtime dependencies are only `httpx` and `numpy` — do not add pydantic, fastapi, pyyaml, or jinja2.
+Requires Python 3.11+. UI: Node 22+, `cd ui && npm ci && npx tsc --noEmit`.
 
-## Layout
+## Adapter PRs
 
-```
-cairn/
-  cli/main.py          # all CLI commands (single file)
-  ingest/              # parsers, writer, watch (incl. vscdb tail)
-  ledger/              # sqlite schema + resolve
-  metrics/             # compute, waste, fingerprint
-  profile/             # context decomposition + detectors
-  outcomes/            # git/tests quality scoring
-  optimize/            # evidence → proposals → measured impact
-  mcp/                 # stdio MCP server + tools
-  live/server.py       # dashboard + /api/* + SSE
-  render/              # dash/session payloads, scrub
-  assets/              # index.html, dashboard.js, session.js, CSS
-```
+1. Add parser under `server/ingest/adapters/`
+2. Register in `server/ingest/registry.py`
+3. Add fixture under `tests/fixtures/ingest/`
+4. Run conformance: `uv run pytest tests/adapter_conformance.py` *(L6)*
 
-## LOC budget
+One parser + one fixture + harness green = mergeable adapter PR.
 
-The v3 rebuild target was ~8–10k Python LOC with only necessary code. Before adding a module, extend an existing one. Avoid duplicate helpers and narrating comments.
+## Style gates
+
+- Modules ≤ 400 lines
+- No SQL outside `server/store/`
+- `mypy --strict`, `ruff`, `tsc` clean
+- No CDN URLs (`tests/test_cdn_grep.py`)
+- Mutations through action registry only (CLI/API/UI parity)
+- Regenerate `docs/cli.md` when changing CLI or actions: `python scripts/gen_cli_docs.py`
 
 ## Tests
 
 ```bash
-python3 -m pytest tests/ -q
-python3 -m pytest tests/test_ingest_cursor.py -v   # single file
+uv run pytest -q
+uv run pytest tests/test_docs.py -q   # docs + CLI surface
 ```
-
-Add tests for real behavior, not trivial assertions. Keep `tests/test_docs.py` green when changing docs.
-
-## Design system
-
-Dashboard uses **Surveyor's Field Notebook** (Part 18): mineral palette, Fraunces + Space Grotesk + JetBrains Mono, no pure `#000`/`#fff`, DOMPurify on all dynamic HTML. See `tests/test_assets_design.py` for guards.
 
 ## Pull requests
 
 - One logical change per PR when possible
-- `python3 -m pytest tests/ -q` green
-- Update docs if CLI or behavior changes
-- No commits to unrelated formatting
+- Update docs when CLI or behavior changes
+- Keep `tests/test_docs.py` green
+
+## Legacy v3
+
+The v3 tree was removed in 4.0.0. Reference tag `v3-final` — see [docs/legacy-v3.md](docs/legacy-v3.md).

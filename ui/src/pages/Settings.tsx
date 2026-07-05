@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchWorkspace, runAction } from "@/lib/api";
 import { formatRelative } from "@/lib/format";
@@ -6,8 +7,13 @@ import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 import { ErrorCard } from "@/components/common/DataViews";
 
+const BOOTSTRAP_PROMPT =
+  "Set up Cairn (open-source agent observability, https://github.com/Harsh-Daga/Cairn) in this repo. Fetch https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/AGENT_SETUP.md and follow it exactly. Do not use sudo; stop and report if any VERIFY step fails.";
+const AGENT_SETUP_URL = "https://github.com/Harsh-Daga/Cairn/blob/main/AGENT_SETUP.md";
+
 export function SettingsPage() {
   const showToast = useToastStore((s) => s.show);
+  const [copied, setCopied] = useState(false);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["workspace"],
     queryFn: fetchWorkspace,
@@ -136,6 +142,40 @@ export function SettingsPage() {
             >
               Rebuild views
             </button>
+          </div>
+        </section>
+
+        <section className="card p-4">
+          <h2 className="font-display text-sm text-bone">Set up on another machine</h2>
+          <p className="mt-2 text-sm text-cinder">
+            Paste this into any coding agent (Claude Code, Cursor, Codex…) to install Cairn in a
+            repo.
+          </p>
+          <pre className="mt-3 overflow-x-auto rounded-sm bg-granite/40 p-3 font-mono text-[11px] text-bone">
+            {BOOTSTRAP_PROMPT}
+          </pre>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
+              onClick={() => {
+                void navigator.clipboard.writeText(BOOTSTRAP_PROMPT).then(() => {
+                  setCopied(true);
+                  showToast("Bootstrap prompt copied");
+                  window.setTimeout(() => setCopied(false), 2000);
+                });
+              }}
+            >
+              {copied ? "Copied" : "Copy prompt"}
+            </button>
+            <a
+              href={AGENT_SETUP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone hover:bg-granite"
+            >
+              Full AGENT_SETUP.md
+            </a>
           </div>
         </section>
 

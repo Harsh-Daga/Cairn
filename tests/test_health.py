@@ -15,7 +15,7 @@ def test_health_endpoint() -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "ok"
-    assert body["version"] == "0.1.0"
+    assert body["version"] == "4.0.0"
 
 
 def test_loopback_bind_validation() -> None:
