@@ -1,0 +1,153 @@
+tests/test_waterfall_perf.py
+  s_b0c0d87e8b3feb::t_f399376c28e55b 67-68
+  s_742d0099f0cd7f::t_c0713f50020ca1 1-66
+ui/src/pages/Sessions.tsx
+  s_d127679309cdc5::t_b6723c950d6bc9 9-10,13,17-18,21,25-41,60-97,101-105,109-111,118,146-147
+  s_b0c0d87e8b3feb::t_be8024f76e9fda 148
+ui/src/pages/Agents.tsx
+  s_d127679309cdc5::t_b5dc1ed14fdcd2 9,100-102
+ui/src/pages/Settings.tsx
+  s_d127679309cdc5::t_83a1e013fc90a8 33
+  s_d127679309cdc5::t_2fc4ca467fa355 88-93
+  s_d127679309cdc5::t_c675387fb46322 53-56
+ui/src/components/waterfall/Waterfall.tsx
+  s_2558bea4b36dde::t_ebd4078b9933e8 48
+  s_d127679309cdc5::t_faabb6d8e918a4 22-26,31-34
+  s_d127679309cdc5::t_384b5a90b308c1 45
+  s_d127679309cdc5::t_80a21a8227b847 82,91-93
+docs/getting-started.md
+  s_742d0099f0cd7f::t_3a52e664a29395 7-8,11,13-20,24,30-33,35,40-42,45-54,62,64,66,71-84,87-90
+docs/reference/configuration.md
+  s_742d0099f0cd7f::t_1b1052f311112b 3-41
+  s_742d0099f0cd7f::t_b18a16bd0fdb0c 163
+docs/ui-tour.md
+  s_742d0099f0cd7f::t_b6543193f0d493 1-113
+ui/e2e/smoke.spec.ts
+  s_2558bea4b36dde::t_8d894b558ee067 1-31,33,35
+  s_2558bea4b36dde::t_b8a87fdbe04dbe 32,34
+ui/src/lib/types.ts
+  s_d127679309cdc5::t_e92cd2b57162d4 224-243
+ui/package.json
+  s_742d0099f0cd7f::t_c0713f50020ca1 12-13
+  s_2558bea4b36dde::t_ebd4078b9933e8 40
+docs/superpowers/plans/2026-07-04-v4-completion.md
+  s_b0c0d87e8b3feb::t_1460799f319361 240-246
+docs/api.md
+  s_2558bea4b36dde::t_d2b7947c3be979 1-132
+ui/src/components/session/ReplayScrubber.tsx
+  s_d127679309cdc5::t_1bf1ec962248b0 52,56-76,78-82
+  s_d127679309cdc5::t_dbe3714ef31024 3
+docs/legacy-v3.md
+  s_742d0099f0cd7f::t_37a7e5cb259cba 1-45
+ui/src/pages/Insights.tsx
+  s_d127679309cdc5::t_55e797fe52f719 57-69
+  s_d127679309cdc5::t_dd09de86cf6732 18
+  s_d127679309cdc5::t_10ff71d4f20313 92-94,98-122,124
+  s_742d0099f0cd7f::t_efb6bb3989eb20 2
+ui/src/components/agents/HandoffDag.tsx
+  s_d127679309cdc5::t_3acc1530453c81 1-131
+ui/vite.config.ts
+  s_2558bea4b36dde::t_0e44ffc532ece8 16
+ui/playwright.config.ts
+  s_2558bea4b36dde::t_518b5a8aa69827 1-20
+ui/src/pages/Optimize.tsx
+  s_d127679309cdc5::t_c72cd339ab71c1 2-3,9,13-114,186-214,219-229
+ui/src/components/session/SpanInspector.tsx
+  s_d127679309cdc5::t_0604173e76cd16 1,6-7,13-14,24,27-40,42-76,78-85,87-108
+.github/workflows/ci.yml
+  s_2558bea4b36dde::t_9e165730eb756d 68-77
+ui/src/pages/Overview.tsx
+  s_2558bea4b36dde::t_10fc6ea46a7598 13
+  s_d127679309cdc5::t_103c464daca052 79-83,86
+  s_d127679309cdc5::t_bdf2c29cb7fdce 3-10,16-21,33-52,71,74-75,78,84-85,87-101,134-139,142-204,237,242,249-253
+docs/optimize.md
+  s_742d0099f0cd7f::t_eae133a8fff32b 1-109
+scripts/build_ui.py
+  s_2558bea4b36dde::t_a2e15c66c38e57 72-75
+  s_742d0099f0cd7f::t_efb6bb3989eb20 78-81
+  s_2558bea4b36dde::t_839af6e63c9334 107-110
+  s_2558bea4b36dde::t_d88cfcca7f9863 51-52
+  s_2558bea4b36dde::t_fffc9f8c8b7bb3 68-71
+  s_b0c0d87e8b3feb::t_2b7c3cebe7f261 162-163
+  s_2558bea4b36dde::t_449d8ffae83762 6-7,12,18-50,76-77,82-98,101-106,111-161,164-176,178-189,197-198,228
+  s_2558bea4b36dde::t_faef92573276c9 99-100
+  s_2558bea4b36dde::t_327ff88ae10f81 190-196
+docs/concepts.md
+  s_b0c0d87e8b3feb::t_0826b730b5c15d 5-36,40,44,48,53,56,60-67,84-85,87-90,92-93,95
+ui/src/pages/Behavior.tsx
+  s_d127679309cdc5::t_1b56822588a78d 1,9-51,62-68,104-105,117-133
+  s_2558bea4b36dde::t_e8c9331e17582e 134
+ui/src/pages/Quality.tsx
+  s_2558bea4b36dde::t_a790764988b6a7 1,6,9-10,15,22-30,75-79,83-93,97-115,117-120,125-150
+  s_d127679309cdc5::t_a6cc91565a497e 80-82
+ui/src/pages/Search.tsx
+  s_d127679309cdc5::t_61d5b81e5a2c9d 90-95
+  s_d127679309cdc5::t_19ce5ee25b8e31 77-84
+ui/src/pages/SessionDetail.tsx
+  s_b0c0d87e8b3feb::t_2c861eee7ecacf 18-19,41-45,47-48,79,104-128,132,135
+ui/src/lib/api.ts
+  s_d127679309cdc5::t_8ed7d41d37a74d 6,14,17
+  s_d127679309cdc5::t_1293eff1b62df0 136-147
+README.md
+  s_742d0099f0cd7f::t_3db1a62d4a818e 118
+  s_2558bea4b36dde::t_a790764988b6a7 138-141,145
+  s_742d0099f0cd7f::t_924d22be3558ba 88-98
+docs/README.md
+  s_742d0099f0cd7f::t_b9761b57770da2 3,7-10,18-19,26-27,29-30,34
+docs/adapters.md
+  s_742d0099f0cd7f::t_299a4787acab59 1-68
+CHANGELOG.md
+  s_2558bea4b36dde::t_7f800890197c8f 5-41,45
+ui/src/pages/Live.tsx
+  s_d127679309cdc5::t_538fa97455e231 95-102,105
+  s_d127679309cdc5::t_814bf7e8fa6bd2 50-51
+  s_d127679309cdc5::t_6c25e544b2c87c 130-157
+  s_d127679309cdc5::t_081de021602581 23
+  s_d127679309cdc5::t_6236495789bc3a 70
+ui/src/pages/Context.tsx
+  s_d127679309cdc5::t_aacfb5fc20b82d 3,9-10,33-36,56,74-95,121-174,184
+  s_d127679309cdc5::t_02eaea1d600579 6
+  s_d127679309cdc5::t_a1294b57446638 73
+ui/package-lock.json
+  s_2558bea4b36dde::t_bb43f8f425cd35 35,1049-1064,3619-3665
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "78f1f046726f648e5fd6ae9520932a1d140debfe",
+  "prompts": {},
+  "sessions": {
+    "s_2558bea4b36dde": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8cafa5ef-4af6-45b9-9534-35a4d1ed4473",
+        "model": "composer-2.5-fast"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_742d0099f0cd7f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2d3c2927-091a-4458-810b-7e5a2d026b3c",
+        "model": "composer-2.5-fast"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_b0c0d87e8b3feb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "da96b872-0253-4a5f-9d47-a06581ddd0c6",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_d127679309cdc5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "f6283a68-0fcc-4adc-a280-393e925cabe5",
+        "model": "composer-2.5-fast"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
