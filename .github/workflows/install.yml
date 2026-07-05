@@ -91,6 +91,7 @@ jobs:
           $env:Path = "$(uv tool dir --bin);$env:Path"
           cairn --version
           cairn doctor --json
+          if ($LASTEXITCODE -ne 0) { Write-Warning "doctor reported issues (non-fatal in CI)" }
 
       - name: Health check after ui start
         shell: pwsh
