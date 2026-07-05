@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import typer
@@ -12,21 +14,80 @@ from server.cli import app
 from server.mcp.install import AGENT_SETUP_URL, BOOTSTRAP_PROMPT
 
 ROOT = Path(__file__).resolve().parent.parent
+README = ROOT / "README.md"
+CLI_DOC = ROOT / "docs" / "cli.md"
+GEN_CLI = ROOT / "scripts" / "gen_cli_docs.py"
 
 FENCED_CMD = re.compile(r"```(?:bash|sh|shell)?\n(.*?)```", re.DOTALL)
+README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]+)`\s*\|", re.MULTILINE)
+
+DOCS_INDEX = [
+    "docs/getting-started.md",
+    "docs/concepts.md",
+    "docs/ui-tour.md",
+    "docs/cli.md",
+    "docs/api.md",
+    "docs/adapters.md",
+    "docs/optimize.md",
+    "docs/ci.md",
+    "docs/configuration.md",
+    "docs/legacy-v3.md",
+    "ACCURACY.md",
+    "AGENT_SETUP.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+]
+
+FORBIDDEN_DOC_PATTERNS = [
+    re.compile(r"(?<![./])cairn/[a-z_]+"),  # legacy module paths, not .cairn/
+    re.compile(r"\brun_id\b"),
+    re.compile(r"`cairn (init|validate|build|profile|behavior|outcomes|advanced)\b"),
+    re.compile(r"docs/reference/"),
+    re.compile(r"docs/guides/"),
+    re.compile(r"docs/spec/"),
+]
+
+FORBIDDEN_DOC_PATHS = {
+    ROOT / "docs" / "legacy-v3.md",
+}
+
+README_CLI_COMMANDS = [
+    "cairn",
+    "cairn sync",
+    "cairn show ID",
+    "cairn insights",
+    "cairn optimize",
+    "cairn experiments ls",
+    "cairn check",
+    "cairn export",
+    "cairn mcp install",
+    "cairn doctor",
+    "cairn setup-prompt",
+]
+
+
+def _command_label(cmd: object) -> str | None:
+    name = getattr(cmd, "name", None)
+    if name:
+        return str(name).replace("_", "-")
+    callback = getattr(cmd, "callback", None)
+    raw = getattr(callback, "__name__", "") or ""
+    aliases = {"show_trace": "show", "setup_prompt": "setup-prompt", "mcp_install_cmd": "install"}
+    return aliases.get(raw, raw.replace("_", "-")) or None
 
 
 def _cli_command_names() -> set[str]:
     names: set[str] = set()
     for cmd in app.registered_commands:
-        if cmd.name:
-            names.add(cmd.name.replace("_", "-"))
+        label = _command_label(cmd)
+        if label:
+            names.add(label)
     for group in app.registered_groups:
-        if group.name:
-            names.add(group.name)
+        gname = group.name or ""
         for sub in group.typer_instance.registered_commands:
-            if sub.name:
-                names.add(f"{group.name} {sub.name}".replace("_", "-"))
+            sublabel = _command_label(sub)
+            if sublabel:
+                names.add(f"{gname} {sublabel}".replace("_", "-"))
     return names
 
 
@@ -42,7 +103,7 @@ def _commands_in_markdown(path: Path) -> list[str]:
             line = line.strip()
             if not line or line.startswith("#") or line.startswith("export "):
                 continue
-            if line.startswith("curl ") or line.startswith("python") or line.startswith("pip"):
+            if line.startswith(("curl ", "python", "pip", "uv ", "cd ", "sleep")):
                 continue
             if line.startswith("cairn "):
                 cmd = line.split("&", 1)[0].strip()
@@ -50,6 +111,88 @@ def _commands_in_markdown(path: Path) -> list[str]:
                     continue
                 commands.append(cmd)
     return commands
+
+
+def _command_exists(cmd: str, cli: set[str], actions: set[str]) -> bool:
+    normalized = re.sub(r"<[^>]+>", "8787", cmd.replace("ID", "trace-id")).strip()
+    if normalized == "cairn":
+        return True
+    body = normalized.removeprefix("cairn ").strip()
+    parts = body.split()
+    if not parts:
+        return True
+    top = parts[0].replace("_", "-")
+    if top == "action":
+        return len(parts) > 1 and parts[1].replace("-", "_") in actions
+    if top == "mcp" and len(parts) > 1:
+        return f"mcp {parts[1].replace('_', '-')}" in cli
+    if top == "ui":
+        return "ui" in cli
+    if len(parts) > 1:
+        key = f"{top} {parts[1].replace('_', '-')}"
+        return key in cli or top in cli
+    return top in cli
+
+
+def test_readme_line_count() -> None:
+    lines = README.read_text(encoding="utf-8").splitlines()
+    assert len(lines) <= 250, f"README has {len(lines)} lines (max 250)"
+
+
+def test_docs_index_links_resolve() -> None:
+    missing = [rel for rel in DOCS_INDEX if not (ROOT / rel).is_file()]
+    assert not missing, f"Missing docs: {missing}"
+
+
+def test_readme_internal_links_resolve() -> None:
+    text = README.read_text(encoding="utf-8")
+    broken: list[str] = []
+    for match in re.finditer(r"\]\(([^)]+)\)", text):
+        target = match.group(1).split("#", 1)[0]
+        if not target or target.startswith("http"):
+            continue
+        if not (ROOT / target).exists():
+            broken.append(target)
+    assert not broken, f"Broken README links: {broken}"
+
+
+def test_readme_cli_table_commands_exist() -> None:
+    cli = _cli_command_names()
+    actions = _action_names()
+    missing = [c for c in README_CLI_COMMANDS if not _command_exists(c, cli, actions)]
+    assert not missing, f"README CLI commands missing from surface: {missing}"
+
+
+def test_readme_cli_table_matches_list() -> None:
+    text = README.read_text(encoding="utf-8")
+    found = README_CLI_ROW.findall(text)
+    assert found, "README CLI table not found"
+    for cmd in found:
+        base = cmd.replace(" ID", "").strip()
+        assert base in README_CLI_COMMANDS or base.startswith("cairn ")
+
+
+def test_cli_doc_is_current() -> None:
+    before = CLI_DOC.read_text(encoding="utf-8")
+    subprocess.run([sys.executable, str(GEN_CLI)], check=True, cwd=ROOT)
+    after = CLI_DOC.read_text(encoding="utf-8")
+    assert before == after, "docs/cli.md is stale — run: python scripts/gen_cli_docs.py"
+
+
+def test_no_v3_terms_in_docs() -> None:
+    paths = [README, ROOT / "docs", ROOT / "AGENT_SETUP.md"]
+    violations: list[str] = []
+    for base in paths:
+        files = [base] if base.is_file() else base.rglob("*.md")
+        for path in files:
+            if not path.is_file() or path in FORBIDDEN_DOC_PATHS:
+                continue
+            text = path.read_text(encoding="utf-8")
+            for pattern in FORBIDDEN_DOC_PATTERNS:
+                for match in pattern.finditer(text):
+                    line = text[: match.start()].count("\n") + 1
+                    violations.append(f"{path.relative_to(ROOT)}:{line}: {match.group()}")
+    assert not violations, "Forbidden v3/stale doc terms:\n" + "\n".join(violations)
 
 
 def test_agent_setup_bootstrap_url() -> None:
@@ -60,36 +203,16 @@ def test_agent_setup_bootstrap_url() -> None:
 def test_agent_setup_commands_exist() -> None:
     cli = _cli_command_names()
     actions = _action_names()
-    missing: list[str] = []
-    for cmd in _commands_in_markdown(ROOT / "AGENT_SETUP.md"):
-        body = cmd.removeprefix("cairn ").strip()
-        top = body.split()[0] if body else ""
-        if top == "action":
-            action_name = body.split()[1] if len(body.split()) > 1 else ""
-            if action_name and action_name not in actions:
-                missing.append(cmd)
-        elif top == "mcp":
-            sub = body.split()[1] if len(body.split()) > 1 else ""
-            if f"mcp {sub}".replace("_", "-") not in cli:
-                missing.append(cmd)
-        elif top.replace("_", "-") not in cli and top not in {
-            "ui",
-            "sync",
-            "stop",
-            "insights",
-        }:
-            missing.append(cmd)
+    missing = [
+        c
+        for c in _commands_in_markdown(ROOT / "AGENT_SETUP.md")
+        if not _command_exists(c, cli, actions)
+    ]
     assert not missing, f"Unknown AGENT_SETUP commands: {missing}"
 
 
 def test_setup_prompt_cli() -> None:
     assert "setup-prompt" in _cli_command_names()
-
-
-def test_docs_links_resolve() -> None:
-    """README doc links are validated in L3 once the docs tree is finalized."""
-    assert (ROOT / "AGENT_SETUP.md").is_file()
-    assert (ROOT / "docs/legacy-v3.md").is_file()
 
 
 def test_cli_app_loads() -> None:

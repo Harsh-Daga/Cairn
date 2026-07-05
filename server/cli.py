@@ -23,7 +23,7 @@ from server.doctor import print_doctor
 app = typer.Typer(
     name="cairn",
     help="Local-first observability and self-improvement for AI coding agents.",
-    no_args_is_help=True,
+    invoke_without_command=True,
 )
 
 
@@ -42,7 +42,10 @@ def main_callback(
     ] = None,
 ) -> None:
     """Cairn CLI — local-first agent observability."""
-    del ctx, version
+    if ctx.invoked_subcommand is not None or version:
+        return
+    _run_action("sync", {}, None)
+    ui()
 
 
 action_app = typer.Typer(help="Run any registered action by name.")
