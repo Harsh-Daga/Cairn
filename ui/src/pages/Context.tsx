@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { fetchRegions, fetchWaste, timeRangeDays } from "@/lib/api";
+import { fetchRegions, fetchUsage, fetchWaste, timeRangeDays } from "@/lib/api";
 import { formatCost, formatTokens } from "@/lib/format";
 import { useUiStore } from "@/state/ui";
+import type { UsageSeriesRow } from "@/lib/types";
 import { PageShell } from "@/components/common/PageShell";
 import { ChartFrame } from "@/components/common/Chip";
-import { EmptyCard, ErrorCard, HorizontalBars } from "@/components/common/DataViews";
+import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
+import { HorizontalBars, StackedArea } from "@/components/charts";
 
 const REGION_LABELS: Record<string, string> = {
   system: "System prompt",
@@ -28,6 +30,10 @@ export function ContextPage() {
     queryKey: ["waste", days],
     queryFn: () => fetchWaste(days),
   });
+  const usageQ = useQuery({
+    queryKey: ["usage", days],
+    queryFn: () => fetchUsage(days),
+  });
 
   if (regionsQ.isLoading || wasteQ.isLoading) {
     return (
@@ -47,6 +53,7 @@ export function ContextPage() {
 
   const regions = regionsQ.data?.regions ?? [];
   const waste = wasteQ.data;
+  const usageSeries = usageQ.data?.series ?? [];
   const totalTokens = regions.reduce((sum, r) => sum + Number(r.tokens), 0);
   const toolResultTokens =
     regions.find((r) => r.region === "tool_result")?.tokens ?? 0;
@@ -62,6 +69,29 @@ export function ContextPage() {
       </PageShell>
     );
   }
+
+  const tokenComposition = usageSeries.map((r: UsageSeriesRow) => ({
+    day: r.key.slice(5) || r.key,
+    input: Number(r.input_tokens),
+    output: Number(r.output_tokens),
+  }));
+
+  const hotspotRows =
+    regions.length > 0
+      ? regions
+          .slice()
+          .sort((a, b) => Number(b.spans) - Number(a.spans))
+          .slice(0, 8)
+          .map((r) => ({
+            path: REGION_LABELS[r.region] ?? r.region,
+            spans: Number(r.spans),
+            tokens: Number(r.tokens),
+          }))
+      : (waste?.categories ?? []).slice(0, 8).map((c) => ({
+          path: c.category.replace(/_/g, " "),
+          spans: Number(c.events ?? 0),
+          tokens: Number(c.tokens),
+        }));
 
   return (
     <PageShell title="Context" question="Where does every token go, and what's re-billed?">
@@ -88,13 +118,60 @@ export function ContextPage() {
           </div>
         </div>
 
-        <ChartFrame title="Context composition" subtitle="Tokens by region">
-          <HorizontalBars
-            items={regions.map((r) => ({
-              label: REGION_LABELS[r.region] ?? r.region,
-              value: Number(r.tokens),
-            }))}
-          />
+        <ChartFrame
+          title="Context composition"
+          subtitle={
+            usageSeries.length > 1 ? "Daily token mix (input vs output)" : "Tokens by region"
+          }
+        >
+          {usageSeries.length > 1 ? (
+            <StackedArea
+              data={tokenComposition}
+              keys={["input", "output"]}
+              xKey="day"
+              width={640}
+              height={200}
+            />
+          ) : (
+            <HorizontalBars
+              items={regions.map((r) => ({
+                label: REGION_LABELS[r.region] ?? r.region,
+                value: Number(r.tokens),
+              }))}
+              width={480}
+            />
+          )}
+        </ChartFrame>
+
+        <ChartFrame title="Hotspots" subtitle="Top regions or waste categories by span count">
+          {hotspotRows.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="font-mono text-[10px] uppercase tracking-wide text-cinder">
+                  <tr>
+                    <th className="px-2 py-2">Path / category</th>
+                    <th className="px-2 py-2 text-right">Spans</th>
+                    <th className="px-2 py-2 text-right">Tokens</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hotspotRows.map((row) => (
+                    <tr key={row.path} className="border-t border-quartz-vein/50">
+                      <td className="px-2 py-2 font-mono text-xs text-bone">{row.path}</td>
+                      <td className="px-2 py-2 text-right font-mono text-xs text-cinder">
+                        {row.spans.toLocaleString()}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono text-xs text-bone">
+                        {formatTokens(row.tokens)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-cinder">No hotspot data in this window.</p>
+          )}
         </ChartFrame>
 
         <ChartFrame title="Waste ledger" subtitle="Re-billing categories">
@@ -103,8 +180,8 @@ export function ContextPage() {
               items={(waste?.categories ?? []).map((c) => ({
                 label: c.category.replace(/_/g, " "),
                 value: Number(c.tokens),
-                to: `/insights?detector=${encodeURIComponent(c.category)}`,
               }))}
+              width={480}
             />
           ) : (
             <p className="text-sm text-cinder">No waste categories recorded yet.</p>

@@ -3,6 +3,7 @@ import type {
   AgentsResponse,
   BehaviorResponse,
   EvidenceChainResponse,
+  ExperimentDetailResponse,
   ExperimentsResponse,
   InsightsResponse,
   OverviewResponse,
@@ -10,8 +11,10 @@ import type {
   RegionsAnalyticsResponse,
   ReplayResponse,
   SearchResponse,
+  TailAnalyticsResponse,
   TraceDetailResponse,
   TracesListResponse,
+  UsageAnalyticsResponse,
   WasteAnalyticsResponse,
   WorkspaceResponse,
 } from "./types";
@@ -128,6 +131,18 @@ export function fetchRegions(days: number): Promise<RegionsAnalyticsResponse> {
 
 export function fetchWaste(days: number): Promise<WasteAnalyticsResponse> {
   return fetchJson(`/analytics/waste?days=${days}`);
+}
+
+export function fetchUsage(days: number): Promise<UsageAnalyticsResponse> {
+  return fetchJson(`/analytics/usage?days=${days}&group_by=day`);
+}
+
+export function fetchTail(days: number): Promise<TailAnalyticsResponse> {
+  return fetchJson(`/analytics/tail?days=${days}`);
+}
+
+export function fetchExperimentDetail(experimentId: string): Promise<ExperimentDetailResponse> {
+  return fetchJson(`/experiments/${encodeURIComponent(experimentId)}`);
 }
 
 export function fetchExperiments(): Promise<ExperimentsResponse> {

@@ -3,33 +3,53 @@
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 UI_DIR = ROOT / "ui"
 STATIC_DIR = ROOT / "server" / "static"
 TYPES_OUT = UI_DIR / "src" / "lib" / "types.ts"
-OPENAPI_PLACEHOLDER = (
-    "/** Placeholder types - generated from OpenAPI in scripts/build_ui.py (Phase 7). */\n\n"
-    "export interface TraceRow {\n"
-    "  trace_id: string;\n"
-    "  title: string | null;\n"
-    "  source: string;\n"
-    "  started_at: string | null;\n"
-    "  cost: number;\n"
-    "  input_tokens: number;\n"
-    "  output_tokens: number;\n"
-    "}\n\n"
-    "export interface InsightRow {\n"
-    "  insight_id: string;\n"
-    "  title: string;\n"
-    "  severity: string;\n"
-    "  state: string;\n"
-    "}\n\n"
-    'export type TimeRange = "24h" | "7d" | "30d" | "90d";\n'
+
+KEY_SCHEMAS = (
+    "OverviewResponse",
+    "TraceRow",
+    "TracesListResponse",
+    "Span",
+    "SpanNode",
+    "Trace",
+    "TraceDetailResponse",
+    "ReplayResponse",
+    "InsightRow",
+    "InsightsResponse",
+    "EvidenceChainResponse",
+    "ActionManifestEntry",
+    "ActionsManifestResponse",
+    "AgentAggregate",
+    "AgentsResponse",
+    "BehaviorResponse",
+    "QualityResponse",
+    "RegionsAnalyticsResponse",
+    "WasteAnalyticsResponse",
+    "ExperimentRow",
+    "ExperimentsResponse",
+    "ExperimentDetailResponse",
+    "SearchHit",
+    "SearchResponse",
+    "WorkspaceAdapter",
+    "PlanWindowGauge",
+    "WorkspaceResponse",
+    "DataNote",
+    "NarrativeSentence",
+    "TailRisk",
+    "SpanLink",
+    "UsageAnalyticsResponse",
+    "TailAnalyticsResponse",
 )
 
 
@@ -45,10 +65,137 @@ def ensure_npm_deps() -> None:
         run(["npm", "install"], UI_DIR)
 
 
+def _ts_type(schema: dict[str, Any] | bool, schemas: dict[str, Any]) -> str:
+    if isinstance(schema, bool):
+        return "unknown" if schema else "never"
+
+    if "$ref" in schema:
+        ref_name = schema["$ref"].rsplit("/", maxsplit=1)[-1]
+        return ref_name
+
+    if "anyOf" in schema:
+        parts = [_ts_type(part, schemas) for part in schema["anyOf"]]
+        nullable = "null" in parts
+        non_null = [p for p in parts if p != "null"]
+        if nullable and len(non_null) == 1:
+            return f"{non_null[0]} | null"
+        return " | ".join(dict.fromkeys(parts))
+
+    if "oneOf" in schema:
+        parts = [_ts_type(part, schemas) for part in schema["oneOf"]]
+        return " | ".join(dict.fromkeys(parts))
+
+    schema_type = schema.get("type")
+    if schema_type == "string":
+        if "enum" in schema:
+            return " | ".join(json.dumps(v) for v in schema["enum"])
+        return "string"
+    if schema_type == "integer":
+        return "number"
+    if schema_type == "number":
+        return "number"
+    if schema_type == "boolean":
+        return "boolean"
+    if schema_type == "null":
+        return "null"
+    if schema_type == "array":
+        items = schema.get("items", {})
+        return f"{_ts_type(items, schemas)}[]"
+    if schema_type == "object" or "properties" in schema:
+        additional = schema.get("additionalProperties")
+        if additional is not None and not schema.get("properties"):
+            if additional is True:
+                return "Record<string, unknown>"
+            if additional is False:
+                return "Record<string, never>"
+            return f"Record<string, {_ts_type(additional, schemas)}>"
+        return "Record<string, unknown>"
+    if schema_type is None and "enum" in schema:
+        return " | ".join(json.dumps(v) for v in schema["enum"])
+    return "unknown"
+
+
+def _render_interface(name: str, schema: dict[str, Any], schemas: dict[str, Any]) -> str:
+    props = schema.get("properties", {})
+    required = set(schema.get("required", []))
+    lines = [f"export interface {name} {{"]
+    for prop_name, prop_schema in props.items():
+        optional = "" if prop_name in required else "?"
+        ts_type = _ts_type(prop_schema, schemas)
+        lines.append(f"  {prop_name}{optional}: {ts_type};")
+    lines.append("}")
+    return "\n".join(lines)
+
+
+def _openapi_to_typescript(openapi: dict[str, Any]) -> str:
+    schemas: dict[str, Any] = openapi.get("components", {}).get("schemas", {})
+    if not schemas:
+        msg = "OpenAPI schema has no components.schemas"
+        raise ValueError(msg)
+
+    header = (
+        "/** Auto-generated from FastAPI OpenAPI — do not edit by hand. */\n"
+        "/** Regenerate via `python scripts/build_ui.py` (optional OPENAPI_GEN=1). */\n\n"
+    )
+
+    enum_types: list[str] = []
+    interfaces: list[str] = []
+
+    for name in KEY_SCHEMAS:
+        schema = schemas.get(name)
+        if schema is None:
+            continue
+        if schema.get("type") == "string" and "enum" in schema:
+            enum_types.append(
+                f'export type {name} = {" | ".join(json.dumps(v) for v in schema["enum"])};'
+            )
+        else:
+            interfaces.append(_render_interface(name, schema, schemas))
+
+    extra_enums = [
+        ("InsightSeverity", schemas.get("InsightSeverity")),
+        ("InsightLifecycle", schemas.get("InsightLifecycle")),
+        ("SpanKind", schemas.get("SpanKind")),
+    ]
+    for enum_name, enum_schema in extra_enums:
+        if enum_schema and "enum" in enum_schema:
+            vals = " | ".join(json.dumps(v) for v in enum_schema["enum"])
+            enum_types.append(f"export type {enum_name} = {vals};")
+
+    time_range = 'export type TimeRange = "24h" | "7d" | "30d" | "90d";\n'
+    body = "\n\n".join([*enum_types, *interfaces])
+    return header + time_range + "\n" + body + "\n"
+
+
+def _fetch_openapi_schema() -> dict[str, Any]:
+    from server.app import create_app
+
+    app = create_app()
+    return app.openapi()
+
+
 def generate_types() -> None:
-    """Generate TypeScript types from OpenAPI (placeholder until Phase 7)."""
-    TYPES_OUT.write_text(OPENAPI_PLACEHOLDER, encoding="utf-8")
-    print(f"Wrote placeholder types to {TYPES_OUT.relative_to(ROOT)}")
+    """Generate TypeScript types from OpenAPI; skip on failure unless OPENAPI_GEN=1."""
+    strict = os.environ.get("OPENAPI_GEN") == "1"
+    try:
+        openapi = _fetch_openapi_schema()
+        types_content = _openapi_to_typescript(openapi)
+    except Exception as exc:
+        if strict:
+            print(f"ERROR: OpenAPI type generation failed: {exc}", file=sys.stderr)
+            raise
+        print(f"Skipping OpenAPI type generation: {exc}")
+        return
+
+    if not strict:
+        print(
+            f"OpenAPI type generation OK ({len(types_content)} chars); "
+            "set OPENAPI_GEN=1 to overwrite ui/src/lib/types.ts",
+        )
+        return
+
+    TYPES_OUT.write_text(types_content, encoding="utf-8")
+    print(f"Wrote generated types to {TYPES_OUT.relative_to(ROOT)}")
 
 
 def build_ui() -> None:
@@ -78,6 +225,7 @@ def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "clean":
         clean()
         return
+    generate_types()
     build_ui()
 
 

@@ -19,12 +19,19 @@ export interface FlatRow {
   depth: number;
 }
 
-export function flattenTree(nodes: SpanNode[], depth = 0): FlatRow[] {
+export function flattenTree(
+  nodes: SpanNode[],
+  depth = 0,
+  foldSubagents = false,
+): FlatRow[] {
   const rows: FlatRow[] = [];
   for (const node of nodes) {
     rows.push({ span: node.span, depth });
     if (node.children.length > 0) {
-      rows.push(...flattenTree(node.children, depth + 1));
+      const skipChildren = foldSubagents && node.span.kind === "subagent";
+      if (!skipChildren) {
+        rows.push(...flattenTree(node.children, depth + 1, foldSubagents));
+      }
     }
   }
   return rows;
@@ -35,9 +42,10 @@ interface WaterfallProps {
   selectedId: string | null;
   onSelect: (spanId: string) => void;
   maxTokens?: number;
+  blameMode?: boolean;
 }
 
-export function Waterfall({ rows, selectedId, onSelect, maxTokens }: WaterfallProps) {
+export function Waterfall({ rows, selectedId, onSelect, maxTokens, blameMode }: WaterfallProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const tokenMax =
     maxTokens ??
@@ -71,6 +79,7 @@ export function Waterfall({ rows, selectedId, onSelect, maxTokens }: WaterfallPr
           const barClass = KIND_COLORS[span.kind] ?? "bg-granite";
           const selected = selectedId === span.span_id;
           const estimated = span.input_estimated > 0 || span.output_estimated > 0;
+          const wasted = blameMode && (span.waste_tokens > 0 || span.waste_category != null);
 
           return (
             <button
@@ -79,7 +88,9 @@ export function Waterfall({ rows, selectedId, onSelect, maxTokens }: WaterfallPr
               data-span-id={span.span_id}
               className={`absolute left-0 flex w-full items-center border-b border-quartz-vein/40 px-3 py-1 text-left hover:bg-shale/60 ${
                 selected ? "border-l-2 border-l-copper bg-shale/80" : ""
-              } ${span.status === "error" ? "text-cinnabar" : "text-bone"}`}
+              } ${wasted ? "bg-ochre/10 ring-1 ring-inset ring-ochre/40" : ""} ${
+                span.status === "error" ? "text-cinnabar" : "text-bone"
+              }`}
               style={{
                 height: item.size,
                 transform: `translateY(${item.start}px)`,

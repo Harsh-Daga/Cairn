@@ -237,10 +237,10 @@
 
 ## Acceptance Checklist (§11)
 
-- [ ] `pip install cairn-workspace && cairn` opens dashboard with real narrative
-- [ ] Waterfall shows subagent swimlane + replay scrubber
-- [ ] Insight evidence → spans in 2 clicks
-- [ ] Optimize apply → measure → verdict with n_effective
-- [ ] Second actor chip without config
-- [ ] Every UI action exists as CLI command
-- [ ] Zero external network requests
+- [x] `pip install cairn-workspace && cairn` opens dashboard with real narrative
+- [x] Waterfall shows subagent swimlane + replay scrubber
+- [x] Insight evidence → spans in 2 clicks
+- [x] Optimize apply → measure → verdict with n_effective
+- [x] Second actor chip without config
+- [x] Every UI action exists as CLI command
+- [x] Zero external network requests

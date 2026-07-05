@@ -1,5 +1,6 @@
 import type { Span } from "@/lib/types";
 import { formatTokens } from "@/lib/format";
+import { Sparkline } from "@/components/charts";
 
 interface ReplayScrubberProps {
   maxSeq: number;
@@ -48,30 +49,37 @@ interface ContextTimelineProps {
 
 export function ContextTimeline({ spans, selectedId, onSelect }: ContextTimelineProps) {
   const points = spans.filter((s) => s.context_tokens_after != null);
-  const maxCtx = Math.max(1, ...points.map((s) => s.context_tokens_after ?? 0));
+  const data = points.map((s) => s.context_tokens_after ?? 0);
 
   return (
     <div className="card p-3">
-      <h4 className="mb-2 font-mono text-[10px] uppercase tracking-wide text-cinder">Context strata</h4>
-      <div className="flex h-24 items-end gap-0.5">
-        {points.map((span) => {
-          const h = ((span.context_tokens_after ?? 0) / maxCtx) * 100;
-          const selected = selectedId === span.span_id;
-          return (
-            <button
-              key={span.span_id}
-              type="button"
-              data-timeline-span={span.span_id}
-              className={`min-w-[4px] flex-1 rounded-t-sm bg-patina/70 hover:bg-copper/80 ${
-                selected ? "ring-1 ring-copper" : ""
-              }`}
-              style={{ height: `${h}%` }}
-              title={`seq ${span.seq}`}
-              onClick={() => onSelect(span.span_id)}
-            />
-          );
-        })}
+      <h4 className="mb-2 font-mono text-[10px] uppercase tracking-wide text-cinder">
+        Context strata
+      </h4>
+      <div className="relative h-24">
+        <Sparkline data={data} width={320} height={96} className="w-full max-w-full" />
+        <div className="absolute inset-0 flex">
+          {points.map((span) => {
+            const selected = selectedId === span.span_id;
+            return (
+              <button
+                key={span.span_id}
+                type="button"
+                data-timeline-span={span.span_id}
+                className={`min-w-[4px] flex-1 ${selected ? "bg-copper/20 ring-1 ring-copper" : ""}`}
+                title={`seq ${span.seq}`}
+                onClick={() => onSelect(span.span_id)}
+                aria-label={`Select span ${span.seq}`}
+              />
+            );
+          })}
+        </div>
       </div>
+      {data.length > 0 ? (
+        <p className="mt-2 font-mono text-[10px] text-cinder">
+          peak {formatTokens(Math.max(...data))} ctx
+        </p>
+      ) : null}
     </div>
   );
 }

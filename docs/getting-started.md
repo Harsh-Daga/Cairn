@@ -4,41 +4,54 @@
 
 ```bash
 cd your-repo
-cairn
+cairn sync          # ingest agent logs into .cairn/cairn.db
+cairn ui            # start the web UI at http://127.0.0.1:8787
 ```
 
-1. Detects installed agents (Claude Code, Codex, Cursor, OpenCode, Goose, Hermes, Aider, Gemini CLI, Cline/Roo/Kilo, OpenClaw)
-2. Syncs sessions into `.cairn/cairn.db`
-3. Opens `http://127.0.0.1:8787` and backgrounds the server
+On first run, `cairn ui` opens your browser. The FastAPI server binds to loopback only (`127.0.0.1:8787`) unless you pass `--token` for a non-loopback bind.
 
-Stop the dashboard: `cairn stop`  
-Keep the server in your terminal: `cairn --foreground` or `cairn -f`
+Stop the server with `Ctrl+C` in the foreground, or run `cairn stop` if a background instance is running.
+
+## What happens
+
+1. **Detect** — Cairn scans known agent log locations (Claude Code, Codex, Cursor, etc.) via ingest adapters in `server/ingest/adapters/`.
+2. **Sync** — Sessions are normalized into OpenTelemetry-aligned traces and spans, written to `.cairn/cairn.db`.
+3. **Analyze** — Incremental views in `server/analyze/` compute regions, fingerprints, outcomes, and diagnostics.
+4. **Serve** — `server/app.py` exposes read APIs under `/api/*` and serves the React UI from `ui/`.
 
 ## First run with no history
 
-If no agent logs are found, the dashboard shows onboarding: pick a folder, run sync, or point ingest at a specific agent path via Settings.
+If no agent logs are found, the Overview page shows onboarding: run **Sync** from Settings, or use `cairn sync` from the terminal.
 
 ## Settings UI
 
 Open **Settings** in the sidebar to configure:
 
-- **Agents** — sources, paths, rescan
-- **Outcomes** — `test_command`, `build_command` for quality scoring
-- **Optimize** — auto-run, holdout size, reflector backend
-- **Budgets** — daily/weekly USD and token caps
-- **MCP** — `auto_install` toggle (default on), client preference
-- **Data** — ledger path, re-ingest, clear
+- **Workspace** — root path, session count, token gauge
+- **Adapters** — detected sources, stream counts, last ingest time; **Rescan adapters** runs `workspace_scan`
+- **Data** — Sync now, export scrubbed bundle, rebuild analyzer views
+- **MCP** — install stdio server config for agent self-awareness
 
-Changes persist to `~/.config/cairn/config.toml`.
+Runtime toggles set via Settings actions persist as `CAIRN_*` environment variables for the current server process.
 
 ## Manual sync
 
 ```bash
-cairn sync                  # all detected agents
-cairn sync --source cursor  # one agent
+cairn sync                        # all detected adapters
+cairn sync --source claude_code   # one adapter (see docs/adapters.md)
+cairn sync --workspace /path/to/repo
 ```
 
-Or click **Sync** in the dashboard topbar.
+Or click **Sync now** in Settings.
+
+## Start the UI separately
+
+```bash
+cairn ui                          # default: 127.0.0.1:8787, opens browser
+cairn ui --no-open                # skip browser launch
+cairn ui --port 9000              # custom port
+cairn ui --workspace /path/to/repo
+```
 
 ## Supported agents
 
@@ -46,18 +59,33 @@ Or click **Sync** in the dashboard topbar.
 |-------|------------|
 | Claude Code | `~/.claude/projects/…/*.jsonl` |
 | Codex CLI | `~/.codex/sessions/…/*.jsonl` |
-| Cursor | `state.vscdb` + agent transcripts |
+| Cursor | `~/.cursor/projects/…` transcripts + `state.vscdb` |
 | OpenCode | `~/.local/share/opencode/sessions/` |
-| Goose | `~/.local/share/goose/sessions/` |
+| Goose | `~/.goose/sessions/` |
 | Hermes | `~/.hermes/sessions/*.json` |
-| Aider | `~/.aider/chat-history/` |
+| Aider | `~/.aider/sessions/` |
 | Gemini CLI | `~/.gemini/tmp/**`, `~/.config/gemini/` |
 | Cline / Roo / Kilo | VS Code `globalStorage/…/tasks/*/ui_messages.json` |
 | OpenClaw | `~/.openclaw/**` |
 
+See [Ingest adapters](adapters.md) for adapter IDs and parser details.
+
+## Project layout (v4)
+
+```
+your-repo/
+├── .cairn/
+│   ├── cairn.db          # SQLite store (traces, spans, insights, experiments)
+│   ├── backups/          # instruction-file backups from optimize apply
+│   └── watch/            # ingest cursors
+├── server/               # FastAPI app, ingest, analyze, improve, MCP
+└── ui/                   # React field-notebook UI (built to server/static/)
+```
+
 ## Next steps
 
-- [Concepts](concepts.md) — pillars, waste taxonomy, optimize loop
-- [Dashboard guide](guides/dashboard.md)
-- [Agent capture](guides/agent-capture.md)
+- [Concepts](concepts.md) — v4 architecture, five pillars, waste taxonomy
+- [UI tour](ui-tour.md) — all 12 pages
+- [API overview](api.md) — `/api` routes
+- [Optimize loop](optimize.md) — propose → apply → measure
 - [CLI reference](reference/cli.md)

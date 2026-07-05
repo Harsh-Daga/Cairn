@@ -20,6 +20,7 @@ export function LivePage() {
   const [rows, setRows] = useState<LiveRow[]>([]);
   const [dropped, setDropped] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [eventFilter, setEventFilter] = useState<string | null>(null);
   const pendingRef = useRef(0);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +47,8 @@ export function LivePage() {
   }, [watchOn, paused]);
 
   const pending = pendingRef.current;
+  const eventTypes = [...new Set(rows.map((r) => r.event))];
+  const visibleRows = eventFilter ? rows.filter((r) => r.event === eventFilter) : rows;
 
   if (!watchOn) {
     return (
@@ -64,7 +67,7 @@ export function LivePage() {
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-quartz-vein px-4 py-2">
             <span className="font-mono text-[10px] uppercase tracking-wide text-cinder">
-              Live tail
+              Live tail · {visibleRows.length} events
             </span>
             {paused && pending > 0 ? (
               <button
@@ -89,12 +92,17 @@ export function LivePage() {
           </div>
           <div ref={listRef} className="max-h-[60vh] overflow-auto">
             {rows.length === 0 ? (
-              <p className="p-4 text-sm text-cinder">
-                No live agents — sessions appear here the moment an agent writes a log line.
-              </p>
+              <div className="p-4">
+                <p className="text-sm text-cinder">
+                  No live agents — sessions appear here the moment an agent writes a log line.
+                </p>
+                <p className="mt-2 font-mono text-[10px] text-cinder">
+                  Tip: enable Watch in the top bar and run an agent session locally.
+                </p>
+              </div>
             ) : (
               <ul>
-                {rows.map((row) => (
+                {visibleRows.map((row) => (
                   <li
                     key={row.id}
                     className="flex items-center gap-3 border-b border-quartz-vein/40 px-4 py-2 font-mono text-xs"
@@ -119,6 +127,34 @@ export function LivePage() {
         </div>
 
         <div className="space-y-4">
+          {eventTypes.length > 1 ? (
+            <div className="card p-3">
+              <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Filter</p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  className={`rounded-chip px-2 py-0.5 font-mono text-[10px] ${
+                    !eventFilter ? "bg-copper/20 text-copper" : "text-cinder hover:text-bone"
+                  }`}
+                  onClick={() => setEventFilter(null)}
+                >
+                  all
+                </button>
+                {eventTypes.slice(0, 6).map((ev) => (
+                  <button
+                    key={ev}
+                    type="button"
+                    className={`rounded-chip px-2 py-0.5 font-mono text-[10px] ${
+                      eventFilter === ev ? "bg-copper/20 text-copper" : "text-cinder hover:text-bone"
+                    }`}
+                    onClick={() => setEventFilter(ev)}
+                  >
+                    {ev}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="card p-4">
             <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Stream health</p>
             <p className={`mt-2 font-mono text-sm ${dropped > 0 ? "text-ochre" : "text-malachite"}`}>
