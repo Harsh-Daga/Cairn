@@ -256,6 +256,14 @@ export interface ExperimentsResponse {
 
 export interface ExperimentDetailResponse {
   experiment: Record<string, unknown>;
+  preview?: VerdictPreviewData | null;
+}
+
+export interface VerdictPreviewData {
+  expected_days_to_verdict: number | null;
+  traces_per_day: number;
+  n_effective_needed: number;
+  traffic_unknown: boolean;
 }
 
 export interface SearchHit {

@@ -124,12 +124,17 @@ def doctor(
 def check(
     min_quality: Annotated[float | None, typer.Option("--min-quality")] = None,
     max_waste_pct: Annotated[float | None, typer.Option("--max-waste-pct")] = None,
+    max_tail_cost: Annotated[float | None, typer.Option("--max-tail-cost")] = None,
     workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
 ) -> None:
     """CI quality gate — exits non-zero on failure."""
     result = _run_action(
         "check",
-        {"min_quality": min_quality, "max_waste_pct": max_waste_pct},
+        {
+            "min_quality": min_quality,
+            "max_waste_pct": max_waste_pct,
+            "max_tail_cost": max_tail_cost,
+        },
         workspace,
     )
     typer.echo(json.dumps(result, indent=2))

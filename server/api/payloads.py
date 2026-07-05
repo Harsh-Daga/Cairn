@@ -43,6 +43,7 @@ from server.api.schemas import (
     WorkspaceAdapter,
     WorkspaceResponse,
 )
+from server.improve.experiments import preview as experiment_preview
 from server.models.span import Span
 from server.store.migrate import FTS_AVAILABLE
 from server.store.repos.data_quality import DataQualityRepo
@@ -627,11 +628,22 @@ def build_experiments(conn: sqlite3.Connection) -> ExperimentsResponse:
 def build_experiment_detail(
     conn: sqlite3.Connection,
     experiment_id: str,
+    *,
+    workspace_id: str,
 ) -> ExperimentDetailResponse | None:
     exp = ExperimentRepo.get(conn, experiment_id)
     if exp is None:
         return None
-    return ExperimentDetailResponse(experiment=exp.model_dump())
+    preview_result = experiment_preview(conn, exp, workspace_id=workspace_id)
+    return ExperimentDetailResponse(
+        experiment=exp.model_dump(),
+        preview={
+            "expected_days_to_verdict": preview_result.expected_days_to_verdict,
+            "traces_per_day": preview_result.traces_per_day,
+            "n_effective_needed": preview_result.n_effective_needed,
+            "traffic_unknown": preview_result.traffic_unknown,
+        },
+    )
 
 
 def build_search(

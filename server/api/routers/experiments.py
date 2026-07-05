@@ -26,7 +26,11 @@ def get_experiment(
     experiment_id: str,
     runtime: Annotated[AppRuntime, Depends(get_runtime)],
 ) -> ExperimentDetailResponse:
-    detail = build_experiment_detail(runtime.database.reader, experiment_id)
+    detail = build_experiment_detail(
+        runtime.database.reader,
+        experiment_id,
+        workspace_id=runtime.workspace_id,
+    )
     if detail is None:
         raise HTTPException(
             status_code=404,

@@ -190,6 +190,7 @@ class ExperimentsResponse(BaseModel):
 
 class ExperimentDetailResponse(BaseModel):
     experiment: dict[str, Any]
+    preview: dict[str, Any] | None = None
 
 
 class SearchHit(BaseModel):
