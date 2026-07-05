@@ -1,0 +1,47 @@
+tests/test_docs.py
+  s_fe6314d23ef5f6::t_b35ca7a0c4d73e 1-47,52-70,81-89,93-96
+  s_fe6314d23ef5f6::t_bd07b513a06864 48-51
+  s_fe6314d23ef5f6::t_7d95132842f4ce 71-80
+  s_fe6314d23ef5f6::t_b535c79e1a22e5 90-92
+AGENT_SETUP.md
+  s_fe6314d23ef5f6::t_4fe5eacf4bd3d5 1-128
+tests/test_mcp_install.py
+  s_fe6314d23ef5f6::t_f86b8095e0a1a3 1-41
+server/api/actions.py
+  s_fe6314d23ef5f6::t_3c73579283b705 22
+  s_fe6314d23ef5f6::t_064541adb116be 146-152
+server/cli.py
+  s_fe6314d23ef5f6::t_f4f17c02ad54af 253-256
+  s_fe6314d23ef5f6::t_f0c86a64501913 248-252,257-264,268-273
+  s_fe6314d23ef5f6::t_3a39eb3e0dcaf9 274-275
+server/api/action_handlers.py
+  s_fe6314d23ef5f6::t_64918fae676950 88-92
+  s_fe6314d23ef5f6::t_bd048c9cec21d6 177-179,182-186
+  s_fe6314d23ef5f6::t_bd0b55814ad1c0 180-181
+ui/src/pages/Settings.tsx
+  s_fe6314d23ef5f6::t_9121b9e451f1e4 1,10-12
+  s_fe6314d23ef5f6::t_ad7f45a39a0edb 149-181
+  s_fe6314d23ef5f6::t_d2322226f463f6 16
+  s_fe6314d23ef5f6::t_7a23812179cff1 13
+  s_fe6314d23ef5f6::t_97abfdc6289ac4 148
+server/mcp/install.py
+  s_fe6314d23ef5f6::t_36a4f480d20efa 98
+  s_fe6314d23ef5f6::t_f0f85c772aa184 14-19
+  s_fe6314d23ef5f6::t_ccf03c215df606 1-13,20-97,99-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f9b76b0e79e4187689c97a27c9a51dba722ae35e",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
