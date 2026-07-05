@@ -1,0 +1,101 @@
+name: Install
+
+on:
+  pull_request:
+    paths:
+      - "scripts/install.sh"
+      - "install.ps1"
+      - "pyproject.toml"
+      - "server/**"
+      - ".github/workflows/install.yml"
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  install-unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build wheel locally
+        shell: bash
+        run: |
+          uv run python scripts/build_ui.py
+          uv build
+          mkdir -p dist-local
+          cp dist/*.whl dist-local/
+
+      - name: Install from local wheel
+        shell: bash
+        run: |
+          WHEEL="$(ls dist-local/*.whl | head -1)"
+          uv tool install --force "cairn-workspace@file://${WHEEL}"
+          export PATH="$(uv tool dir --bin):$PATH"
+          cairn --version
+          cairn doctor --json || true
+
+      - name: Health check after ui start
+        shell: bash
+        run: |
+          export PATH="$(uv tool dir --bin):$PATH"
+          cairn ui --no-open --port 8799 &
+          sleep 3
+          curl -sf http://127.0.0.1:8799/api/health
+          kill %1 || true
+
+  install-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build wheel locally
+        shell: bash
+        run: |
+          uv run python scripts/build_ui.py
+          uv build
+          mkdir -p dist-local
+          cp dist/*.whl dist-local/
+
+      - name: Install from local wheel
+        shell: pwsh
+        run: |
+          $wheel = Get-ChildItem dist-local/*.whl | Select-Object -First 1
+          uv tool install --force "cairn-workspace@file://$($wheel.FullName)"
+          $env:Path = "$(uv tool dir --bin);$env:Path"
+          cairn --version
+          cairn doctor --json
+
+      - name: Health check after ui start
+        shell: pwsh
+        run: |
+          $env:Path = "$(uv tool dir --bin);$env:Path"
+          Start-Process -FilePath cairn -ArgumentList @('ui','--no-open','--port','8799') -WindowStyle Hidden
+          Start-Sleep -Seconds 5
+          Invoke-RestMethod http://127.0.0.1:8799/api/health
