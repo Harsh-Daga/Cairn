@@ -28,6 +28,7 @@ from server.api.schemas import (
     PlanWindowGauge,
     QualityResponse,
     RegionsAnalyticsResponse,
+    ReplayCheckpoint,
     ReplayResponse,
     SearchHit,
     SearchResponse,
@@ -283,28 +284,70 @@ def build_trace_detail(conn: sqlite3.Connection, trace_id: str) -> TraceDetailRe
     )
 
 
-def build_replay(conn: sqlite3.Connection, trace_id: str, seq: int) -> ReplayResponse | None:
-    trace = TraceRepo.get(conn, trace_id)
-    if trace is None:
-        return None
-    spans = [s for s in SpanRepo.list_by_trace(conn, trace_id) if s.seq <= seq]
+def _replay_summary(trace: object, spans: list[Span], seq: int) -> dict[str, Any]:
     ctx = next(
         (s.context_tokens_after for s in reversed(spans) if s.context_tokens_after),
         None,
     )
     files = len({s.path_rel for s in spans if s.path_rel})
     agents = len({s.agent_id for s in spans if s.agent_id})
+    cost = getattr(trace, "cost", None)
+    return {
+        "turn": seq,
+        "context_tokens": ctx,
+        "cost": cost,
+        "files_read": files,
+        "agents": agents,
+    }
+
+
+def build_replay(conn: sqlite3.Connection, trace_id: str, seq: int) -> ReplayResponse | None:
+    trace = TraceRepo.get(conn, trace_id)
+    if trace is None:
+        return None
+    spans = [s for s in SpanRepo.list_by_trace(conn, trace_id) if s.seq <= seq]
     return ReplayResponse(
         trace_id=trace_id,
         seq=seq,
         spans=spans,
-        summary={
-            "turn": seq,
-            "context_tokens": ctx,
-            "cost": trace.cost,
-            "files_read": files,
-            "agents": agents,
-        },
+        summary=_replay_summary(trace, spans, seq),
+    )
+
+
+def build_replay_checkpoints(conn: sqlite3.Connection, trace_id: str) -> ReplayResponse | None:
+    trace = TraceRepo.get(conn, trace_id)
+    if trace is None:
+        return None
+    all_spans = SpanRepo.list_by_trace(conn, trace_id)
+    if not all_spans:
+        return ReplayResponse(trace_id=trace_id, max_seq=0, step=1, checkpoints=[])
+    max_seq = max(s.seq for s in all_spans)
+    step = max(1, (max_seq + 39) // 40)
+    checkpoints: list[ReplayCheckpoint] = []
+    for seq in range(step, max_seq + step, step):
+        capped = min(seq, max_seq)
+        spans = [s for s in all_spans if s.seq <= capped]
+        checkpoints.append(
+            ReplayCheckpoint(
+                seq=capped,
+                spans=spans,
+                summary=_replay_summary(trace, spans, capped),
+            )
+        )
+    if not checkpoints or checkpoints[-1].seq != max_seq:
+        spans = all_spans
+        checkpoints.append(
+            ReplayCheckpoint(
+                seq=max_seq,
+                spans=spans,
+                summary=_replay_summary(trace, spans, max_seq),
+            )
+        )
+    return ReplayResponse(
+        trace_id=trace_id,
+        max_seq=max_seq,
+        step=step,
+        checkpoints=checkpoints,
     )
 
 

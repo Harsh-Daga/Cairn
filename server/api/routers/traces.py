@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from server.api.bootstrap import AppRuntime
 from server.api.deps import get_runtime, get_workspace_id
-from server.api.payloads import build_replay, build_trace_detail, build_traces_list
+from server.api.payloads import (
+    build_replay,
+    build_replay_checkpoints,
+    build_trace_detail,
+    build_traces_list,
+)
 from server.api.schemas import ReplayResponse, TraceDetailResponse, TracesListResponse
 
 router = APIRouter(prefix="/traces", tags=["traces"])
@@ -59,9 +64,12 @@ def get_trace(
 def replay_trace(
     trace_id: str,
     runtime: Annotated[AppRuntime, Depends(get_runtime)],
-    seq: int = 0,
+    seq: int | None = None,
 ) -> ReplayResponse:
-    replay = build_replay(runtime.database.reader, trace_id, seq)
+    if seq is None:
+        replay = build_replay_checkpoints(runtime.database.reader, trace_id)
+    else:
+        replay = build_replay(runtime.database.reader, trace_id, seq)
     if replay is None:
         raise HTTPException(
             status_code=404,

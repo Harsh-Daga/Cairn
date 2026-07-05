@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { fetchReplay, fetchTraceDetail } from "@/lib/api";
+import { fetchReplayCheckpoints, fetchTraceDetail } from "@/lib/api";
+import { interpolateReplayAtSeq } from "@/lib/replay";
 import { formatCost } from "@/lib/format";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
@@ -27,16 +28,19 @@ export function SessionDetailPage() {
   const maxSeq = detail?.spans.length ? Math.max(...detail.spans.map((s) => s.seq)) : 0;
   const seq = Math.min(seqParam, maxSeq);
 
-  const { data: replay } = useQuery({
-    queryKey: ["replay", id, seq],
-    queryFn: () => fetchReplay(id!, seq),
-    enabled: Boolean(id) && seq > 0,
+  const { data: replayData } = useQuery({
+    queryKey: ["replay-checkpoints", id],
+    queryFn: () => fetchReplayCheckpoints(id!),
+    enabled: Boolean(id),
   });
 
   const activeSpans: Span[] = useMemo(() => {
-    if (replay && seq > 0) return replay.spans;
-    return detail?.spans ?? [];
-  }, [detail, replay, seq]);
+    if (seq <= 0) return detail?.spans ?? [];
+    if (replayData?.checkpoints?.length) {
+      return interpolateReplayAtSeq(replayData.checkpoints, seq).spans;
+    }
+    return (detail?.spans ?? []).filter((s) => s.seq <= seq);
+  }, [detail, replayData, seq]);
 
   const allRows = useMemo(
     () => (detail ? flattenTree(detail.tree, 0, foldSubagents) : []),

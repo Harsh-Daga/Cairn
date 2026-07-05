@@ -85,11 +85,20 @@ class TraceDetailResponse(BaseModel):
     quality: dict[str, Any] | None
 
 
-class ReplayResponse(BaseModel):
-    trace_id: str
+class ReplayCheckpoint(BaseModel):
     seq: int
     spans: list[Span]
     summary: dict[str, Any]
+
+
+class ReplayResponse(BaseModel):
+    trace_id: str
+    seq: int | None = None
+    max_seq: int | None = None
+    step: int | None = None
+    spans: list[Span] | None = None
+    summary: dict[str, Any] | None = None
+    checkpoints: list[ReplayCheckpoint] | None = None
 
 
 class AgentAggregate(BaseModel):
