@@ -10,7 +10,7 @@ from typing import Any
 from server.mcp.tools import ToolsContext, call_tool, list_tools, open_context
 
 _PROTOCOL_VERSION = "2024-11-05"
-_SERVER_INFO = {"name": "cairn", "version": "0.1.0"}
+_SERVER_INFO = {"name": "cairn", "version": "4.0.0"}
 
 
 def serve(start_cwd: Path | None = None, *, stdin: Any = None, stdout: Any = None) -> int:

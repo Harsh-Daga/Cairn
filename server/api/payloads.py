@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 
-from cairn.context.gauge import compute_gauge
+from server.analyze.gauge import compute_gauge
 from server.analyze.tail import expected_worst
 from server.api.schemas import (
     AgentAggregate,

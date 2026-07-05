@@ -1,14 +1,12 @@
 #!/bin/sh
-# Cairn installer — https://cairn.dev
+# Cairn installer — POSIX sh, idempotent.
 #
-# One line to a dashboard of your coding-agent history:
-#   curl -LsSf https://cairn.dev/install.sh | sh
-#
-# POSIX sh. Installs uv (if missing), then installs/upgrades cairn-workspace as a
-# uv tool. Writes nothing outside uv's tool dir. Re-running is idempotent.
+# One line install:
+#   curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/install.sh | sh
 #
 # Environment:
-#   INSTALL_UV=0   Skip uv bootstrap (error if uv is absent)
+#   INSTALL_UV=0      Skip uv bootstrap (error if uv is absent)
+#   CAIRN_VERSION=x   Pin PyPI version (default: latest)
 
 set -eu
 
@@ -17,6 +15,7 @@ warn() { printf '\033[1;33m==>\033[0m %s\n' "$*"; }
 err() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 
 INSTALL_UV="${INSTALL_UV:-1}"
+CAIRN_VERSION="${CAIRN_VERSION:-}"
 
 install_uv() {
   if command -v uv >/dev/null 2>&1; then
@@ -26,7 +25,7 @@ install_uv() {
   if [ "${INSTALL_UV}" != "1" ]; then
     err "uv is required but INSTALL_UV=0 and uv was not found"
   fi
-  info "Installing uv (Python toolchain manager)..."
+  info "Installing uv..."
   if command -v curl >/dev/null 2>&1; then
     curl -LsSf https://astral.sh/uv/install.sh | sh
   elif command -v wget >/dev/null 2>&1; then
@@ -34,7 +33,6 @@ install_uv() {
   else
     err "Need curl or wget to download the uv installer"
   fi
-  # Make uv visible on PATH for the rest of this script.
   if [ -f "${HOME}/.local/bin/env" ]; then
     # shellcheck disable=SC1091
     . "${HOME}/.local/bin/env"
@@ -43,11 +41,6 @@ install_uv() {
     export PATH
   fi
   command -v uv >/dev/null 2>&1 || err "uv install finished but uv is not on PATH"
-}
-
-install_cairn() {
-  info "Installing cairn-workspace..."
-  uv tool install --upgrade cairn-workspace
 }
 
 ensure_path() {
@@ -64,25 +57,54 @@ ensure_path() {
   esac
 }
 
+install_cairn() {
+  spec="cairn-workspace"
+  if [ -n "${CAIRN_VERSION}" ]; then
+    spec="cairn-workspace==${CAIRN_VERSION}"
+  fi
+
+  if command -v uv >/dev/null 2>&1; then
+    info "Installing ${spec} via uv tool..."
+    uv tool install --upgrade "${spec}"
+    return 0
+  fi
+
+  if command -v pipx >/dev/null 2>&1; then
+    info "Installing ${spec} via pipx..."
+    pipx install --force "${spec}"
+    return 0
+  fi
+
+  if command -v pip3 >/dev/null 2>&1; then
+    info "Installing ${spec} via pip --user..."
+    pip3 install --user --upgrade "${spec}"
+    return 0
+  fi
+
+  err "No installer found. Install uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
+}
+
 main() {
   info "Cairn installer"
-  install_uv
+  if ! command -v uv >/dev/null 2>&1; then
+    install_uv
+  fi
   install_cairn
   ensure_path
+
   if command -v cairn >/dev/null 2>&1; then
     info "Installed $(cairn --version)"
+    cairn doctor || true
   fi
 
   cat <<'EOF'
 
-Cairn is ready. Next step:
+Cairn is ready:
 
-  cd <repo> && cairn
+  cd <your-repo> && cairn
 
-That mines your existing agent history and opens a dashboard in under 60 seconds.
-Try it without installing anything:  uvx cairn-workspace
-
-Docs:  https://cairn.dev/docs
+No account, no cloud, no config. Stop with: cairn stop
+Docs: https://github.com/Harsh-Daga/Cairn
 EOF
 }
 

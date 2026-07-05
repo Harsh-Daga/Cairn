@@ -9,7 +9,7 @@ import server
 
 
 def test_server_package_importable() -> None:
-    assert server.__version__ == "0.1.0"
+    assert server.__version__ == "4.0.0"
 
 
 def test_all_server_submodules_importable() -> None:

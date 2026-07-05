@@ -5,12 +5,12 @@ from __future__ import annotations
 import sqlite3
 from datetime import UTC, datetime
 
-from cairn.outcomes.labels import derive_outcome_label
 from server.analyze.diagnose_cascade import detect_cascade
 from server.analyze.diagnose_ideal import ideal_path_savings
 from server.analyze.diagnose_localize import localize_failure
 from server.analyze.diagnose_taxonomy import classify_failure
 from server.analyze.events import spans_to_events
+from server.analyze.outcome_labels import derive_outcome_label
 from server.analyze.views import IncrementalView, trace_input_hash
 from server.models.outcome import Diagnostic, Outcome
 from server.models.span import Span

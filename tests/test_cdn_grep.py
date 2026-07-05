@@ -25,7 +25,6 @@ SKIP_DIRS = {
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
-    "cairn",
 }
 
 

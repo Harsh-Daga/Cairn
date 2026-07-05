@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from cairn.config import get_diagnose_setting
+from server.util.user_config import get_diagnose_setting
 
 
 def localize_failure(events: list[dict[str, Any]]) -> tuple[int | None, str | None, str]:

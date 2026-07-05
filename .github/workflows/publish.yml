@@ -17,8 +17,20 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build UI
+        run: python scripts/build_ui.py
+
       - name: Build package
         run: uv build
+
+      - name: Verify wheel contains UI
+        run: |
+          unzip -l dist/*.whl | grep -F 'server/static/index.html'
 
       - name: Publish to PyPI
         run: uv publish

@@ -11,18 +11,39 @@ from typing import Annotated, Any
 import typer
 import uvicorn
 
+from server import __version__
 from server.api.actions import build_manifest, get_action
 from server.api.bootstrap import bootstrap_runtime
 from server.api.context import ActionCtx
 from server.api.show import render_waterfall
 from server.app import create_app
 from server.config import Settings
+from server.doctor import print_doctor
 
 app = typer.Typer(
     name="cairn",
     help="Local-first observability and self-improvement for AI coding agents.",
     no_args_is_help=True,
 )
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main_callback(
+    ctx: typer.Context,
+    version: Annotated[
+        bool | None,
+        typer.Option("--version", callback=_version_callback, is_eager=True),
+    ] = None,
+) -> None:
+    """Cairn CLI — local-first agent observability."""
+    del ctx, version
+
 
 action_app = typer.Typer(help="Run any registered action by name.")
 app.add_typer(action_app, name="action")
@@ -84,6 +105,16 @@ def sync(
     """Sync agent logs into the local store."""
     result = _run_action("sync", {"source": source}, workspace)
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command()
+def doctor(
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    port: Annotated[int, typer.Option("--port", "-p")] = 8787,
+    json_out: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Verify install, environment, and workspace readiness."""
+    raise typer.Exit(print_doctor(workspace=workspace, port=port, as_json=json_out))
 
 
 @app.command()

@@ -16,7 +16,7 @@ Requires Python 3.11+. Runtime dependencies are only `httpx` and `numpy` — do 
 ## Layout
 
 ```
-cairn/
+The v3 Python package was archived at tag **`v3-final`**. v4 lives entirely under `server/` and `ui/`.
   cli/main.py          # all CLI commands (single file)
   ingest/              # parsers, writer, watch (incl. vscdb tail)
   ledger/              # sqlite schema + resolve
