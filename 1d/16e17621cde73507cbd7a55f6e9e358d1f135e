@@ -1,0 +1,19 @@
+.github/workflows/install.yml
+  s_fe6314d23ef5f6::t_a86f77ed6b9317 94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1d16e17621cde73507cbd7a55f6e9e358d1f135e",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
