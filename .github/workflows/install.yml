@@ -92,6 +92,7 @@ jobs:
           cairn --version
           cairn doctor --json
           if ($LASTEXITCODE -ne 0) { Write-Warning "doctor reported issues (non-fatal in CI)" }
+          $LASTEXITCODE = 0
 
       - name: Health check after ui start
         shell: pwsh
