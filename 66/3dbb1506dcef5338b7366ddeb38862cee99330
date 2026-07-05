@@ -1,0 +1,82 @@
+server/analyze/diagnose.py
+  s_fe6314d23ef5f6::t_05ef2be45a04cc 13
+server/util/user_config.py
+  s_fe6314d23ef5f6::t_749a7ad22e7d0d 1-97
+server/doctor.py
+  s_fe6314d23ef5f6::t_ef60ce97055a98 1-176
+server/analyze/diagnose_cascade.py
+  s_fe6314d23ef5f6::t_3417f79d10001b 7
+scripts/install.sh
+  s_fe6314d23ef5f6::t_1e4ad258bb17ef 2,4-5,8-9,18,28,60-86,89-91,94,97,102,104,106-107
+server/analyze/outcome_labels.py
+  s_fe6314d23ef5f6::t_26169ca2513a43 1-36
+install.ps1
+  s_fe6314d23ef5f6::t_dc8ac9b8754090 3-6,10-11,15-22,26-28,31-35,38-42,44-59,62-71,75,77,79-80
+server/mcp/server.py
+  s_fe6314d23ef5f6::t_aeb30e2e9ed480 13
+.github/workflows/install.yml
+  s_fe6314d23ef5f6::t_9b5963810c879c 1-68
+tests/test_doctor.py
+  s_fe6314d23ef5f6::t_d2b5aa46c3f346 1-19
+server/analyze/outcome_tests.py
+  s_fe6314d23ef5f6::t_43ae54cfa2d982 1-123
+ui/package.json
+  s_fe6314d23ef5f6::t_7a880e43a1d2f6 4
+CONTRIBUTING.md
+  s_fe6314d23ef5f6::t_6b1d1dca59e869 19
+tests/test_health.py
+  s_fe6314d23ef5f6::t_a0c0459f027fe7 18
+server/cli.py
+  s_fe6314d23ef5f6::t_3f9d41c3741a60 21,29-46
+  s_fe6314d23ef5f6::t_05ef2be45a04cc 14
+  s_fe6314d23ef5f6::t_50c65aae6e14c6 111-119
+  s_fe6314d23ef5f6::t_7bd439644e9fe5 47,110
+server/analyze/diagnose_localize.py
+  s_fe6314d23ef5f6::t_e761773aa5782f 7
+.github/workflows/publish.yml
+  s_fe6314d23ef5f6::t_9b5963810c879c 20-27,31-33
+  s_fe6314d23ef5f6::t_74894d0c53b855 34
+server/api/payloads.py
+  s_fe6314d23ef5f6::t_3e8e9e1dc0f1d9 13
+server/app.py
+  s_fe6314d23ef5f6::t_ea38747d463921 43
+  s_fe6314d23ef5f6::t_7acf7cd4832540 117-118
+  s_fe6314d23ef5f6::t_228bbf6704c13e 53
+  s_fe6314d23ef5f6::t_c9149a4cb395c7 134
+  s_fe6314d23ef5f6::t_b221c22956f4a6 11
+  s_fe6314d23ef5f6::t_5008b780006532 103-106,111-116,119-133,135,137-138,140-142
+docs/legacy-v3.md
+  s_fe6314d23ef5f6::t_9e7619af4cba8d 3,5,12-13,15,17-19,21,23-26,28
+server/analyze/gauge.py
+  s_fe6314d23ef5f6::t_0a86a759e6974e 1-70
+pyproject.toml
+  s_fe6314d23ef5f6::t_3a9fe070c8ab88 59
+  s_fe6314d23ef5f6::t_406ee8f8da2819 3,11
+  s_fe6314d23ef5f6::t_e13a07b6f26271 76,80-88
+  s_fe6314d23ef5f6::t_026e8cc24ad6f8 32
+  s_fe6314d23ef5f6::t_bc13a038e59b0b 77-79,89-91
+scripts/hatch_build.py
+  s_fe6314d23ef5f6::t_2e11b17dc12e6f 1-37
+tests/test_scaffold.py
+  s_fe6314d23ef5f6::t_0a599faed243bc 12
+server/__init__.py
+  s_fe6314d23ef5f6::t_3d4a982d22689c 3
+server/analyze/outcomes.py
+  s_fe6314d23ef5f6::t_5385caf2955ef2 13-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "663dbb1506dcef5338b7366ddeb38862cee99330",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
