@@ -7,6 +7,7 @@ import { formatCost } from "@/lib/format";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 import { flattenTree, Waterfall } from "@/components/waterfall/Waterfall";
+import { LinkLegend } from "@/components/waterfall/LinkConnectors";
 import { ContextTimeline, ReplayScrubber } from "@/components/session/ReplayScrubber";
 import { SpanInspector } from "@/components/session/SpanInspector";
 import type { Span } from "@/lib/types";
@@ -26,6 +27,7 @@ export function SessionDetailPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [blameMode, setBlameMode] = useState(false);
   const [foldSubagents, setFoldSubagents] = useState(false);
+  const [highlightedLinkId, setHighlightedLinkId] = useState<string | null>(null);
   const modeParam = searchParams.get("mode");
   const waterfallMode: WaterfallMode = modeParam === "time" ? "time" : "tokens";
   const timeZoom = parseZoomParam(searchParams.get("zoom"));
@@ -125,6 +127,9 @@ export function SessionDetailPage() {
   const traceDuration = traceDurationMs(trace.started_at, trace.ended_at, activeSpans);
   const traceStartMs = trace.started_at ? Date.parse(trace.started_at) : 0;
   const showTimestampNote = waterfallMode === "time" && spansMissingTimestamps(activeSpans);
+  const visibleLinks = detail.links.filter((link) =>
+    activeSpans.some((span) => span.span_id === link.from_span_id || span.span_id === link.to_span_id),
+  );
 
   const handleZoomSpan = (span: Span) => {
     if (waterfallMode !== "time") return;
@@ -202,6 +207,7 @@ export function SessionDetailPage() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[58%_42%] lg:grid-rows-[minmax(280px,1fr)_auto]">
         <div className="min-h-[280px] lg:row-span-2">
+          <LinkLegend links={visibleLinks} />
           <Waterfall
             rows={rows.length > 0 ? rows : allRows}
             selectedId={selectedId}
@@ -213,6 +219,9 @@ export function SessionDetailPage() {
             timeDomain={timeZoom}
             showTimestampNote={showTimestampNote}
             onZoomSpan={handleZoomSpan}
+            links={visibleLinks}
+            highlightedLinkId={highlightedLinkId}
+            onLinkHover={setHighlightedLinkId}
           />
         </div>
         <ContextTimeline

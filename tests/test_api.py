@@ -33,6 +33,7 @@ def test_trace_detail_shape(api_client: TestClient, api_workspace: tuple) -> Non
     assert body["trace"]["trace_id"] == trace_id
     assert "spans" in body
     assert "tree" in body
+    assert "links" in body
     assert len(body["spans"]) > 0
 
 

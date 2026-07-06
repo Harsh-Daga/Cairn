@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import type { Span, SpanNode } from "@/lib/types";
 import { formatTokens } from "@/lib/format";
 import {
@@ -11,6 +11,8 @@ import {
   type TimeDomain,
   type WaterfallMode,
 } from "@/lib/waterfallLayout";
+import { LinkConnectors } from "@/components/waterfall/LinkConnectors";
+import { pairLinkConnectors, type SpanLinkRow } from "@/lib/spanLinks";
 
 const KIND_COLORS: Record<string, string> = {
   user_msg: "bg-lapis/60",
@@ -58,6 +60,9 @@ interface WaterfallProps {
   timeDomain?: TimeDomain | null;
   showTimestampNote?: boolean;
   onZoomSpan?: (span: Span) => void;
+  links?: SpanLinkRow[];
+  highlightedLinkId?: string | null;
+  onLinkHover?: (connectorId: string | null) => void;
 }
 
 function barStyle(layout: BarLayout): React.CSSProperties {
@@ -80,6 +85,9 @@ export function Waterfall({
   timeDomain,
   showTimestampNote = false,
   onZoomSpan,
+  links = [],
+  highlightedLinkId = null,
+  onLinkHover,
 }: WaterfallProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const tokenMax =
@@ -89,6 +97,31 @@ export function Waterfall({
       ...rows.map((r) => (r.span.input_tokens ?? 0) + (r.span.output_tokens ?? 0)),
     );
   const traceStartMs = parseIsoMs(traceStartedAt) ?? 0;
+
+  const spanIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    rows.forEach((row, index) => map.set(row.span.span_id, index));
+    return map;
+  }, [rows]);
+
+  const connectors = useMemo(
+    () => pairLinkConnectors(links, spanIndex),
+    [links, spanIndex],
+  );
+
+  const highlightedSpanIds = useMemo(() => {
+    if (!highlightedLinkId) return new Set<string>();
+    const connector = connectors.find((c) => c.id === highlightedLinkId);
+    if (!connector) return new Set<string>();
+    const ids = new Set<string>();
+    for (const row of rows) {
+      const index = spanIndex.get(row.span.span_id);
+      if (index === connector.fromIndex || index === connector.toIndex) {
+        ids.add(row.span.span_id);
+      }
+    }
+    return ids;
+  }, [connectors, highlightedLinkId, rows, spanIndex]);
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -101,7 +134,12 @@ export function Waterfall({
   const domainEnd = timeDomain?.endMs ?? traceStartMs + traceDurationMs;
 
   return (
-    <div ref={parentRef} className="h-full overflow-auto rounded-sm border border-quartz-vein bg-granite/20">
+    <div
+      ref={parentRef}
+      className={`h-full overflow-auto rounded-sm border border-quartz-vein bg-granite/20 ${
+        connectors.length > 0 ? "pl-5" : ""
+      }`}
+    >
       {showTimestampNote && mode === "time" ? (
         <div className="border-b border-quartz-vein bg-ochre/10 px-3 py-2 font-mono text-[10px] text-ochre">
           Some spans lack timestamps from this source — shown as hatched full-row bars.
@@ -123,6 +161,12 @@ export function Waterfall({
         )}
       </div>
       <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+        <LinkConnectors
+          connectors={connectors}
+          totalRows={rows.length}
+          highlightedId={highlightedLinkId}
+          onHover={onLinkHover ?? (() => undefined)}
+        />
         {virtualizer.getVirtualItems().map((item) => {
           const row = rows[item.index];
           if (!row) return null;
@@ -133,6 +177,7 @@ export function Waterfall({
               : tokenBarLayout(span, tokenMax);
           const barClass = KIND_COLORS[span.kind] ?? "bg-granite";
           const selected = selectedId === span.span_id;
+          const linked = highlightedSpanIds.has(span.span_id);
           const estimated = span.input_estimated > 0 || span.output_estimated > 0;
           const wasted = blameMode && (span.waste_tokens > 0 || span.waste_category != null);
 
@@ -143,9 +188,9 @@ export function Waterfall({
               data-span-id={span.span_id}
               className={`absolute left-0 flex w-full items-center border-b border-quartz-vein/40 px-3 py-1 text-left hover:bg-shale/60 ${
                 selected ? "border-l-2 border-l-copper bg-shale/80" : ""
-              } ${wasted ? "bg-ochre/10 ring-1 ring-inset ring-ochre/40" : ""} ${
-                span.status === "error" ? "text-cinnabar" : "text-bone"
-              }`}
+              } ${linked ? "bg-patina/10 ring-1 ring-inset ring-patina/30" : ""} ${
+                wasted ? "bg-ochre/10 ring-1 ring-inset ring-ochre/40" : ""
+              } ${span.status === "error" ? "text-cinnabar" : "text-bone"}`}
               style={{
                 height: item.size,
                 transform: `translateY(${item.start}px)`,

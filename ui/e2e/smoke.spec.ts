@@ -33,3 +33,30 @@ test("insights page loads", async ({ page }) => {
   await page.goto("/insights");
   await expect(page.locator("h1.page-title")).toHaveText("Insights");
 });
+
+test("sessions saved view round-trip", async ({ page }) => {
+  await page.goto("/sessions");
+  await expect(page.locator("h1.page-title")).toHaveText("Sessions");
+
+  await page.getByRole("button", { name: "cursor" }).click();
+  await page.getByPlaceholder("Save view as…").fill("E2E cursor");
+  await page.getByRole("button", { name: "Save view" }).click();
+  await expect(page.getByRole("button", { name: "E2E cursor" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Default" }).click();
+  await page.getByRole("button", { name: "E2E cursor" }).click();
+  await expect(page.getByRole("button", { name: "cursor" })).toHaveClass(/border-copper/);
+});
+
+test("session detail time mode toggle", async ({ page, request }) => {
+  const traces = await request.get("/api/traces?limit=1");
+  test.skip(!traces.ok(), "No traces available");
+  const body = await traces.json();
+  const traceId = body.traces?.[0]?.trace_id as string | undefined;
+  test.skip(!traceId, "No traces available");
+
+  await page.goto(`/sessions/${traceId}`);
+  await page.getByRole("button", { name: "Token mode" }).click();
+  await expect(page).toHaveURL(/\?mode=time/);
+  await expect(page.getByRole("button", { name: "Time mode" })).toBeVisible();
+});
