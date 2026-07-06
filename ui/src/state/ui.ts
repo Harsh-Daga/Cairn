@@ -7,10 +7,12 @@ interface UiState {
   timeRange: TimeRange;
   watchEnabled: boolean;
   paletteOpen: boolean;
+  shortcutsOpen: boolean;
   toggleRail: () => void;
   setTimeRange: (range: TimeRange) => void;
   setWatch: (on: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setShortcutsOpen: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -20,10 +22,12 @@ export const useUiStore = create<UiState>()(
       timeRange: "30d",
       watchEnabled: false,
       paletteOpen: false,
+      shortcutsOpen: false,
       toggleRail: () => set((s) => ({ railCollapsed: !s.railCollapsed })),
       setTimeRange: (timeRange) => set({ timeRange }),
       setWatch: (watchEnabled) => set({ watchEnabled }),
       setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+      setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
     }),
     { name: "cairn-ui" },
   ),

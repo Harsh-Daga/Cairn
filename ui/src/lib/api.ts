@@ -84,6 +84,10 @@ export function fetchTraceDetail(traceId: string): Promise<TraceDetailResponse> 
   return fetchJson(`/traces/${encodeURIComponent(traceId)}`);
 }
 
+export function fetchReplayCheckpoints(traceId: string): Promise<ReplayResponse> {
+  return fetchJson(`/traces/${encodeURIComponent(traceId)}/replay`);
+}
+
 export function fetchReplay(traceId: string, seq: number): Promise<ReplayResponse> {
   return fetchJson(`/traces/${encodeURIComponent(traceId)}/replay?seq=${seq}`);
 }

@@ -20,7 +20,10 @@ from server.ingest.writer import IngestResult, IngestWriter
 from server.models.ingest import IngestCursor as StoredCursor
 from server.store.db import Database
 from server.store.repos.ingest_cursors import IngestCursorRepo
+from server.store.repos.spans import SpanRepo
 from server.store.repos.traces import TraceRepo
+
+_PATH_REFRESH_SEC = 30.0
 
 
 @dataclass
@@ -54,6 +57,7 @@ class IngestPipeline:
         self._watcher = FileWatcher()
         self._watcher.set_on_change(self._on_path_changed)
         self._worker: threading.Thread | None = None
+        self._refresh: threading.Thread | None = None
         self._stop = threading.Event()
 
     def _refresh_path_index(self) -> None:
@@ -79,11 +83,27 @@ class IngestPipeline:
                 target=self._event_loop, name="cairn-ingest", daemon=True
             )
             self._worker.start()
+        if self._refresh is None or not self._refresh.is_alive():
+            self._refresh = threading.Thread(
+                target=self._refresh_loop, name="cairn-ingest-refresh", daemon=True
+            )
+            self._refresh.start()
 
     def stop(self) -> None:
         """Stop watcher and worker threads."""
         self._stop.set()
         self._watcher.stop()
+        if self._worker is not None:
+            self._worker.join(timeout=2)
+            self._worker = None
+        if self._refresh is not None:
+            self._refresh.join(timeout=2)
+            self._refresh = None
+
+    def _refresh_loop(self) -> None:
+        """Rediscover adapter paths so new Cursor/Claude sessions are watched."""
+        while not self._stop.wait(_PATH_REFRESH_SEC):
+            self.watch_paths()
 
     def sync_all(self) -> PipelineReport:
         """Scan all adapter streams and ingest new/changed files."""
@@ -158,6 +178,8 @@ class IngestPipeline:
 
         dirty_keys = self._db.write(_mark_dirty)
         computed = self._run_scheduler(dirty_keys)
+        spans = SpanRepo.list_by_trace(self._db.reader, result.trace_id)
+        latest = spans[-1] if spans else None
         self._bus.publish(
             "trace-updated",
             {
@@ -165,6 +187,8 @@ class IngestPipeline:
                 "inserted": result.inserted,
                 "span_count": result.span_count,
                 "source": source,
+                "span_id": latest.span_id if latest is not None else None,
+                "kind": latest.kind if latest is not None else None,
             },
         )
         if dirty_keys:

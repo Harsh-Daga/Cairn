@@ -33,6 +33,7 @@ def test_trace_detail_shape(api_client: TestClient, api_workspace: tuple) -> Non
     assert body["trace"]["trace_id"] == trace_id
     assert "spans" in body
     assert "tree" in body
+    assert "links" in body
     assert len(body["spans"]) > 0
 
 
@@ -42,8 +43,18 @@ def test_trace_replay_shape(api_client: TestClient, api_workspace: tuple) -> Non
     assert resp.status_code == 200
     body = resp.json()
     assert body["trace_id"] == trace_id
-    assert "spans" in body
-    assert "summary" in body
+    assert body["spans"] is not None
+    assert body["summary"] is not None
+
+
+def test_trace_replay_checkpoints_shape(api_client: TestClient, api_workspace: tuple) -> None:
+    _root, _ws, trace_id = api_workspace
+    resp = api_client.get(f"/api/traces/{trace_id}/replay")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["trace_id"] == trace_id
+    assert body["checkpoints"] is not None
+    assert len(body["checkpoints"]) >= 1
 
 
 def test_agents_shape(api_client: TestClient) -> None:

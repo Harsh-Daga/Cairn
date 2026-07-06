@@ -131,11 +131,20 @@ export interface TraceDetailResponse {
   quality: Record<string, unknown> | null;
 }
 
-export interface ReplayResponse {
-  trace_id: string;
+export interface ReplayCheckpoint {
   seq: number;
   spans: Span[];
   summary: Record<string, unknown>;
+}
+
+export interface ReplayResponse {
+  trace_id: string;
+  seq?: number | null;
+  max_seq?: number | null;
+  step?: number | null;
+  spans?: Span[] | null;
+  summary?: Record<string, unknown> | null;
+  checkpoints?: ReplayCheckpoint[] | null;
 }
 
 export interface InsightRow {
