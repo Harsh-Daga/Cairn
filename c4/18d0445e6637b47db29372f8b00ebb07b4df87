@@ -1,0 +1,19 @@
+server/improve/detectors/stale_tool_results.py
+  s_fe6314d23ef5f6::t_a25c24a2e78cce 7,15-25,34-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c418d0445e6637b47db29372f8b00ebb07b4df87",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
