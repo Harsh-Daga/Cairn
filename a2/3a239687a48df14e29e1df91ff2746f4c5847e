@@ -1,0 +1,31 @@
+ui/src/lib/sse.ts
+  s_fe6314d23ef5f6::t_70ff9f977c3d9a 3-10,14-21,23-28
+server/app.py
+  s_fe6314d23ef5f6::t_340a41497ef8fc 31,33
+tests/test_app_live.py
+  s_fe6314d23ef5f6::t_31194c42c0b076 1-19
+ui/src/test/live.test.ts
+  s_fe6314d23ef5f6::t_4e8fa8f61431db 8,15-20,26-30,40,47-49
+server/ingest/pipeline.py
+  s_fe6314d23ef5f6::t_41bd35c93ddeac 23
+  s_fe6314d23ef5f6::t_3ea86ff4b4c492 181-182,190-191
+  s_fe6314d23ef5f6::t_7aac28b9279c87 60
+  s_fe6314d23ef5f6::t_3e1450820682b4 86-90,96-106
+  s_fe6314d23ef5f6::t_afe2c4e88bb3b4 26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a23a239687a48df14e29e1df91ff2746f4c5847e",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
