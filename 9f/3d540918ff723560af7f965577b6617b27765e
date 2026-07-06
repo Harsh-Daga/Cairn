@@ -1,0 +1,56 @@
+ui/src/test/savedViews.test.ts
+  s_fe6314d23ef5f6::t_6290472d24719f 1-28
+ui/src/lib/savedViews.ts
+  s_fe6314d23ef5f6::t_aebe871a1a8c08 1-60
+ui/src/components/waterfall/LinkConnectors.tsx
+  s_fe6314d23ef5f6::t_3e9acd3da7076c 1-60,65-79
+  s_fe6314d23ef5f6::t_9a13361b054d1a 61-64
+ui/src/pages/Sessions.tsx
+  s_fe6314d23ef5f6::t_0117be7cded005 2-3,6-13,21,24-28,40-83,90-111,132-173,205-208,227,241,243,247-250
+ui/src/state/ui.ts
+  s_fe6314d23ef5f6::t_8f56402d514a3c 10,15,25,30
+ui/src/hooks/useGlobalShortcuts.ts
+  s_fe6314d23ef5f6::t_e93f5cbba4c508 1-90
+ui/src/components/common/KeyboardOverlay.tsx
+  s_fe6314d23ef5f6::t_11c30473e9afb9 1-52
+ui/src/components/common/Shell.tsx
+  s_fe6314d23ef5f6::t_919d1a03e2e6e5 5-6,13-14,23
+ui/src/test/spanLinks.test.ts
+  s_fe6314d23ef5f6::t_9dd0cf86845eeb 1-23
+ui/src/components/waterfall/Waterfall.tsx
+  s_fe6314d23ef5f6::t_6b741d2f81b738 63-65
+  s_fe6314d23ef5f6::t_dd04c58ba8bcdb 164-169
+  s_fe6314d23ef5f6::t_54a9d43ad8fd1c 180,191-193
+  s_fe6314d23ef5f6::t_896a7e8192b870 2,14-15
+  s_fe6314d23ef5f6::t_1e0843cf006946 88-90,101-124
+  s_fe6314d23ef5f6::t_99959efae39cdb 137-142
+  s_fe6314d23ef5f6::t_2ed0ed7decc137 125
+ui/src/lib/spanLinks.ts
+  s_fe6314d23ef5f6::t_ee72772852c418 1-44
+ui/src/pages/SessionDetail.tsx
+  s_fe6314d23ef5f6::t_facd8330df93fd 222-224
+  s_fe6314d23ef5f6::t_29c924e74b79ef 130-132
+  s_fe6314d23ef5f6::t_9e4736dc093cbd 30
+  s_fe6314d23ef5f6::t_f479d6d75ecccb 10
+  s_fe6314d23ef5f6::t_441858cec1b04e 210
+tests/test_api.py
+  s_fe6314d23ef5f6::t_452357bba85d59 36
+ui/e2e/smoke.spec.ts
+  s_fe6314d23ef5f6::t_c7f963a0481292 36-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9f3d540918ff723560af7f965577b6617b27765e",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
