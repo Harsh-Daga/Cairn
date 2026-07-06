@@ -1,0 +1,52 @@
+server/cli.py
+  s_fe6314d23ef5f6::t_367908db4f9a54 322-345
+server/improve/detectors/registry.py
+  s_fe6314d23ef5f6::t_4ed7a7ebd14917 12-14
+  s_fe6314d23ef5f6::t_b2d810ba78d61a 23
+  s_fe6314d23ef5f6::t_a324d4f9085cad 43-46
+server/improve/detectors/error_streak.py
+  s_fe6314d23ef5f6::t_902e7edc268c86 1-25
+tests/test_adapter_scaffold.py
+  s_fe6314d23ef5f6::t_bb85472aa42c46 1-20
+server/improve/detectors/stale_tool_results.py
+  s_fe6314d23ef5f6::t_43f4a40617af25 1-26
+server/improve/detectors/failing_command.py
+  s_fe6314d23ef5f6::t_bff7dcb654cf55 1-30
+server/improve/detectors/cost_anomaly.py
+  s_fe6314d23ef5f6::t_4bec867dded925 1-29
+server/ingest/scaffold.py
+  s_fe6314d23ef5f6::t_67b74f4f53c9f2 1-34,36-46,48-84
+  s_fe6314d23ef5f6::t_e1e9f3b66986aa 35
+  s_fe6314d23ef5f6::t_fc02cc2f5df7c6 47
+tests/test_insights.py
+  s_fe6314d23ef5f6::t_11c25cd319ff6a 94-125
+  s_fe6314d23ef5f6::t_6265af97c0dbac 92-93
+server/improve/detectors/rules.py
+  s_fe6314d23ef5f6::t_4ed7a7ebd14917 16-18
+  s_fe6314d23ef5f6::t_bf089c8175c5c7 28
+  s_fe6314d23ef5f6::t_ca47d6f06f056a 50-53
+server/improve/context.py
+  s_fe6314d23ef5f6::t_aab9b253b26e4a 324,334,341
+  s_fe6314d23ef5f6::t_bf0369e3aab1fd 277-289,292-323,325-333,335-340,342-346
+  s_fe6314d23ef5f6::t_f65f8cf0027a15 263-276,347-352
+  s_fe6314d23ef5f6::t_69e57f53386562 111-112,123-125
+  s_fe6314d23ef5f6::t_e3cda7d63b513d 290-291
+docs/optimize.md
+  s_fe6314d23ef5f6::t_5c57c4a44b20c5 26-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "eb0ddb81bfb9fa030d00df6dd9e8621979ef4645",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
