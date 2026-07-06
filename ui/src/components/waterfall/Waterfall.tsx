@@ -2,6 +2,15 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef } from "react";
 import type { Span, SpanNode } from "@/lib/types";
 import { formatTokens } from "@/lib/format";
+import {
+  formatTimeRulerLabel,
+  parseIsoMs,
+  timeBarLayout,
+  tokenBarLayout,
+  type BarLayout,
+  type TimeDomain,
+  type WaterfallMode,
+} from "@/lib/waterfallLayout";
 
 const KIND_COLORS: Record<string, string> = {
   user_msg: "bg-lapis/60",
@@ -43,9 +52,35 @@ interface WaterfallProps {
   onSelect: (spanId: string) => void;
   maxTokens?: number;
   blameMode?: boolean;
+  mode?: WaterfallMode;
+  traceStartedAt?: string | null;
+  traceDurationMs?: number;
+  timeDomain?: TimeDomain | null;
+  showTimestampNote?: boolean;
+  onZoomSpan?: (span: Span) => void;
 }
 
-export function Waterfall({ rows, selectedId, onSelect, maxTokens, blameMode }: WaterfallProps) {
+function barStyle(layout: BarLayout): React.CSSProperties {
+  return {
+    marginLeft: `${layout.leftPct}%`,
+    width: `${layout.widthPct}%`,
+    minWidth: layout.hatched ? undefined : "2px",
+  };
+}
+
+export function Waterfall({
+  rows,
+  selectedId,
+  onSelect,
+  maxTokens,
+  blameMode,
+  mode = "tokens",
+  traceStartedAt,
+  traceDurationMs = 1,
+  timeDomain,
+  showTimestampNote = false,
+  onZoomSpan,
+}: WaterfallProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const tokenMax =
     maxTokens ??
@@ -53,6 +88,7 @@ export function Waterfall({ rows, selectedId, onSelect, maxTokens, blameMode }: 
       1,
       ...rows.map((r) => (r.span.input_tokens ?? 0) + (r.span.output_tokens ?? 0)),
     );
+  const traceStartMs = parseIsoMs(traceStartedAt) ?? 0;
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -61,21 +97,40 @@ export function Waterfall({ rows, selectedId, onSelect, maxTokens, blameMode }: 
     overscan: 12,
   });
 
+  const domainStart = timeDomain?.startMs ?? traceStartMs;
+  const domainEnd = timeDomain?.endMs ?? traceStartMs + traceDurationMs;
+
   return (
     <div ref={parentRef} className="h-full overflow-auto rounded-sm border border-quartz-vein bg-granite/20">
-      <div className="sticky top-0 z-10 flex border-b border-quartz-vein bg-slate px-3 py-2 font-mono text-[10px] text-cinder">
-        <span className="w-[45%]">span</span>
-        <span className="w-[30%]">bar</span>
-        <span className="w-[12%] text-right">in</span>
-        <span className="w-[13%] text-right">cost</span>
+      {showTimestampNote && mode === "time" ? (
+        <div className="border-b border-quartz-vein bg-ochre/10 px-3 py-2 font-mono text-[10px] text-ochre">
+          Some spans lack timestamps from this source — shown as hatched full-row bars.
+        </div>
+      ) : null}
+      <div className="sticky top-0 z-10 border-b border-quartz-vein bg-slate px-3 py-2 font-mono text-[10px] text-cinder">
+        {mode === "time" ? (
+          <div className="flex justify-between">
+            <span>{formatTimeRulerLabel(domainStart, traceStartMs)}</span>
+            <span>{formatTimeRulerLabel(domainEnd, traceStartMs)}</span>
+          </div>
+        ) : (
+          <div className="flex">
+            <span className="w-[45%]">span</span>
+            <span className="w-[30%]">bar</span>
+            <span className="w-[12%] text-right">in</span>
+            <span className="w-[13%] text-right">cost</span>
+          </div>
+        )}
       </div>
       <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
         {virtualizer.getVirtualItems().map((item) => {
           const row = rows[item.index];
           if (!row) return null;
           const { span, depth } = row;
-          const tokens = (span.input_tokens ?? 0) + (span.output_tokens ?? 0);
-          const widthPct = Math.max(4, (tokens / tokenMax) * 100);
+          const layout =
+            mode === "time"
+              ? timeBarLayout(span, traceStartMs, traceDurationMs, timeDomain)
+              : tokenBarLayout(span, tokenMax);
           const barClass = KIND_COLORS[span.kind] ?? "bg-granite";
           const selected = selectedId === span.span_id;
           const estimated = span.input_estimated > 0 || span.output_estimated > 0;
@@ -97,14 +152,24 @@ export function Waterfall({ rows, selectedId, onSelect, maxTokens, blameMode }: 
                 paddingLeft: `${12 + depth * 16}px`,
               }}
               onClick={() => onSelect(span.span_id)}
+              onDoubleClick={() => onZoomSpan?.(span)}
             >
               <span className="w-[45%] truncate font-mono text-[11px]">
                 {span.kind} · {span.name ?? "—"}
               </span>
-              <span className="w-[30%] px-2">
+              <span className="relative w-[30%] px-2">
                 <span
-                  className={`block h-3 rounded-sm ${barClass} ${estimated ? "border border-dashed border-cinder" : ""}`}
-                  style={{ width: `${widthPct}%`, animation: "strata-rise 0.3s ease-out" }}
+                  className={`block h-3 rounded-sm ${barClass} ${
+                    layout.hatched
+                      ? "border border-dashed border-cinder bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.08)_0_4px,transparent_4px_8px)]"
+                      : estimated
+                        ? "border border-dashed border-cinder"
+                        : ""
+                  }`}
+                  style={{
+                    ...barStyle(layout),
+                    animation: layout.hatched ? undefined : "strata-rise 0.3s ease-out",
+                  }}
                 />
               </span>
               <span className={`w-[12%] text-right font-mono text-[10px] ${estimated ? "estimated-chip" : ""}`}>
