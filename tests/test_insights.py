@@ -91,6 +91,40 @@ def test_identical_calls_detector(db: tuple[Database, str]) -> None:
     assert any(i.detector == "identical-tool-calls" for i in insights)
 
 
+def test_error_streak_detector(db: tuple[Database, str]) -> None:
+    database, ws_id = db
+    _insert_trace(database.reader, "t-err", ws_id)
+    conn = database.reader
+    for seq in range(1, 6):
+        conn.execute(
+            """
+            INSERT INTO spans (span_id, trace_id, seq, kind, name, status)
+            VALUES (?, 't-err', ?, 'tool_call', 'run', 'error')
+            """,
+            (f"e{seq}", seq),
+        )
+    conn.commit()
+    insights = evaluate(conn, workspace_id=ws_id, days=14)
+    assert any(i.detector == "error-streak" for i in insights)
+
+
+def test_failing_command_detector(db: tuple[Database, str]) -> None:
+    database, ws_id = db
+    _insert_trace(database.reader, "t-fail", ws_id)
+    conn = database.reader
+    for seq in range(1, 4):
+        conn.execute(
+            """
+            INSERT INTO spans (span_id, trace_id, seq, kind, name, status)
+            VALUES (?, 't-fail', ?, 'tool_call', 'pytest', 'error')
+            """,
+            (f"f{seq}", seq),
+        )
+    conn.commit()
+    insights = evaluate(conn, workspace_id=ws_id, days=14)
+    assert any(i.detector == "failing-command" for i in insights)
+
+
 def test_lifecycle_ack_to_fixed(db: tuple[Database, str]) -> None:
     database, ws_id = db
     draft = InsightDraft(

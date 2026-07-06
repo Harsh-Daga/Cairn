@@ -23,6 +23,10 @@ After sync, the improve engine runs modular detectors (`server/improve/detectors
 | `quality-regression` | Outcome score drops |
 | `unused-tools` | Tool schemas rarely invoked |
 | `subagent-heavy` | High subagent fan-out |
+| `stale-tool-results` | Tool output still in context after last reference |
+| `failing-command` | Same command failing ≥3× |
+| `error-streak` | ≥4 consecutive tool errors |
+| `cost-anomaly` | Session cost > μ+3σ for difficulty bucket |
 
 Insights appear on the **Insights** page and feed the proposal generator.
 

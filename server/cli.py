@@ -319,6 +319,30 @@ def rebuild(
     typer.echo(json.dumps(result, indent=2))
 
 
+adapter_app = typer.Typer(help="Ingest adapter scaffolding.")
+app.add_typer(adapter_app, name="adapter")
+
+
+@adapter_app.command("new")
+def adapter_new(
+    name: str,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Scaffold a new ingest adapter module, fixture, and test."""
+    from server.ingest.scaffold import scaffold_adapter
+
+    root = (workspace or Path.cwd()).resolve()
+    try:
+        created = scaffold_adapter(root, name)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Scaffolded {name} adapter:")
+    for path in created:
+        typer.echo(f"  {path.relative_to(root)}")
+    typer.echo("Register the adapter in server/ingest/registry.py when ready.")
+
+
 def _register_action_commands() -> None:
     for entry in build_manifest():
         action_name = entry.name
