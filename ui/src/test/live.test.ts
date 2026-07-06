@@ -5,10 +5,17 @@ class MockEventSource {
   static instances: MockEventSource[] = [];
   url: string;
   onmessage: ((ev: MessageEvent) => void) | null = null;
+  private listeners = new Map<string, Array<(ev: MessageEvent) => void>>();
 
   constructor(url: string) {
     this.url = url;
     MockEventSource.instances.push(this);
+  }
+
+  addEventListener(type: string, handler: (ev: MessageEvent) => void) {
+    const list = this.listeners.get(type) ?? [];
+    list.push(handler);
+    this.listeners.set(type, list);
   }
 
   close() {
@@ -16,8 +23,11 @@ class MockEventSource {
     if (idx >= 0) MockEventSource.instances.splice(idx, 1);
   }
 
-  emit(data: unknown) {
-    this.onmessage?.({ data: JSON.stringify(data) } as MessageEvent);
+  emitNamed(type: string, data: Record<string, unknown>) {
+    const msg = { data: JSON.stringify(data) } as MessageEvent;
+    for (const handler of this.listeners.get(type) ?? []) {
+      handler(msg);
+    }
   }
 }
 
@@ -27,16 +37,16 @@ describe("live SSE", () => {
     vi.unstubAllGlobals();
   });
 
-  it("connects to /api/live/events and dispatches events", () => {
+  it("connects to /api/live/events and dispatches named events", () => {
     vi.stubGlobal("EventSource", MockEventSource);
     const handler = vi.fn();
     const disconnect = connectLiveEvents(handler);
 
     expect(MockEventSource.instances[0]?.url).toBe("/api/live/events");
 
-    MockEventSource.instances[0]?.emit({
-      event: "trace-updated",
-      data: { trace_id: "t1", kind: "tool_call" },
+    MockEventSource.instances[0]?.emitNamed("trace-updated", {
+      trace_id: "t1",
+      kind: "tool_call",
     });
 
     expect(handler).toHaveBeenCalledWith("trace-updated", {

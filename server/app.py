@@ -28,7 +28,9 @@ async def _lifespan(application: FastAPI) -> AsyncIterator[None]:
     application.state.database = runtime.database
     application.state.workspace_id = runtime.workspace_id
     application.state.event_bus = runtime.event_bus
+    runtime.pipeline.start()
     yield
+    runtime.pipeline.stop()
     runtime.database.close()
 
 
@@ -46,7 +48,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=_lifespan,
     )
     application.state.settings = cfg
-    application.state.event_bus = EventBus()
 
     @application.get(f"{API_PREFIX}/health")
     def health() -> JSONResponse:
