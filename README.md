@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/hero.gif" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
+  <img src="docs/assets/hero.svg" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
 </p>
 
 ---
@@ -49,7 +49,9 @@ curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/insta
 cd your-repo && cairn
 ```
 
-No account, no cloud, no config. `cairn stop` to quit.
+No account, no cloud, no config. `cairn stop` to quit (or `uv run cairn stop` from a dev checkout).
+
+> **Note:** If `cairn stop` fails with `ModuleNotFoundError: No module named 'cairn'`, you have a stale v3 shim on PATH. Reinstall with `uv tool install --force cairn-workspace` or use `uv run cairn` from the repo.
 
 ### Or let your agent install it
 
@@ -83,7 +85,7 @@ Full prompt: [AGENT_SETUP.md](AGENT_SETUP.md) · `cairn setup-prompt`
 
 | Overview | Session waterfall + strata | Optimize verdict |
 |----------|---------------------------|------------------|
-| ![Overview](docs/assets/overview.png) | ![Session detail](docs/assets/session-detail.png) | ![Optimize verdict](docs/assets/optimize-verdict.png) |
+| ![Overview](docs/assets/overview.svg) | ![Session detail](docs/assets/session-detail.svg) | ![Optimize verdict](docs/assets/optimize-verdict.svg) |
 
 Live demo (Phase L7): GitHub Pages link coming soon.
 

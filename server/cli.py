@@ -18,7 +18,9 @@ from server.api.context import ActionCtx
 from server.api.show import render_waterfall
 from server.app import create_app
 from server.config import Settings
+from server.demo.seed import DEMO_ROOT
 from server.doctor import print_doctor
+from server.export.static import export_static_snapshot
 
 app = typer.Typer(
     name="cairn",
@@ -95,9 +97,17 @@ def ui(
 
 
 @app.command()
-def stop() -> None:
-    """Stop a running Cairn background server."""
-    typer.echo("No running server found.")
+def stop(
+    port: Annotated[int, typer.Option("--port", "-p", help="HTTP port")] = 8787,
+) -> None:
+    """Stop a running Cairn UI server (by port)."""
+    from server.util.server_ctl import stop_server_on_port
+
+    if stop_server_on_port(port):
+        typer.echo(f"Stopped Cairn on port {port}.")
+    else:
+        typer.echo("No running server found.", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -241,11 +251,37 @@ def experiments_revert(
 @app.command()
 def export(
     trace_id: Annotated[str | None, typer.Option("--trace-id")] = None,
+    static: Annotated[
+        Path | None,
+        typer.Option("--static", help="Export static read-only snapshot to directory"),
+    ] = None,
     workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
 ) -> None:
     """Export a scrubbed trace bundle."""
+    if static is not None:
+        if trace_id is not None:
+            typer.echo("Cannot combine --trace-id with --static.", err=True)
+            raise typer.Exit(code=2)
+        out_dir = static.expanduser().resolve()
+        root = workspace.resolve() if workspace is not None else None
+        result = export_static_snapshot(root, out_dir)
+        typer.echo(json.dumps(result, indent=2))
+        return
     result = _run_action("export_bundle", {"trace_id": trace_id, "scrub": True}, workspace)
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command()
+def demo(
+    reset: Annotated[
+        bool,
+        typer.Option("--reset", help="Reset and reseed ~/.cairn-demo"),
+    ] = False,
+) -> None:
+    """Seed a deterministic local demo workspace."""
+    result = _run_action("demo_seed", {"reset": reset}, None)
+    typer.echo(json.dumps(result, indent=2))
+    typer.echo(f'Run "cairn ui --workspace {DEMO_ROOT}" to open the demo workspace.')
 
 
 mcp_app = typer.Typer(help="MCP integration helpers.")
@@ -344,8 +380,8 @@ def adapter_new(
 
     class_name = "".join(part.capitalize() for part in name.split("_")) + "Adapter"
     typer.echo(
-        "Next: add to pyproject.toml [project.entry-points.\"cairn.adapters\"] "
-        f'or server/ingest/registry.py:\n  {entry_point_snippet(name, class_name)}'
+        'Next: add to pyproject.toml [project.entry-points."cairn.adapters"] '
+        f"or server/ingest/registry.py:\n  {entry_point_snippet(name, class_name)}"
     )
 
 
