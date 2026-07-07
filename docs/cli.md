@@ -23,6 +23,7 @@ Cairn v4 CLI entry point: `server.cli:app`. Mutations also available as `cairn a
 | `cairn action server-stop` | Stop background server |
 | `cairn action sync` | Sync agent logs |
 | `cairn action workspace-scan` | Scan workspace for adapters |
+| `cairn adapter new` | Scaffold a new ingest adapter module, fixture, and test. |
 | `cairn check` | CI quality gate — exits non-zero on failure. |
 | `cairn config set` |  |
 | `cairn doctor` | Verify install, environment, and workspace readiness. |

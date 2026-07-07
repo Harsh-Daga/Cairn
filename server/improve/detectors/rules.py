@@ -23,6 +23,7 @@ from server.improve.detectors.oversize_results import rule_oversize_tool_results
 from server.improve.detectors.quality_regression import rule_quality_regression
 from server.improve.detectors.rebilling_waste import rule_rebilling_waste
 from server.improve.detectors.registry import ALL_RULES
+from server.improve.detectors.reread_hotspot import rule_reread_hotspot
 from server.improve.detectors.retry_loops import rule_retry_loops_detected
 from server.improve.detectors.runaway_sessions import rule_runaway_sessions
 from server.improve.detectors.stale_tool_results import rule_stale_tool_results
@@ -39,6 +40,7 @@ __all__ = [
     "rule_cache_misuse",
     "rule_context_window_pressure",
     "rule_high_file_churn",
+    "rule_reread_hotspot",
     "rule_identical_tool_calls",
     "rule_multi_model_cost_spread",
     "rule_oversize_tool_results",

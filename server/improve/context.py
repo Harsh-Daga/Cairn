@@ -123,6 +123,7 @@ def build_context(
         "failing_commands": _failing_commands(conn, workspace_id, days),
         "max_error_streak": _max_error_streak(conn, workspace_id, since),
         "cost_anomalies": _cost_anomalies(conn, workspace_id, since),
+        "read_rereads": _read_rereads(conn, workspace_id, since),
     }
 
 
@@ -350,3 +351,33 @@ def _cost_anomalies(
                 )
     anomalies.sort(key=lambda item: float(item["cost"]), reverse=True)
     return anomalies[:5]
+
+
+def _read_rereads(
+    conn: sqlite3.Connection, workspace_id: str, since: str
+) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT s.path_rel, COALESCE(s.text_hash, s.args_hash) AS content_hash, COUNT(*) AS n
+        FROM spans s
+        JOIN traces t ON t.trace_id = s.trace_id
+        WHERE s.name = 'read'
+          AND s.path_rel IS NOT NULL
+          AND COALESCE(s.text_hash, s.args_hash) IS NOT NULL
+          AND t.workspace_id = ?
+          AND (t.started_at IS NULL OR date(t.started_at) >= date('now', ?))
+        GROUP BY s.path_rel, content_hash
+        HAVING n >= 3
+        ORDER BY n DESC
+        LIMIT 10
+        """,
+        (workspace_id, since),
+    ).fetchall()
+    return [
+        {
+            "path": str(r["path_rel"]),
+            "content_hash": str(r["content_hash"]),
+            "reads": int(r["n"]),
+        }
+        for r in rows
+    ]

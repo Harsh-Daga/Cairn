@@ -82,3 +82,8 @@ def test_{name}_adapter_parses_fixture(tmp_path: Path) -> None:
         created.append(test_file)
 
     return created
+
+
+def entry_point_snippet(name: str, class_name: str) -> str:
+    """Return pyproject entry-point line for a scaffolded adapter."""
+    return f'{name} = "server.ingest.adapters.{name}_adapter:{class_name}"'

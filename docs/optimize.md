@@ -14,6 +14,7 @@ After sync, the improve engine runs modular detectors (`server/improve/detectors
 | `identical-tool-calls` | Repeated read/search with same args |
 | `oversize-tool-results` | Tool outputs dominating context |
 | `high-file-churn` | Excessive file touches per session |
+| `reread-hotspot` | Repeated reads of unchanged file content (same hash) |
 | `retry-loops-detected` | Blind retry patterns |
 | `cache-misuse` | Prompt caching opportunities missed |
 | `multi-model-cost-spread` | Cost variance across models |

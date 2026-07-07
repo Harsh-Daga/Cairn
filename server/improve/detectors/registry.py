@@ -18,6 +18,7 @@ from server.improve.detectors.multi_model_spread import rule_multi_model_cost_sp
 from server.improve.detectors.oversize_results import rule_oversize_tool_results
 from server.improve.detectors.quality_regression import rule_quality_regression
 from server.improve.detectors.rebilling_waste import rule_rebilling_waste
+from server.improve.detectors.reread_hotspot import rule_reread_hotspot
 from server.improve.detectors.retry_loops import rule_retry_loops_detected
 from server.improve.detectors.runaway_sessions import rule_runaway_sessions
 from server.improve.detectors.stale_tool_results import rule_stale_tool_results
@@ -31,6 +32,7 @@ ALL_RULES: tuple[RuleFn, ...] = (
     rule_identical_tool_calls,
     rule_oversize_tool_results,
     rule_high_file_churn,
+    rule_reread_hotspot,
     rule_retry_loops_detected,
     rule_cache_misuse,
     rule_multi_model_cost_spread,

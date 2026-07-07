@@ -125,6 +125,76 @@ def test_failing_command_detector(db: tuple[Database, str]) -> None:
     assert any(i.detector == "failing-command" for i in insights)
 
 
+def test_reread_hotspot_detector(db: tuple[Database, str]) -> None:
+    database, ws_id = db
+    _insert_trace(database.reader, "t-reread", ws_id)
+    conn = database.reader
+    for seq in range(1, 4):
+        conn.execute(
+            """
+            INSERT INTO spans (
+              span_id, trace_id, seq, kind, name, status, path_rel, text_hash
+            ) VALUES (?, 't-reread', ?, 'tool_call', 'read', 'ok', 'src/a.py', 'hash1')
+            """,
+            (f"r{seq}", seq),
+        )
+    conn.commit()
+    insights = evaluate(conn, workspace_id=ws_id, days=14)
+    assert any(i.detector == "reread-hotspot" for i in insights)
+
+
+def test_stale_tool_results_detector(db: tuple[Database, str]) -> None:
+    database, ws_id = db
+    _insert_trace(database.reader, "t-stale", ws_id, input_tokens=50_000, cost=10.0)
+    conn = database.reader
+    for seq in range(1, 4):
+        conn.execute(
+            """
+            INSERT INTO spans (
+              span_id, trace_id, seq, kind, name, status,
+              waste_category, waste_tokens
+            ) VALUES (?, 't-stale', ?, 'tool_result', 'read', 'ok', 'stale_context', 8000)
+            """,
+            (f"s{seq}", seq),
+        )
+    conn.commit()
+    insights = evaluate(conn, workspace_id=ws_id, days=14)
+    assert any(i.detector == "stale-tool-results" for i in insights)
+
+
+def test_cost_anomaly_detector(db: tuple[Database, str]) -> None:
+    database, ws_id = db
+    conn = database.reader
+    for i in range(21):
+        conn.execute(
+            """
+            INSERT INTO traces (
+              trace_id, workspace_id, source, external_id, started_at, status,
+              input_tokens, output_tokens, cost, cost_source, difficulty, model
+            ) VALUES (
+              ?, ?, 'claude_code', ?, ?, 'completed',
+              10000, 2000, ?, 'observed', 'medium', 'claude-opus'
+            )
+            """,
+            (f"t-cost-{i}", ws_id, f"t-cost-{i}", _now(), 5.0 + i * 0.01),
+        )
+    conn.execute(
+        """
+        INSERT INTO traces (
+          trace_id, workspace_id, source, external_id, started_at, status,
+          input_tokens, output_tokens, cost, cost_source, difficulty, model
+        ) VALUES (
+          't-outlier', ?, 'claude_code', 't-outlier', ?, 'completed',
+          10000, 2000, 99.0, 'observed', 'medium', 'claude-opus'
+        )
+        """,
+        (ws_id, _now()),
+    )
+    conn.commit()
+    insights = evaluate(conn, workspace_id=ws_id, days=14)
+    assert any(i.detector == "cost-anomaly" for i in insights)
+
+
 def test_lifecycle_ack_to_fixed(db: tuple[Database, str]) -> None:
     database, ws_id = db
     draft = InsightDraft(

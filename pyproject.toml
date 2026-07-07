@@ -36,6 +36,10 @@ Issues = "https://github.com/Harsh-Daga/Cairn/issues"
 [project.scripts]
 cairn = "server.cli:app"
 
+[project.entry-points."cairn.adapters"]
+# Third-party adapters register here, e.g.:
+# my_agent = "my_pkg.adapters.my_agent_adapter:MyAgentAdapter"
+
 [project.optional-dependencies]
 dev = [
     "hypothesis>=6.0",

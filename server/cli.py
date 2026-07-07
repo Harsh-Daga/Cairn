@@ -340,7 +340,13 @@ def adapter_new(
     typer.echo(f"Scaffolded {name} adapter:")
     for path in created:
         typer.echo(f"  {path.relative_to(root)}")
-    typer.echo("Register the adapter in server/ingest/registry.py when ready.")
+    from server.ingest.scaffold import entry_point_snippet
+
+    class_name = "".join(part.capitalize() for part in name.split("_")) + "Adapter"
+    typer.echo(
+        "Next: add to pyproject.toml [project.entry-points.\"cairn.adapters\"] "
+        f'or server/ingest/registry.py:\n  {entry_point_snippet(name, class_name)}'
+    )
 
 
 def _register_action_commands() -> None:
