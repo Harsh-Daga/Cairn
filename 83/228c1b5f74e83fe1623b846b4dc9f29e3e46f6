@@ -1,0 +1,50 @@
+server/ingest/scaffold.py
+  s_fe6314d23ef5f6::t_8e7352939ee68d 85-89
+docs/cli.md
+  s_fe6314d23ef5f6::t_6e291030972499 26
+tests/test_insights.py
+  s_fe6314d23ef5f6::t_08e5fcc7d505c9 174-177,186-189
+  s_fe6314d23ef5f6::t_b2f6be622d91f5 128-145
+  s_fe6314d23ef5f6::t_403994dd4a7278 146-173,178-185,190-195
+  s_fe6314d23ef5f6::t_531a9297f2e359 126-127
+server/improve/detectors/reread_hotspot.py
+  s_fe6314d23ef5f6::t_82ed9f20c01522 1-30
+tests/adapter_conformance.py
+  s_fe6314d23ef5f6::t_f45eb78e3e9fdc 10
+  s_fe6314d23ef5f6::t_4300d1920c2cba 1-9,11-91
+server/improve/context.py
+  s_fe6314d23ef5f6::t_f82867fa324810 126
+  s_fe6314d23ef5f6::t_58361ced7580b4 354-383
+docs/adapters.md
+  s_fe6314d23ef5f6::t_dd9b5b02eb475f 3,5,8,11,13-17,19,21-28,30-34,36,38-42,44,46,48-67,71,77,81,83,85
+pyproject.toml
+  s_fe6314d23ef5f6::t_e12c2d6b6711e1 39-42
+server/ingest/registry.py
+  s_fe6314d23ef5f6::t_577e57208d76f3 5,29-36,52,66-67
+docs/optimize.md
+  s_fe6314d23ef5f6::t_b0de695aa0292a 17
+server/improve/detectors/registry.py
+  s_fe6314d23ef5f6::t_f45eb78e3e9fdc 21
+  s_fe6314d23ef5f6::t_7186eba2a7c021 35
+server/improve/detectors/rules.py
+  s_fe6314d23ef5f6::t_f45eb78e3e9fdc 26
+  s_fe6314d23ef5f6::t_3d98fe3db15106 43
+server/cli.py
+  s_fe6314d23ef5f6::t_84a5bc0272c967 343-349
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "83228c1b5f74e83fe1623b846b4dc9f29e3e46f6",
+  "prompts": {},
+  "sessions": {
+    "s_fe6314d23ef5f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "73f63104-64f9-4d25-a9af-f3975bfccb5c",
+        "model": "composer-2.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
