@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/hero.png" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
+  <img src="https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/hero.gif" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
 </p>
 
 ---
