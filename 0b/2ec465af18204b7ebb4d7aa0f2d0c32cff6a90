@@ -1,0 +1,19 @@
+README.md
+  s_9f419e958311b2::t_36ff09cae1d5cd 24,86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "0b2ec465af18204b7ebb4d7aa0f2d0c32cff6a90",
+  "prompts": {},
+  "sessions": {
+    "s_9f419e958311b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ac0a4ec1-f175-4bbc-92ab-7fd120026765",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
