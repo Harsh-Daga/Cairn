@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/hero.gif" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
+  <img src="https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/hero.png" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
 </p>
 
 ---
@@ -83,7 +83,7 @@ Full prompt: [AGENT_SETUP.md](AGENT_SETUP.md) · `cairn setup-prompt`
 
 | Overview | Session waterfall + strata | Optimize verdict |
 |----------|---------------------------|------------------|
-| ![Overview](docs/assets/overview.png) | ![Session detail](docs/assets/session-detail.png) | ![Optimize verdict](docs/assets/optimize-verdict.png) |
+| ![Overview](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/overview.png) | ![Session detail](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/session-detail.png) | ![Optimize verdict](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/optimize-verdict.png) |
 
 Live demo (Phase L7): GitHub Pages link coming soon.
 
