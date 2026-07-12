@@ -7,6 +7,7 @@ import webbrowser
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
 import typer
 import uvicorn
@@ -93,7 +94,8 @@ def ui(
     application = create_app(settings)
 
     if open_browser:
-        webbrowser.open(f"http://{host}:{port}")
+        query = f"?{urlencode({'token': token})}" if token else ""
+        webbrowser.open(f"http://{host}:{port}/{query}")
 
     register_server(host=host, port=port, workspace=workspace)
     try:

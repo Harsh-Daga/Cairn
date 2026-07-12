@@ -8,6 +8,7 @@ import queue
 import threading
 import uuid
 from collections.abc import AsyncIterator, Iterator
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -66,7 +67,7 @@ class EventBus:
         with self._lock:
             client = self._clients.pop(client_id, None)
         if client is not None:
-            with contextlib_suppress_queue_full(client):
+            with suppress(queue.Full):
                 client.queue.put_nowait(None)
 
     def client_dropped(self, client_id: str) -> int:
@@ -112,21 +113,6 @@ class EventBus:
             yield item
         with self._lock:
             self._clients.pop(client_id, None)
-
-
-def contextlib_suppress_queue_full(client: _ClientQueue) -> _SuppressQueueFull:
-    return _SuppressQueueFull(client)
-
-
-class _SuppressQueueFull:
-    def __init__(self, client: _ClientQueue) -> None:
-        self._client = client
-
-    def __enter__(self) -> None:
-        return None
-
-    def __exit__(self, exc_type: object, exc: object, tb: object) -> bool:
-        return exc_type is queue.Full
 
 
 def format_sse(event: SseEvent, *, include_dropped: int = 0) -> str:

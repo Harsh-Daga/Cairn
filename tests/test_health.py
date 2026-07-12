@@ -32,3 +32,22 @@ def test_loopback_bind_validation() -> None:
 def test_non_loopback_with_token_ok() -> None:
     settings = Settings(host="0.0.0.0", token="secret")
     settings.validate_bind()  # should not raise
+
+
+def test_token_protects_exposed_server_and_bootstraps_browser_cookie() -> None:
+    client = TestClient(create_app(Settings(host="0.0.0.0", token="secret")))
+
+    denied = client.get("/api/health")
+    assert denied.status_code == 401
+    assert denied.headers["www-authenticate"] == "Bearer"
+
+    bearer = client.get("/api/health", headers={"Authorization": "Bearer secret"})
+    assert bearer.status_code == 200
+
+    browser = client.get("/?token=secret", follow_redirects=False)
+    assert browser.status_code == 307
+    assert browser.headers["location"] == "/"
+    assert "cairn_token" in browser.headers["set-cookie"]
+
+    client.cookies.set("cairn_token", "secret")
+    assert client.get("/api/health").status_code == 200

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlencode
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import RequestResponseEndpoint
 
 from server import __version__
 from server.api.bootstrap import bootstrap_runtime
@@ -55,6 +58,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=_lifespan,
     )
     application.state.settings = cfg
+
+    @application.middleware("http")
+    async def require_token(request: Request, call_next: RequestResponseEndpoint) -> Response:
+        """Protect every endpoint when the server is exposed beyond loopback."""
+        if not cfg.token:
+            return await call_next(request)
+
+        supplied = request.headers.get("authorization", "").removeprefix("Bearer ")
+        supplied = supplied or request.cookies.get("cairn_token", "")
+        query_token = request.query_params.get("token")
+        if query_token and secrets.compare_digest(query_token, cfg.token):
+            params = [
+                (key, value) for key, value in request.query_params.multi_items() if key != "token"
+            ]
+            location = request.url.path
+            if params:
+                location = f"{location}?{urlencode(params)}"
+            response = RedirectResponse(location, status_code=307)
+            response.set_cookie("cairn_token", cfg.token, httponly=True, samesite="lax")
+            return response
+        if supplied and secrets.compare_digest(supplied, cfg.token):
+            return await call_next(request)
+        return JSONResponse(
+            status_code=401,
+            content={"error": {"code": "unauthorized", "message": "Valid Cairn token required"}},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     @application.get(f"{API_PREFIX}/health")
     def health() -> JSONResponse:

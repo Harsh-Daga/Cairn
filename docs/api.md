@@ -120,7 +120,7 @@ Non-API paths serve the built React app from `server/static/` (produced by `scri
 
 ## Auth
 
-By default the server binds to loopback only. To bind elsewhere, pass `--token` to `cairn ui` and set `CAIRN_TOKEN`. Non-loopback bind without a token is refused at startup.
+By default the server binds to loopback only. To bind elsewhere, pass `--token` to `cairn ui`. Every route then requires either `Authorization: Bearer <token>` or the `cairn_token` browser cookie. Opening `http://HOST:PORT/?token=<token>` establishes that HttpOnly cookie and redirects to the token-free URL. Non-loopback bind without a token is refused at startup.
 
 ## Error shape
 
