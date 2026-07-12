@@ -188,7 +188,7 @@ def seed_demo_workspace(root: Path | None = None, *, reset: bool = False) -> Dem
                     project,
                     str(target_root),
                     model,
-                    "v4/phase-l7-demo",
+                    "demo/reference",
                     f"deadbeef{idx:02x}",
                     trace_started.isoformat(),
                     trace_ended.isoformat(),

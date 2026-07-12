@@ -2,7 +2,7 @@
 # Usage: irm https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.ps1 | iex
 #
 # Environment:
-#   $env:CAIRN_VERSION = "1.0.0"   Pin PyPI version
+#   $env:CAIRN_VERSION = "<published-version>"   Pin a published PyPI version
 #   $env:INSTALL_UV = "0"            Skip uv bootstrap
 
 $ErrorActionPreference = "Stop"

@@ -22,16 +22,17 @@ FENCED_CMD = re.compile(r"```(?:bash|sh|shell)?\n(.*?)```", re.DOTALL)
 README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]+)`\s*\|", re.MULTILINE)
 
 DOCS_INDEX = [
+    "docs/README.md",
     "docs/getting-started.md",
     "docs/concepts.md",
     "docs/ui-tour.md",
     "docs/cli.md",
     "docs/api.md",
     "docs/adapters.md",
+    "docs/otlp.md",
     "docs/optimize.md",
     "docs/ci.md",
     "docs/configuration.md",
-    "docs/legacy-v3.md",
     "ACCURACY.md",
     "AGENT_SETUP.md",
     "CONTRIBUTING.md",
@@ -39,17 +40,13 @@ DOCS_INDEX = [
 ]
 
 FORBIDDEN_DOC_PATTERNS = [
-    re.compile(r"(?<![./])cairn/[a-z_]+"),  # legacy module paths, not .cairn/
+    re.compile(r"(?<![./])cairn/[a-z_]+"),  # retired module paths, not .cairn/
     re.compile(r"\brun_id\b"),
     re.compile(r"`cairn (init|validate|build|profile|behavior|outcomes|advanced)\b"),
     re.compile(r"docs/reference/"),
     re.compile(r"docs/guides/"),
     re.compile(r"docs/spec/"),
 ]
-
-FORBIDDEN_DOC_PATHS = {
-    ROOT / "docs" / "legacy-v3.md",
-}
 
 README_CLI_COMMANDS = [
     "cairn",
@@ -156,6 +153,25 @@ def test_readme_internal_links_resolve() -> None:
     assert not broken, f"Broken README links: {broken}"
 
 
+def test_documentation_internal_links_resolve() -> None:
+    markdown = [
+        README,
+        ROOT / "AGENT_SETUP.md",
+        ROOT / "CONTRIBUTING.md",
+        *(ROOT / "docs").glob("*.md"),
+    ]
+    broken: list[str] = []
+    for path in markdown:
+        text = path.read_text(encoding="utf-8")
+        for match in re.finditer(r"\]\(([^)]+)\)", text):
+            target = match.group(1).split("#", 1)[0]
+            if not target or target.startswith(("http://", "https://", "mailto:")):
+                continue
+            if not (path.parent / target).resolve().exists():
+                broken.append(f"{path.relative_to(ROOT)} → {target}")
+    assert not broken, "Broken documentation links:\n" + "\n".join(broken)
+
+
 def test_readme_cli_table_commands_exist() -> None:
     cli = _cli_command_names()
     actions = _action_names()
@@ -179,20 +195,32 @@ def test_cli_doc_is_current() -> None:
     assert before == after, "docs/cli.md is stale — run: python scripts/gen_cli_docs.py"
 
 
-def test_no_v3_terms_in_docs() -> None:
-    paths = [README, ROOT / "docs", ROOT / "AGENT_SETUP.md"]
+def test_no_retired_release_terms_in_public_docs() -> None:
+    paths = [README, ROOT / "docs", ROOT / "AGENT_SETUP.md", ROOT / "CHANGELOG.md"]
     violations: list[str] = []
     for base in paths:
         files = [base] if base.is_file() else base.rglob("*.md")
         for path in files:
-            if not path.is_file() or path in FORBIDDEN_DOC_PATHS:
+            if not path.is_file():
                 continue
             text = path.read_text(encoding="utf-8")
             for pattern in FORBIDDEN_DOC_PATTERNS:
                 for match in pattern.finditer(text):
                     line = text[: match.start()].count("\n") + 1
                     violations.append(f"{path.relative_to(ROOT)}:{line}: {match.group()}")
-    assert not violations, "Forbidden v3/stale doc terms:\n" + "\n".join(violations)
+    retired_release = re.compile(
+        r"\b(?:v3|v4)\b|(?<![\d.])(?:0\.0\.1|0\.1\.0)(?![\d.])", re.IGNORECASE
+    )
+    for base in paths:
+        files = [base] if base.is_file() else base.rglob("*.md")
+        for path in files:
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8")
+            for match in retired_release.finditer(text):
+                line = text[: match.start()].count("\n") + 1
+                violations.append(f"{path.relative_to(ROOT)}:{line}: {match.group()}")
+    assert not violations, "Forbidden retired/stale doc terms:\n" + "\n".join(violations)
 
 
 def test_agent_setup_bootstrap_url() -> None:

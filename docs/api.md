@@ -103,7 +103,6 @@ Registered actions (from `server/api/actions.py`):
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/live/events` | Server-sent events stream (ingest, insight, job updates) |
-| GET | `/api/live/events` | Legacy alias at app root also works |
 
 The UI connects via `ui/src/lib/sse.ts` when **Watch** is enabled on the Live page.
 
@@ -111,7 +110,9 @@ The UI connects via `ui/src/lib/sse.ts` when **Watch** is enabled on the Live pa
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/v1/traces` | Accept OTLP/JSON trace payloads (not under `/api`) |
+| POST | `/v1/traces` | Accept OTLP/JSON or protobuf trace payloads (not under `/api`) |
+
+See [OTLP ingest](otlp.md) for content types, examples, and idempotency behavior.
 
 ## Static UI
 

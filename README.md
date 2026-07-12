@@ -51,7 +51,7 @@ cd your-repo && cairn
 
 No account, no cloud, no config. `cairn stop` to quit (or `uv run cairn stop` from a dev checkout).
 
-> **Note:** If `cairn stop` fails with `ModuleNotFoundError: No module named 'cairn'`, you have a stale v3 shim on PATH. Reinstall with `uv tool install --force cairn-workspace` or use `uv run cairn` from the repo.
+> **Note:** If `cairn stop` fails because an older installation is first on PATH, reinstall with `uv tool install --force cairn-workspace` or use `uv run cairn` from the repository.
 
 ### Or let your agent install it
 
@@ -170,6 +170,7 @@ Local-first. Loopback-only default (`127.0.0.1`). No telemetry, no accounts, no 
 
 ## Documentation
 
+- [Documentation home](docs/README.md)
 - [Getting started](docs/getting-started.md)
 - [Concepts](docs/concepts.md)
 - [UI tour](docs/ui-tour.md)
@@ -179,7 +180,6 @@ Local-first. Loopback-only default (`127.0.0.1`). No telemetry, no accounts, no 
 - [Optimize loop](docs/optimize.md)
 - [CI gates](docs/ci.md)
 - [Configuration](docs/configuration.md)
-- [Legacy v3](docs/legacy-v3.md)
 - [Accuracy](ACCURACY.md)
 
 ---

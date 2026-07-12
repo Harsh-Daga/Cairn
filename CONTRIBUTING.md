@@ -46,7 +46,3 @@ uv run pytest tests/test_docs.py -q   # docs + CLI surface
 - One logical change per PR when possible
 - Update docs when CLI or behavior changes
 - Keep `tests/test_docs.py` green
-
-## Historical migration notes
-
-The pre-1.0 implementation is preserved only for migration reference on the `v3-final` tag. See [docs/legacy-v3.md](docs/legacy-v3.md).

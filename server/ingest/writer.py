@@ -1,4 +1,4 @@
-"""Ingest writer — persists parsed sessions to the v4 store."""
+"""Ingest writer — persists parsed sessions to the Cairn store."""
 
 from __future__ import annotations
 

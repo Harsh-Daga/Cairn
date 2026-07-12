@@ -1,4 +1,4 @@
-"""MCP tool implementations — v4 schema (traces/spans)."""
+"""MCP tool implementations for the trace and span schema."""
 
 from __future__ import annotations
 

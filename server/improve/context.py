@@ -1,4 +1,4 @@
-"""Build detector evaluation context from v4 traces/spans."""
+"""Build detector evaluation context from Cairn traces and spans."""
 
 from __future__ import annotations
 
