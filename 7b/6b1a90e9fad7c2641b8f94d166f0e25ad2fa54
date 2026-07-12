@@ -1,0 +1,32 @@
+scripts/check_pypi_version.py
+  s_7d77ecaccb5763::t_ef520750e6fd55 1-54
+.github/workflows/publish.yml
+  s_7d77ecaccb5763::t_611d148ce12c42 5-6,13,27-42,44,48,52,57
+tests/test_server_ctl.py
+  s_7d77ecaccb5763::t_ef520750e6fd55 20
+CHANGELOG.md
+  s_7d77ecaccb5763::t_ef520750e6fd55 7-9
+docs/README.md
+  s_7d77ecaccb5763::t_ef520750e6fd55 27
+docs/ci.md
+  s_7d77ecaccb5763::t_20b936747d47ed 49-56
+tests/test_release_publish.py
+  s_7d77ecaccb5763::t_ef520750e6fd55 1-23,27-32
+  s_7d77ecaccb5763::t_f34b10f1f14373 24-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "7b6b1a90e9fad7c2641b8f94d166f0e25ad2fa54",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
