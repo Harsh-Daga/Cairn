@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2 as httpx
 
 from server.improve.evidence_pack import EvidencePack
 

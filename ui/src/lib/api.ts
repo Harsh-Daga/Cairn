@@ -13,6 +13,7 @@ import type {
   SearchResponse,
   TailAnalyticsResponse,
   TraceDetailResponse,
+  TraceDiffResponse,
   TracesListResponse,
   UsageAnalyticsResponse,
   WasteAnalyticsResponse,
@@ -20,6 +21,38 @@ import type {
 } from "./types";
 
 const API_BASE = "/api";
+const STATIC_SLUG_RE = /[^A-Za-z0-9._-]+/g;
+
+declare global {
+  interface Window {
+    __CAIRN_STATIC__?: boolean;
+  }
+}
+
+function slug(value: string): string {
+  const cleaned = value.replace(STATIC_SLUG_RE, "-").replace(/^-+|-+$/g, "");
+  return cleaned || "x";
+}
+
+function staticQuerySuffix(rawQuery: string): string {
+  if (!rawQuery) return "";
+  const params = new URLSearchParams(rawQuery);
+  const pairs = Array.from(params.entries())
+    .filter(([, value]) => value.length > 0)
+    .sort(([a], [b]) => a.localeCompare(b));
+  if (pairs.length === 0) return "";
+  return `__${pairs.map(([k, v]) => `${slug(k)}=${slug(v)}`).join("__")}`;
+}
+
+function staticJsonPath(path: string): string {
+  const [rawPath, rawQuery = ""] = path.split("?");
+  const rel = (rawPath ?? "").replace(/^\/+/, "") || "root";
+  return `${API_BASE}/${rel}${staticQuerySuffix(rawQuery)}.json`;
+}
+
+export function isStaticMode(): boolean {
+  return Boolean(window.__CAIRN_STATIC__);
+}
 
 export interface HealthResponse {
   status: string;
@@ -33,7 +66,12 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, init);
+  const method = (init?.method ?? "GET").toUpperCase();
+  if (isStaticMode() && method !== "GET") {
+    throw new Error("This is a read-only static snapshot.");
+  }
+  const url = isStaticMode() ? staticJsonPath(path) : `${API_BASE}${path}`;
+  const res = await fetch(url, init);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const message =
@@ -92,6 +130,11 @@ export function fetchReplay(traceId: string, seq: number): Promise<ReplayRespons
   return fetchJson(`/traces/${encodeURIComponent(traceId)}/replay?seq=${seq}`);
 }
 
+export function fetchTraceDiff(traceIdA: string, traceIdB: string): Promise<TraceDiffResponse> {
+  const qs = new URLSearchParams({ a: traceIdA, b: traceIdB });
+  return fetchJson(`/traces/diff?${qs}`);
+}
+
 export function fetchInsights(state?: string): Promise<InsightsResponse> {
   const qs = state ? `?state=${encodeURIComponent(state)}` : "";
   return fetchJson(`/insights${qs}`);
@@ -110,6 +153,9 @@ export function runAction(name: string, params: Record<string, unknown> = {}): P
   result?: Record<string, unknown>;
   job_id?: string;
 }> {
+  if (isStaticMode()) {
+    return Promise.reject(new Error("Actions are disabled in static mode."));
+  }
   return fetchJson(`/actions/${encodeURIComponent(name)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -28,6 +28,11 @@ jobs:
           uv venv
           uv pip install -e ".[dev]"
 
+      - name: Verify ACCURACY.md is up to date
+        run: |
+          uv run python scripts/gen_accuracy.py
+          git diff --exit-code ACCURACY.md
+
       - name: Ruff
         run: uv run ruff check .
 

@@ -147,6 +147,35 @@ export interface ReplayResponse {
   checkpoints?: ReplayCheckpoint[] | null;
 }
 
+export interface TraceDiffTurn {
+  index: number;
+  op: "match" | "insert" | "delete";
+  a: Span | null;
+  b: Span | null;
+  delta_tokens: number;
+  delta_waste_tokens: number;
+  delta_quality: number;
+}
+
+export interface TraceDiffSummary {
+  cost_a: number;
+  cost_b: number;
+  delta_cost: number;
+  waste_a: number;
+  waste_b: number;
+  delta_waste_tokens: number;
+  quality_a: number;
+  quality_b: number;
+  delta_quality: number;
+}
+
+export interface TraceDiffResponse {
+  a: Trace;
+  b: Trace;
+  summary: TraceDiffSummary;
+  turns: TraceDiffTurn[];
+}
+
 export interface InsightRow {
   insight_id: string;
   fingerprint: string;

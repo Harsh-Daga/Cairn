@@ -8,14 +8,15 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from server import __version__
 from server.api.bootstrap import bootstrap_runtime
 from server.api.routers import ALL_ROUTERS
-from server.api.sse import EventBus, sse_stream
 from server.config import Settings, get_settings
 from server.ingest.otlp import OtlpReceiver
+from server.util.runtime_state import register_server, unregister_server
 
 API_PREFIX = "/api"
 
@@ -29,7 +30,13 @@ async def _lifespan(application: FastAPI) -> AsyncIterator[None]:
     application.state.workspace_id = runtime.workspace_id
     application.state.event_bus = runtime.event_bus
     runtime.pipeline.start()
+    register_server(
+        host=settings.host,
+        port=settings.port,
+        workspace=settings.workspace_root,
+    )
     yield
+    unregister_server(settings.port)
     runtime.pipeline.stop()
     runtime.database.close()
 
@@ -42,7 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application = FastAPI(
         title="Cairn",
         description="Local-first observability for AI coding agents",
-        version="4.0.0",
+        version=__version__,
         docs_url=f"{API_PREFIX}/docs",
         openapi_url=f"{API_PREFIX}/openapi.json",
         lifespan=_lifespan,
@@ -51,15 +58,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @application.get(f"{API_PREFIX}/health")
     def health() -> JSONResponse:
-        return JSONResponse({"status": "ok", "version": "4.0.0"})
-
-    @application.get(f"{API_PREFIX}/live/events")
-    def legacy_live_events(request: Request) -> StreamingResponse:
-        bus: EventBus = request.app.state.event_bus
-        runtime = getattr(request.app.state, "runtime", None)
-        if runtime is not None:
-            bus = runtime.event_bus
-        return StreamingResponse(sse_stream(bus), media_type="text/event-stream")
+        return JSONResponse({"status": "ok", "version": __version__})
 
     for router in ALL_ROUTERS:
         application.include_router(router, prefix=API_PREFIX)
@@ -80,7 +79,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
         receiver = OtlpReceiver(runtime.database, runtime.workspace_id, runtime.event_bus)
         try:
-            results = receiver.ingest_bytes(body)
+            results = receiver.ingest_bytes(body, content_type=request.headers.get("content-type"))
         except (json.JSONDecodeError, UnicodeDecodeError, KeyError, TypeError, ValueError) as exc:
             return JSONResponse(
                 status_code=400,

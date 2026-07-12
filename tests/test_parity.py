@@ -16,6 +16,7 @@ EXPECTED_ACTIONS = {
     "check",
     "export_bundle",
     "mcp_install",
+    "demo_seed",
     "optimize_propose",
     "experiment_apply",
     "experiment_revert",
@@ -55,7 +56,7 @@ def test_every_action_postable(api_client: TestClient) -> None:
         "config_set": {"key": "host", "value": "127.0.0.1"},
     }
     for name in EXPECTED_ACTIONS:
-        if name == "server_stop":
+        if name in {"server_stop", "demo_seed"}:
             continue
         payload = skip_payload.get(name, {})
         resp = api_client.post(f"/api/actions/{name}", json=payload)

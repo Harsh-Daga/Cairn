@@ -1,0 +1,45 @@
+name: Adapter request
+description: Request support for a new agent adapter
+title: "[adapter]: "
+labels: ["enhancement", "adapter"]
+body:
+  - type: input
+    id: agent_name
+    attributes:
+      label: Agent/tool name
+      placeholder: "e.g. Foo Agent CLI"
+    validations:
+      required: true
+
+  - type: input
+    id: logs_location
+    attributes:
+      label: Log location pattern
+      placeholder: "~/.../sessions/*.jsonl"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sample
+    attributes:
+      label: Redacted sample log lines
+      description: Share 5-20 representative lines (with secrets removed).
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: token_fields
+    attributes:
+      label: Token/cost fields
+      description: Which fields expose input/output/cache/reasoning tokens and cost?
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I confirmed this adapter is not already supported in README/docs.
+          required: true
+        - label: I can provide a redacted fixture for tests.
+          required: false

@@ -86,6 +86,8 @@ def ui(
     workspace: Annotated[Path | None, typer.Option("--workspace", help="Workspace root")] = None,
 ) -> None:
     """Start the Cairn web UI server."""
+    from server.util.runtime_state import register_server, unregister_server
+
     settings = Settings(host=host, port=port, token=token, workspace_root=workspace)
     settings.validate_bind()
     application = create_app(settings)
@@ -93,7 +95,11 @@ def ui(
     if open_browser:
         webbrowser.open(f"http://{host}:{port}")
 
-    uvicorn.run(application, host=host, port=port, log_level="info")
+    register_server(host=host, port=port, workspace=workspace)
+    try:
+        uvicorn.run(application, host=host, port=port, log_level="info")
+    finally:
+        unregister_server(port)
 
 
 @app.command()
@@ -101,12 +107,13 @@ def stop(
     port: Annotated[int, typer.Option("--port", "-p", help="HTTP port")] = 8787,
 ) -> None:
     """Stop a running Cairn UI server (by port)."""
-    from server.util.server_ctl import stop_server_on_port
+    from server.util.runtime_state import stop_server
 
-    if stop_server_on_port(port):
-        typer.echo(f"Stopped Cairn on port {port}.")
+    ok, message = stop_server(port)
+    if ok:
+        typer.echo(message)
     else:
-        typer.echo("No running server found.", err=True)
+        typer.echo(message, err=True)
         raise typer.Exit(code=1)
 
 

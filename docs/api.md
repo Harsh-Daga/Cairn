@@ -1,6 +1,6 @@
 # API overview
 
-Cairn v4 serves a FastAPI application from `server/app.py`. All JSON routes use the `/api` prefix unless noted. OpenAPI docs are at `/api/docs` when the server is running.
+Cairn serves a FastAPI application from `server/app.py`. All JSON routes use the `/api` prefix unless noted. OpenAPI docs are at `/api/docs` when the server is running.
 
 Start the server with `cairn ui` (default `http://127.0.0.1:8787`).
 
@@ -8,7 +8,7 @@ Start the server with `cairn ui` (default `http://127.0.0.1:8787`).
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/health` | `{ "status": "ok", "version": "4.0.0" }` |
+| GET | `/api/health` | `{ "status": "ok", "version": "1.0.0" }` |
 | GET | `/api/docs` | Swagger UI |
 | GET | `/api/openapi.json` | OpenAPI schema (also used to generate UI types) |
 

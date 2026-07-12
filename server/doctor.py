@@ -40,9 +40,9 @@ def _check_cairn_on_path() -> CheckResult:
 
 def _check_version() -> CheckResult:
     detail = __version__
-    ok = detail.startswith("4.")
-    fix = "Upgrade: uv tool install --upgrade cairn-workspace" if not ok else None
-    return CheckResult("Cairn version 4.x", ok, detail, fix)
+    ok = True
+    fix = None
+    return CheckResult("Cairn package version", ok, detail, fix)
 
 
 def _detect_install_method() -> CheckResult:

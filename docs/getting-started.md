@@ -8,7 +8,7 @@
 | **pip** | `pip install cairn-workspace` |
 | **curl** | `curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/install.sh \| sh` |
 
-Pin a version: `CAIRN_VERSION=4.0.0` with the install script, or `uv tool install cairn-workspace==4.0.0`.
+Pin a version: `CAIRN_VERSION=1.0.0` with the install script, or `uv tool install cairn-workspace==1.0.0`.
 
 Verify: `cairn doctor`
 

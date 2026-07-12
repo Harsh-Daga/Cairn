@@ -10,6 +10,7 @@ from typing import Any
 
 from server.analyze.dirty import mark_trace_dirty, trace_day_key
 from server.api.sse import EventBus
+from server.ingest.otlp_pb import decode_export_trace_service_request
 from server.models.data_quality import DataQuality
 from server.models.span import Span, SpanKind, SpanStatus
 from server.models.trace import Trace
@@ -222,8 +223,11 @@ class OtlpReceiver:
         self.workspace_id = workspace_id
         self._bus = event_bus
 
-    def ingest_bytes(self, raw: bytes) -> list[OtlpIngestResult]:
-        payload = json.loads(raw.decode("utf-8"))
+    def ingest_bytes(self, raw: bytes, content_type: str | None = None) -> list[OtlpIngestResult]:
+        if content_type and "application/x-protobuf" in content_type.lower():
+            payload = decode_export_trace_service_request(raw)
+        else:
+            payload = json.loads(raw.decode("utf-8"))
         return self.ingest_payload(payload)
 
     def ingest_payload(self, payload: dict[str, Any]) -> list[OtlpIngestResult]:

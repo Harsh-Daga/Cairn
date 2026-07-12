@@ -10,6 +10,7 @@ from typing import Any
 
 import numpy as np
 
+from server.analyze.diff import build_trace_diff_payload
 from server.analyze.gauge import compute_gauge
 from server.analyze.tail import expected_worst
 from server.api.schemas import (
@@ -37,6 +38,7 @@ from server.api.schemas import (
     TailAnalyticsResponse,
     TailRisk,
     TraceDetailResponse,
+    TraceDiffResponse,
     TraceRow,
     TracesListResponse,
     UsageAnalyticsResponse,
@@ -282,6 +284,15 @@ def build_trace_detail(conn: sqlite3.Connection, trace_id: str) -> TraceDetailRe
         diagnostics=diag.model_dump() if diag else None,
         quality=quality.model_dump() if quality else None,
     )
+
+
+def build_trace_diff(
+    conn: sqlite3.Connection, trace_id_a: str, trace_id_b: str
+) -> TraceDiffResponse | None:
+    payload = build_trace_diff_payload(conn, trace_id_a=trace_id_a, trace_id_b=trace_id_b)
+    if payload is None:
+        return None
+    return TraceDiffResponse.model_validate(payload)
 
 
 def _replay_summary(trace: object, spans: list[Span], seq: int) -> dict[str, Any]:

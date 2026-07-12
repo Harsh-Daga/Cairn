@@ -7,4 +7,5 @@ import runpy
 from pathlib import Path
 
 if __name__ == "__main__":
-    runpy.run_path(str(Path(__file__).resolve().parent / "gen_readme_assets.py"), run_name="__main__")
+    script = Path(__file__).resolve().parent / "gen_readme_assets.py"
+    runpy.run_path(str(script), run_name="__main__")

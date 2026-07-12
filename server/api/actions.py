@@ -13,6 +13,7 @@ from server.api.action_handlers import (
     BackfillParams,
     CheckParams,
     ConfigSetParams,
+    DemoSeedParams,
     EmptyParams,
     ExperimentApplyParams,
     ExperimentMeasureParams,
@@ -27,6 +28,7 @@ from server.api.action_handlers import (
     _backfill_action,
     _check_action,
     _config_set_action,
+    _demo_seed_action,
     _experiment_apply_action,
     _experiment_measure_action,
     _experiment_revert_action,
@@ -151,6 +153,16 @@ def export_bundle(params: ExportBundleParams, ctx: ActionCtx) -> dict[str, Any]:
 )
 def mcp_install(params: McpInstallParams, ctx: ActionCtx) -> dict[str, Any]:
     return _mcp_install_action(params, ctx)
+
+
+@action(
+    name="demo_seed",
+    title="Seed deterministic demo workspace",
+    category="setup",
+    params=DemoSeedParams,
+)
+def demo_seed(params: DemoSeedParams, ctx: ActionCtx) -> dict[str, Any]:
+    return _demo_seed_action(params, ctx)
 
 
 @action(

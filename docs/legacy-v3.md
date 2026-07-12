@@ -1,6 +1,6 @@
 # Legacy v3 tree (`cairn/`)
 
-The v3 Python package was removed in **Cairn 4.0.0**. A snapshot remains on the git tag **`v3-final`** for reference.
+The v3 Python package was removed in **Cairn 1.0.0**. A snapshot remains on the git tag **`v3-final`** for reference.
 
 ## v3 → v4 mapping
 

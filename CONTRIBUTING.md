@@ -49,4 +49,4 @@ uv run pytest tests/test_docs.py -q   # docs + CLI surface
 
 ## Legacy v3
 
-The v3 tree was removed in 4.0.0. Reference tag `v3-final` — see [docs/legacy-v3.md](docs/legacy-v3.md).
+The v3 tree was removed in 0.1.0. Reference tag `v3-final` — see [docs/legacy-v3.md](docs/legacy-v3.md).

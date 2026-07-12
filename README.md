@@ -106,6 +106,8 @@ Live demo (Phase L7): GitHub Pages link coming soon.
 | Gemini CLI | `gemini_cli` | `~/.gemini/tmp/`, `~/.config/gemini/` |
 | OpenCode | `opencode` | `~/.local/share/opencode/sessions/` |
 | Hermes | `hermes` | `~/.hermes/sessions/*.json` |
+| OpenClaw | `openclaw` | `~/.openclaw/` session logs |
+| Generic JSONL | `agent_jsonl` | Aider, Goose, and OpenCode-compatible JSONL logs |
 
 Adding an adapter is one file + one fixture — see `cairn adapter new` ([adapters.md](docs/adapters.md)) *(scaffold lands in L6)*.
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from server import __version__
 from server.app import create_app
 from server.config import Settings
 
@@ -15,7 +16,7 @@ def test_health_endpoint() -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "ok"
-    assert body["version"] == "4.0.0"
+    assert body["version"] == __version__
 
 
 def test_loopback_bind_validation() -> None:

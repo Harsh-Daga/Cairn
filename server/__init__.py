@@ -1,3 +1,3 @@
-"""Cairn v4 server — local-first observability for AI coding agents."""
+"""Cairn server — local-first observability for AI coding agents."""
 
-__version__ = "4.0.0"
+__version__ = "1.0.0"

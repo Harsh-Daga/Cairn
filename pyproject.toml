@@ -1,6 +1,6 @@
 [project]
 name = "cairn-workspace"
-version = "4.0.0"
+version = "1.0.0"
 description = "Local-first observability and self-improvement platform for AI coding agents"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "fastapi>=0.115",
-    "httpx>=0.27",
+    "httpx2>=2.5",
     "numpy>=2.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
@@ -44,6 +44,7 @@ cairn = "server.cli:app"
 dev = [
     "hypothesis>=6.0",
     "mypy>=1.13",
+    "pillow>=10",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "ruff>=0.8",
@@ -79,7 +80,8 @@ build-backend = "hatchling.build"
 packages = ["server"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"server/static" = "server/static"
+"server/static/index.html" = "server/static/index.html"
+"server/static/assets" = "server/static/assets"
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "scripts/hatch_build.py"
