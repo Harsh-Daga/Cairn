@@ -108,7 +108,7 @@ def _merge_codex_toml(path: Path, snippet: dict[str, object]) -> None:
     block = (
         "\n[mcp_servers.cairn]\n"
         f'command = "{snippet["command"]}"\n'
-        f'args = {json.dumps(snippet["args"])}\n'
+        f"args = {json.dumps(snippet['args'])}\n"
         f'cwd = "{snippet["cwd"]}"\n'
     )
     if path.is_file():

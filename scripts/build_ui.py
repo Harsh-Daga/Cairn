@@ -152,7 +152,7 @@ def _openapi_to_typescript(openapi: dict[str, Any]) -> str:
             continue
         if schema.get("type") == "string" and "enum" in schema:
             enum_types.append(
-                f'export type {name} = {" | ".join(json.dumps(v) for v in schema["enum"])};'
+                f"export type {name} = {' | '.join(json.dumps(v) for v in schema['enum'])};"
             )
         else:
             interfaces.append(_render_interface(name, schema, schemas))

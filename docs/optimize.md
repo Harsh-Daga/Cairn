@@ -111,9 +111,9 @@ Without LLM config, Cairn uses templated rewrites from evidence.
 | Revert | `cairn experiments revert ID` | Optimize → Revert |
 | List | `cairn experiments ls` | Optimize board |
 
-## Appendix — statistics formulas (v4)
+## Appendix — statistics formulas
 
-Cairn v4 replaces fixed-*z* sequential tests with **anytime-valid confidence sequences** (CS) on CUPED-adjusted holdout effects.
+Cairn uses **anytime-valid confidence sequences** (CS) on CUPED-adjusted holdout effects instead of fixed-*z* sequential tests.
 
 ### CUPED adjustment
 

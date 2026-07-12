@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible Cairn v4 bug
+description: Report a reproducible Cairn bug
 title: "[bug]: "
 labels: ["bug"]
 body:

@@ -78,4 +78,3 @@ def api_client(api_workspace: tuple[Path, str, str]) -> Generator[TestClient, No
     application.state.event_bus = runtime.event_bus
     client = TestClient(application)
     yield client
-

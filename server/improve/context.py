@@ -44,9 +44,7 @@ def build_context(
             total_cost += float(r["cost"] or 0)
         pct = r["peak_context_pct"]
         if pct is not None and float(pct) >= 70:
-            high_context.append(
-                {"run_id": str(r["trace_id"]), "peak_context_pct": float(pct)}
-            )
+            high_context.append({"run_id": str(r["trace_id"]), "peak_context_pct": float(pct)})
 
     model_rows = conn.execute(
         """
@@ -225,9 +223,7 @@ def _quality_regression(conn: sqlite3.Connection, workspace_id: str) -> dict[str
     }
 
 
-def _subagent_heavy(
-    conn: sqlite3.Connection, run_rows: list[sqlite3.Row]
-) -> list[dict[str, Any]]:
+def _subagent_heavy(conn: sqlite3.Connection, run_rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in run_rows:
         trace_id = str(r["trace_id"])
@@ -353,9 +349,7 @@ def _cost_anomalies(
     return anomalies[:5]
 
 
-def _read_rereads(
-    conn: sqlite3.Connection, workspace_id: str, since: str
-) -> list[dict[str, Any]]:
+def _read_rereads(conn: sqlite3.Connection, workspace_id: str, since: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
         SELECT s.path_rel, COALESCE(s.text_hash, s.args_hash) AS content_hash, COUNT(*) AS n

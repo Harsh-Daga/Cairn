@@ -87,10 +87,6 @@ Full prompt: [AGENT_SETUP.md](AGENT_SETUP.md) · `cairn setup-prompt`
 |----------|---------------------------|------------------|
 | ![Overview](docs/assets/overview.svg) | ![Session detail](docs/assets/session-detail.svg) | ![Optimize verdict](docs/assets/optimize-verdict.svg) |
 
-Live demo (Phase L7): GitHub Pages link coming soon.
-
----
-
 ## Supported agents
 
 | Agent | Adapter ID | Log source |
@@ -109,7 +105,7 @@ Live demo (Phase L7): GitHub Pages link coming soon.
 | OpenClaw | `openclaw` | `~/.openclaw/` session logs |
 | Generic JSONL | `agent_jsonl` | Aider, Goose, and OpenCode-compatible JSONL logs |
 
-Adding an adapter is one file + one fixture — see `cairn adapter new` ([adapters.md](docs/adapters.md)) *(scaffold lands in L6)*.
+Adding an adapter is one parser, one fixture, and a conformance test — see `cairn adapter new` and [adapters.md](docs/adapters.md).
 
 ---
 
@@ -190,6 +186,6 @@ Local-first. Loopback-only default (`127.0.0.1`). No telemetry, no accounts, no 
 
 ## Contributing · License
 
-Adapter PRs welcome — one parser, one fixture, conformance harness green. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Adapter PRs welcome — one parser, one fixture, conformance harness green. See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SUPPORT.md](SUPPORT.md). If Cairn is useful to you, you can [support its development](https://buymeacoffee.com/harshdaga).
 
 Apache-2.0 — see [LICENSE](LICENSE).

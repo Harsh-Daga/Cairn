@@ -91,9 +91,7 @@ def _event_text(event: dict[str, Any]) -> tuple[str | None, str | None]:
     return event.get("text_hash") or event.get("args_hash"), None
 
 
-def _path_from_tool_input(
-    event: dict[str, Any], cwd: str | None, root: Path
-) -> str | None:
+def _path_from_tool_input(event: dict[str, Any], cwd: str | None, root: Path) -> str | None:
     for key in ("path", "file_path", "file", "filename"):
         val = event.get(key)
         if isinstance(val, str) and val:

@@ -34,7 +34,7 @@ def _check_cairn_on_path() -> CheckResult:
     cairn = shutil.which("cairn")
     ok = cairn is not None
     detail = cairn or "not found on PATH"
-    fix = "Add uv tool dir to PATH: export PATH=\"$(uv tool dir --bin):$PATH\"" if not ok else None
+    fix = 'Add uv tool dir to PATH: export PATH="$(uv tool dir --bin):$PATH"' if not ok else None
     return CheckResult("cairn on PATH", ok, detail, fix)
 
 
@@ -180,9 +180,7 @@ def doctor_json(results: list[CheckResult]) -> dict[str, object]:
     return {
         "version": __version__,
         "ok": all(r.ok for r in results),
-        "checks": [
-            {"name": r.name, "ok": r.ok, "detail": r.detail, "fix": r.fix} for r in results
-        ],
+        "checks": [{"name": r.name, "ok": r.ok, "detail": r.detail, "fix": r.fix} for r in results],
     }
 
 

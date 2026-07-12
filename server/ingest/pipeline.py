@@ -216,11 +216,7 @@ class IngestPipeline:
 
     @staticmethod
     def _cursor_unchanged(old: ContractCursor, new: ContractCursor) -> bool:
-        return (
-            old.offset == new.offset
-            and old.mtime_ns == new.mtime_ns
-            and old.size == new.size
-        )
+        return old.offset == new.offset and old.mtime_ns == new.mtime_ns and old.size == new.size
 
     def _persist_cursor(self, source: str, stream: str, cursor: ContractCursor) -> None:
         now = datetime.now(UTC).isoformat()

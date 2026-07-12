@@ -151,9 +151,7 @@ def _split_turns(events: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     if current:
         turns.append(current)
     return [
-        turn
-        for turn in turns
-        if any(event.get("type") == "assistant_message" for event in turn)
+        turn for turn in turns if any(event.get("type") == "assistant_message" for event in turn)
     ]
 
 

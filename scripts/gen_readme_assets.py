@@ -21,6 +21,7 @@ PATINA = "#5a8a82"
 LAPIS = "#5a7a9e"
 OCHRE = "#c4a055"
 
+
 def _svg_header(w: int, h: int) -> str:
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" '
@@ -53,7 +54,9 @@ def hero_svg() -> str:
         "CAIRN · 85 sessions · live</text>"
     )
     s += f'<rect x="140" y="68" width="280" height="72" fill="{PANEL}" stroke="{BORDER}" rx="4"/>'
-    s += f'<text x="156" y="92" fill="{COPPER}" font-family="monospace" font-size="10">TRACES</text>'
+    s += (
+        f'<text x="156" y="92" fill="{COPPER}" font-family="monospace" font-size="10">TRACES</text>'
+    )
     s += f'<text x="156" y="118" fill="{BONE}" font-family="sans-serif" font-size="22">85</text>'
     s += f'<rect x="440" y="68" width="280" height="72" fill="{PANEL}" stroke="{BORDER}" rx="4"/>'
     s += f'<text x="456" y="92" fill="{COPPER}" font-family="monospace" font-size="10">WASTE</text>'

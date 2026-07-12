@@ -130,7 +130,7 @@ def _have_i_read(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
     """
     if within_session:
         last = ctx.conn.execute(
-            f"SELECT trace_id FROM traces { 'WHERE workspace_id = ?' if ctx.workspace_id else '' } "
+            f"SELECT trace_id FROM traces {'WHERE workspace_id = ?' if ctx.workspace_id else ''} "
             "ORDER BY started_at DESC LIMIT 1",
             [ctx.workspace_id] if ctx.workspace_id else [],
         ).fetchone()

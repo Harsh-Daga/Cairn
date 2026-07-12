@@ -1,6 +1,6 @@
 # Ingest adapters
 
-Cairn v4 normalizes agent logs through **adapters** in `server/ingest/adapters/`. Each adapter discovers log files for a workspace and parses them into a `ParsedSession` (events, tool calls, usage). The pipeline in `server/ingest/pipeline.py` writes traces and spans to `.cairn/cairn.db`.
+Cairn normalizes agent logs through **adapters** in `server/ingest/adapters/`. Each adapter discovers log files for a workspace and parses them into a `ParsedSession` (events, tool calls, usage). The pipeline in `server/ingest/pipeline.py` writes traces and spans to `.cairn/cairn.db`.
 
 ## Quick start: scaffold a new adapter
 
@@ -38,7 +38,7 @@ The harness checks, for each adapter + fixture pair:
 - **Determinism** — parse twice → identical `span_id`s
 - **Monotonic seq** — strictly increasing, unique sequence numbers
 - **Parent refs** — every `parent_span_id` resolves to a span in the trace
-- **Valid kinds** — span kinds within the v4 enum
+- **Valid kinds** — span kinds within the current schema
 - **Quality record** — `DataQuality` present with `trace_id` and `cost_source`
 
 An adapter PR is **one parser + one fixture + harness green**.

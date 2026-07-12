@@ -17,9 +17,7 @@ CREATE TABLE IF NOT EXISTS _migrations (
 """
 
 _FTS_DDL = (
-    "CREATE VIRTUAL TABLE spans_fts USING fts5("
-    "trace_id UNINDEXED, span_id UNINDEXED, text_inline"
-    ");"
+    "CREATE VIRTUAL TABLE spans_fts USING fts5(trace_id UNINDEXED, span_id UNINDEXED, text_inline);"
 )
 
 
