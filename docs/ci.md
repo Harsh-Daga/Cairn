@@ -46,6 +46,14 @@ After install:
 cairn doctor --json
 ```
 
+## Release publishing
+
+Merging a versioned change to `main` runs the publish workflow. It checks the
+exact version in `pyproject.toml` against PyPI before building and uploading.
+An already-published version is skipped successfully, so ordinary later merges
+cannot overwrite or fail on an immutable PyPI release. PyPI Trusted Publishing
+is required for the repository environment.
+
 ## Related
 
 - [Optimize loop](optimize.md) — experiment verdicts

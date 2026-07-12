@@ -4,7 +4,9 @@ All notable changes to **cairn-workspace** follow [Semantic Versioning](https://
 
 ## [1.0.0] — Unreleased
 
-The first stable release of Cairn.
+The first public beta release of Cairn. It is intended for real-world use, with
+the conservative release process, compatibility discipline, and quality gates
+expected of a 1.0 line.
 
 ### Added
 - **Packaging** — PyPI wheel bundles React UI; hatch build hook + publish CI gate

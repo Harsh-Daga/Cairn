@@ -17,19 +17,11 @@ from server.util.runtime_state import (
     unregister_server,
     write_server_record,
 )
-from server.util.server_ctl import find_server_pids, listeners_on_port, stop_server_on_port
+from server.util.server_ctl import listeners_on_port
 
 
 def test_listeners_on_port_free() -> None:
     assert listeners_on_port(59999) == []
-
-
-def test_stop_server_on_port_noop() -> None:
-    assert stop_server_on_port(59998) is False
-
-
-def test_find_server_pids_free() -> None:
-    assert find_server_pids(59997) == []
 
 
 def test_register_stop_and_clear(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

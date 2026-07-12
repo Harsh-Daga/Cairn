@@ -24,4 +24,4 @@ Cairn is a local-first observability workspace for AI coding agents. It ingests 
 - [Security](../SECURITY.md) — security reporting and deployment boundaries.
 - [Support](../SUPPORT.md) — where to get help or report a problem.
 
-The documentation describes the current 1.0.0 release candidate. It intentionally does not document retired package layouts or obsolete CLI commands.
+The documentation describes the current 1.0.0 public beta. It intentionally does not document retired package layouts or obsolete CLI commands.

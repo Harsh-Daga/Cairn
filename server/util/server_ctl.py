@@ -55,16 +55,3 @@ def _listeners_on_port_windows(port: int) -> list[int]:
             except ValueError:
                 continue
     return sorted(set(pids))
-
-
-def find_server_pids(port: int) -> list[int]:
-    """Return listener PIDs on ``port`` (legacy helper for doctor/tests)."""
-    return listeners_on_port(port)
-
-
-def stop_server_on_port(port: int) -> bool:
-    """Stop the Cairn UI server on ``port``."""
-    from server.util.runtime_state import stop_server
-
-    ok, _message = stop_server(port)
-    return ok
