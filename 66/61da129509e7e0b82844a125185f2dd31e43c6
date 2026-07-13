@@ -1,0 +1,68 @@
+docs/getting-started.md
+  s_6dffa805dc7e47::t_b6bd58c910d0ec 13-16
+docs/README.md
+  s_6dffa805dc7e47::t_cf41b67b01373e 27
+README.md
+  s_6dffa805dc7e47::t_b6bd58c910d0ec 54-55,136
+pyproject.toml
+  s_6dffa805dc7e47::t_cf41b67b01373e 3
+server/cli.py
+  s_6dffa805dc7e47::t_b6bd58c910d0ec 6,26,124-125,130-145
+  s_6dffa805dc7e47::t_dbc7cf37b6e3f7 126-129
+  s_6dffa805dc7e47::t_87944a8d2fe483 146-147
+CHANGELOG.md
+  s_6dffa805dc7e47::t_cf41b67b01373e 5-11
+examples/e2e-demo/cairn.toml
+  s_6dffa805dc7e47::t_cf41b67b01373e 6
+ui/package.json
+  s_6dffa805dc7e47::t_cf41b67b01373e 4
+ui/src/pages/Overview.tsx
+  s_6dffa805dc7e47::t_710ec0f1aeed33 105-107,114,134,137-140,247,250,253
+  s_6dffa805dc7e47::t_70727be2e9a853 241
+ui/src/components/common/WaypointRail.tsx
+  s_6dffa805dc7e47::t_9c88b18d9f62d0 8-21,26,31-41,109,135,137,142,159
+ui/src/components/common/Chip.tsx
+  s_6dffa805dc7e47::t_fd40327dcedb8f 43-44,46-47,51-52
+ui/src/theme.css
+  s_6dffa805dc7e47::t_fd40327dcedb8f 6,14,16-31,37-38,73,242-243,248-275,283-284,295-338,357-361
+server/update.py
+  s_6dffa805dc7e47::t_b6bd58c910d0ec 1-23
+docs/api.md
+  s_6dffa805dc7e47::t_cf41b67b01373e 11
+tests/test_release_publish.py
+  s_6dffa805dc7e47::t_cf41b67b01373e 13,21,32
+ui/src/components/common/PlaqueTopbar.tsx
+  s_6dffa805dc7e47::t_9c88b18d9f62d0 2,65,76,132,143
+server/__init__.py
+  s_6dffa805dc7e47::t_cf41b67b01373e 3
+ui/src/components/charts/StackedArea.tsx
+  s_6dffa805dc7e47::t_710ec0f1aeed33 6,41-49,52-76,85,87-97,108
+tests/test_update.py
+  s_6dffa805dc7e47::t_b6bd58c910d0ec 1-27
+docs/cli.md
+  s_6dffa805dc7e47::t_79d1eda0d1cc81 46
+ui/src/pages/Settings.tsx
+  s_6dffa805dc7e47::t_b6bd58c910d0ec 66-79
+ui/src/components/common/PageShell.tsx
+  s_6dffa805dc7e47::t_fd40327dcedb8f 10-17
+tests/test_scaffold.py
+  s_6dffa805dc7e47::t_cf41b67b01373e 12
+ui/package-lock.json
+  s_6dffa805dc7e47::t_32894b68e8df90 3,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "6661da129509e7e0b82844a125185f2dd31e43c6",
+  "prompts": {},
+  "sessions": {
+    "s_6dffa805dc7e47": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5c18-4c3a-77e2-b2a8-9fe7efff4b69",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
