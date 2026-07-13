@@ -1,0 +1,70 @@
+ui/src/pages/Quality.tsx
+  s_6dffa805dc7e47::t_53e7b67f043069 10,112-118
+server/api/payloads.py
+  s_6dffa805dc7e47::t_53e7b67f043069 394,400,402,408,415,424,981,999
+CONTRIBUTING.md
+  s_6dffa805dc7e47::t_8c26cbdb38ebfa 44-50
+ui/playwright.config.ts
+  s_6dffa805dc7e47::t_2d4f95625c0b56 3-4,13
+ui/src/components/insights/InsightCard.tsx
+  s_6dffa805dc7e47::t_42fdecb84d0bc7 30-47,52,59
+ui/src/pages/Sessions.tsx
+  s_6dffa805dc7e47::t_a95165ae27abc6 274-278,309-311,313,316,319,322,325
+  s_6dffa805dc7e47::t_53e7b67f043069 18
+ui/src/pages/Overview.tsx
+  s_6dffa805dc7e47::t_3b2371ca73dcf0 155
+server/improve/detectors/runaway_sessions.py
+  s_6dffa805dc7e47::t_3b2371ca73dcf0 20-21
+ui/src/components/session/ReplayScrubber.tsx
+  s_6dffa805dc7e47::t_a95165ae27abc6 15,38
+ui/src/pages/SessionDiff.tsx
+  s_6dffa805dc7e47::t_84abc6b80589ea 61
+ui/src/lib/types.ts
+  s_6dffa805dc7e47::t_53e7b67f043069 223
+ui/src/pages/Context.tsx
+  s_6dffa805dc7e47::t_53e7b67f043069 39,47,63,96,112,114
+README.md
+  s_6dffa805dc7e47::t_768de851fc005d 24
+docs/ui-tour.md
+  s_6dffa805dc7e47::t_8c26cbdb38ebfa 40,43-44
+ui/src/lib/format.ts
+  s_6dffa805dc7e47::t_84abc6b80589ea 7-8
+ui/src/pages/Agents.tsx
+  s_6dffa805dc7e47::t_53e7b67f043069 65-69
+ui/src/pages/Settings.tsx
+  s_6dffa805dc7e47::t_3c06055aad19e9 218
+  s_6dffa805dc7e47::t_05f4698d6da0af 17,41-52,132,145,152,162,210-217,219-232
+ui/src/pages/Live.tsx
+  s_6dffa805dc7e47::t_4f4b00b3ab3fc0 175-176
+ui/src/pages/Behavior.tsx
+  s_6dffa805dc7e47::t_53e7b67f043069 112,134-138,146
+server/improve/detectors/unused_tools.py
+  s_6dffa805dc7e47::t_3b2371ca73dcf0 24-25
+server/api/schemas.py
+  s_6dffa805dc7e47::t_53e7b67f043069 136
+scripts/gen_readme_assets.py
+  s_6dffa805dc7e47::t_768de851fc005d 2-9,13-15,18-19,21,23-25,28-30,32-41,45-49,52-66,68-94,96,100-103,107
+ui/e2e/smoke.spec.ts
+  s_6dffa805dc7e47::t_2d4f95625c0b56 14
+  s_6dffa805dc7e47::t_ce63365afaaffd 65-102
+  s_6dffa805dc7e47::t_1222247bc8f7da 48-50
+  s_6dffa805dc7e47::t_c91583483007b7 44,47
+ui/package-lock.json
+  s_6dffa805dc7e47::t_052b3bd8336cd8 1705
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "9adc58c8a05d54da873fcbeed0ce09c711088863",
+  "prompts": {},
+  "sessions": {
+    "s_6dffa805dc7e47": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5c18-4c3a-77e2-b2a8-9fe7efff4b69",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
