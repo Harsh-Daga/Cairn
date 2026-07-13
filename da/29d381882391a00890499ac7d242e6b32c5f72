@@ -1,0 +1,25 @@
+server/doctor.py
+  s_7d77ecaccb5763::t_caf636707b895f 77
+.github/ISSUE_TEMPLATE/bug_report.yml
+  s_7d77ecaccb5763::t_967cca07541138 48
+tests/conftest.py
+  s_7d77ecaccb5763::t_caf636707b895f 1
+scripts/release_check.py
+  s_7d77ecaccb5763::t_cedcbe11c6634c 13-14,19,83-94,141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "da29d381882391a00890499ac7d242e6b32c5f72",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
