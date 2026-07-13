@@ -21,6 +21,7 @@ dependencies = [
     "fastapi>=0.115",
     "httpx2>=2.5",
     "numpy>=2.0",
+    "opentelemetry-proto>=1.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "typer>=0.12",
@@ -76,6 +77,11 @@ packages = ["server"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "types-protobuf>=7.34.1.20260518",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["server"]

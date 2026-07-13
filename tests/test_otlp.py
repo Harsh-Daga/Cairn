@@ -91,6 +91,11 @@ def test_decode_otlp_protobuf_maps_to_json_shape() -> None:
     assert spans[1].kind == "tool_call"
 
 
+def test_decode_otlp_protobuf_rejects_malformed_payload() -> None:
+    with pytest.raises(ValueError, match="invalid OTLP protobuf payload"):
+        decode_export_trace_service_request(b"\xff")
+
+
 def test_otlp_http_endpoint(tmp_path: Path) -> None:
     from server.api.bootstrap import bootstrap_runtime
     from server.config import Settings
