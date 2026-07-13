@@ -1,0 +1,20 @@
+scripts/build_ui.py
+  s_7d77ecaccb5763::t_7765d87164fbd8 212
+  s_7d77ecaccb5763::t_b94899eea26e63 210-211
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "9a4a28c8ebbfe7e632a16615c11256c0ca5ee9b1",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
