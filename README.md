@@ -51,6 +51,8 @@ cd your-repo && cairn
 
 No account, no cloud, no config. `cairn stop` to quit (or `uv run cairn stop` from a dev checkout).
 
+Already installed? Run `cairn upgrade` to update the local CLI to the newest published release. Add `--check` to preview the package-manager command.
+
 > **Note:** If `cairn stop` fails because an older installation is first on PATH, reinstall with `uv tool install --force cairn-workspace` or use `uv run cairn` from the repository.
 
 ### Or let your agent install it
@@ -131,6 +133,7 @@ Adding an adapter is one parser, one fixture, and a conformance test — see `ca
 | `cairn export` | Export scrubbed trace bundle |
 | `cairn mcp install` | Write MCP config for your agent |
 | `cairn doctor` | Verify install, PATH, port, assets |
+| `cairn upgrade` | Update the local CLI to the latest release |
 | `cairn setup-prompt` | Print agent bootstrap block |
 
 Full reference: [docs/cli.md](docs/cli.md) (auto-generated from the action registry).

@@ -63,6 +63,20 @@ export function SettingsPage() {
           </dl>
         </section>
 
+        <section className="card p-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="page-kicker">Maintenance</p>
+              <h2 className="font-display text-lg text-bone">Keep Cairn current</h2>
+              <p className="mt-1 text-sm text-cinder">
+                Update your local CLI and restart the dashboard. Your workspace data stays in place.
+              </p>
+            </div>
+            <span className="rounded-chip border border-patina/40 px-2 py-1 font-mono text-[10px] text-patina">safe local update</span>
+          </div>
+          <pre className="mt-4 overflow-x-auto rounded-sm border border-quartz-vein/60 bg-anthracite/40 p-3 font-mono text-[11px] text-bone">cairn upgrade</pre>
+        </section>
+
         <section className="card overflow-hidden">
           <div className="border-b border-quartz-vein px-4 py-3">
             <h2 className="font-display text-sm text-bone">Adapters</h2>

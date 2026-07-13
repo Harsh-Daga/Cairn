@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Command, RefreshCw, Radio } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUiStore } from "@/state/ui";
 import { useToastStore } from "@/state/toast";
@@ -61,7 +62,7 @@ export function PlaqueTopbar() {
     : `${traceCount} sessions · surveyed just now`;
 
   return (
-    <header className="flex h-[52px] shrink-0 items-center gap-4 border-b border-t border-quartz-vein bg-shale px-6">
+    <header className="flex h-[60px] shrink-0 items-center gap-4 border-b border-t border-quartz-vein/80 bg-shale/90 px-6 backdrop-blur-xl">
       <div className="flex min-w-0 items-baseline gap-3">
         <span className="display text-[15px] text-bone">{workspace?.name ?? "workspace"}</span>
         <span className="mono text-[11px] text-cinder">{meta}</span>
@@ -72,6 +73,7 @@ export function PlaqueTopbar() {
             }`}
             title="Live SSE stream"
           >
+            <Radio className="h-3 w-3" aria-hidden="true" />
             <span
               className={`h-1.5 w-1.5 rounded-full ${
                 ssePulse ? "bg-copper animate-[pulse-once_1s_ease-out]" : "bg-quartz-vein"
@@ -127,6 +129,7 @@ export function PlaqueTopbar() {
             onClick={() => syncMut.mutate()}
             className="rounded-sm border border-copper-dim px-3 py-1.5 text-xs font-medium text-copper hover:bg-granite disabled:opacity-50"
           >
+            <RefreshCw className={`mr-1.5 inline h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} aria-hidden="true" />
             {syncing ? "Syncing…" : "Sync now"}
           </button>
         ) : null}
@@ -137,7 +140,7 @@ export function PlaqueTopbar() {
           className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-cinder hover:text-bone"
           aria-label="Open command palette"
         >
-          ⌘K
+          <Command className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />K
         </button>
       </div>
     </header>

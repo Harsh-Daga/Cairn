@@ -40,15 +40,15 @@ interface ChartFrameProps {
 
 export function ChartFrame({ title, subtitle, children, action }: ChartFrameProps) {
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-start justify-between border-b border-quartz-vein px-4 py-3">
+    <section className="card overflow-hidden">
+      <div className="flex items-start justify-between gap-4 border-b border-quartz-vein/80 px-5 py-4">
         <div>
-          <h3 className="font-display text-sm font-medium text-bone">{title}</h3>
-          {subtitle ? <p className="mt-0.5 font-mono text-[10px] text-cinder">{subtitle}</p> : null}
+          <h3 className="font-display text-base font-medium text-bone">{title}</h3>
+          {subtitle ? <p className="mt-1 font-mono text-[10px] text-cinder">{subtitle}</p> : null}
         </div>
         {action}
       </div>
-      <div className="p-4">{children}</div>
-    </div>
+      <div className="chart-surface p-5">{children}</div>
+    </section>
   );
 }

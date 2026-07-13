@@ -3,6 +3,7 @@
 @import "@fontsource/space-grotesk/400.css";
 @import "@fontsource/space-grotesk/500.css";
 @import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/space-grotesk/700.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 
@@ -10,29 +11,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* §7.0 Design DNA — mineral-slate tokens (FINAL) */
+/* Cairn 1.0.1 — signal field: calm data, tactile surfaces. */
 :root {
-  --anthracite: #14161a;
-  --slate: #1b1e23;
-  --shale: #23272e;
-  --granite: #2d323a;
-  --quartz-vein: #3a4049;
-  --bone: #e8e4dc;
-  --cinder: #8a8f98;
-  --ash: #5b6068;
-  --copper: #d08c4f;
-  --copper-dim: #8a5a30;
-  --patina: #6fa8b8;
-  --malachite: #7bae6b;
-  --ochre: #c98a3a;
-  --cinnabar: #c75b5b;
-  --lapis: #8b8fd4;
+  --anthracite: #101319;
+  --slate: #171c24;
+  --shale: #202733;
+  --granite: #2a3442;
+  --quartz-vein: #3b485a;
+  --bone: #f2efe8;
+  --cinder: #a3adba;
+  --ash: #687586;
+  --copper: #f0a35c;
+  --copper-dim: #a96732;
+  --patina: #77c5d4;
+  --malachite: #8bce83;
+  --ochre: #f1bc57;
+  --cinnabar: #ed7777;
+  --lapis: #a5a8ff;
+  --signal: #86a8ff;
 
   --font-display: "Fraunces", Georgia, serif;
   --font-ui: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --shadow-stone: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-stone: 0 1px 2px rgba(0, 0, 0, 0.26), 0 14px 36px rgba(0, 0, 0, 0.22);
+  --shadow-lift: 0 18px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.025) inset;
   --r-chip: 4px;
   --r-sm: 8px;
   --r-card: 12px;
@@ -67,7 +70,7 @@ body,
 
 body {
   background-color: var(--anthracite);
-  background-image: var(--contour);
+  background-image: radial-gradient(circle at 82% -10%, rgba(119, 197, 212, 0.12), transparent 31rem), radial-gradient(circle at 3% 3%, rgba(240, 163, 92, 0.1), transparent 26rem), var(--contour);
   background-attachment: fixed;
   background-repeat: repeat;
   color: var(--bone);
@@ -236,10 +239,38 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .card {
-  background: var(--shale);
-  border: 1px solid var(--quartz-vein);
+  background: linear-gradient(145deg, rgba(38, 47, 60, 0.94), rgba(28, 35, 45, 0.96));
+  border: 1px solid color-mix(in srgb, var(--quartz-vein) 88%, white);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-stone);
+}
+
+.card--interactive {
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.card--interactive:hover {
+  border-color: color-mix(in srgb, var(--copper) 58%, var(--quartz-vein));
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+.page-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.page-kicker {
+  margin: 0 0 7px;
+  color: var(--copper);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
 }
 
 .page-enter {
@@ -249,7 +280,8 @@ body.ready .cairn-glyph .stone.top {
 .page-title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 26px;
+  font-size: clamp(28px, 2.8vw, 38px);
+  letter-spacing: -0.035em;
   color: var(--bone);
   margin: 0 0 8px;
 }
@@ -258,6 +290,50 @@ body.ready .cairn-glyph .stone.top {
   font-size: 15px;
   color: var(--cinder);
   margin: 0 0 24px;
+}
+
+.page-status {
+  border: 1px solid rgba(119, 197, 212, 0.25);
+  border-radius: 999px;
+  color: var(--patina);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.metric-card {
+  min-height: 138px;
+  overflow: hidden;
+  position: relative;
+}
+
+.metric-card::after {
+  background-image: radial-gradient(rgba(240, 163, 92, 0.28) 0.7px, transparent 0.8px);
+  background-size: 5px 5px;
+  content: "";
+  inset: auto -18px -24px auto;
+  opacity: 0.34;
+  pointer-events: none;
+  position: absolute;
+  width: 108px;
+  height: 88px;
+  mask-image: linear-gradient(135deg, transparent 8%, black 70%);
+}
+
+.chart-surface {
+  background: linear-gradient(180deg, rgba(16, 19, 25, 0.18), transparent);
+}
+
+.chart-entrance {
+  animation: chart-rise 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: bottom;
+}
+
+@keyframes chart-rise {
+  from { opacity: 0; transform: translateY(10px) scaleY(0.96); }
+  to { opacity: 1; transform: none; }
 }
 
 .empty-state {
@@ -277,4 +353,9 @@ body.ready .cairn-glyph .stone.top {
 .estimated-chip {
   border-left: 2px dashed var(--cinder);
   padding-left: 6px;
+}
+
+@media (max-width: 700px) {
+  .page-header { align-items: start; flex-direction: column; gap: 10px; }
+  .page-status { display: none; }
 }

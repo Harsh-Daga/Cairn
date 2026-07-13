@@ -2,6 +2,13 @@
 
 All notable changes to **cairn-workspace** follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-07-13
+
+### Changed
+- Rebuilt the dashboard visual system around a clearer signal hierarchy, tactile dithered chart surfaces, richer metric cards, and refined navigation.
+- Added interactive point inspection to the daily spend chart and clearer, information-rich dashboard framing.
+- Added `cairn upgrade` and Settings guidance for a one-command local update path.
+
 ## [1.0.0] — 2026-07-13
 
 The first public beta release of Cairn. It is intended for real-world use, with

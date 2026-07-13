@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import webbrowser
 from collections.abc import Callable
 from pathlib import Path
@@ -22,6 +23,7 @@ from server.config import Settings
 from server.demo.seed import DEMO_ROOT
 from server.doctor import print_doctor
 from server.export.static import export_static_snapshot
+from server.update import render_command, upgrade_command
 
 app = typer.Typer(
     name="cairn",
@@ -117,6 +119,30 @@ def stop(
     else:
         typer.echo(message, err=True)
         raise typer.Exit(code=1)
+
+
+@app.command()
+def upgrade(
+    check: Annotated[
+        bool,
+        typer.Option("--check", help="Print the update command without running it"),
+    ] = False,
+) -> None:
+    """Upgrade Cairn to the latest published release."""
+    method, command = upgrade_command()
+    rendered = render_command(command)
+    typer.echo(f"Updating Cairn via {method}: {rendered}")
+    if check:
+        return
+    try:
+        result = subprocess.run(command, check=False)
+    except OSError as exc:
+        typer.echo(f"Could not start updater: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if result.returncode:
+        typer.echo(f"Update failed (exit {result.returncode}). Run: {rendered}", err=True)
+        raise typer.Exit(code=result.returncode)
+    typer.echo("Updated. Restart Cairn to use the new version.")
 
 
 @app.command()

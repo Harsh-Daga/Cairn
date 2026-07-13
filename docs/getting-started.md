@@ -10,6 +10,10 @@
 
 To pin a published version, set `CAIRN_VERSION=<published-version>` for the installer or run `uv tool install cairn-workspace==<published-version>`.
 
+## Upgrade
+
+Run `cairn upgrade` whenever you want the latest published Cairn release. It uses `uv tool` when available, then `pipx`, then the Python environment that launched Cairn. Use `cairn upgrade --check` to see the exact command first.
+
 Verify: `cairn doctor`
 
 ## Agent-driven setup

@@ -43,6 +43,7 @@ Cairn CLI entry point: `server.cli:app`. Mutations are also available as `cairn 
 | `cairn traces ls` | List recent traces as a plain table. |
 | `cairn traces show` | Alias for `cairn show`. |
 | `cairn ui` | Start the Cairn web UI server. |
+| `cairn upgrade` | Upgrade Cairn to the latest published release. |
 
 ## Action registry
 
