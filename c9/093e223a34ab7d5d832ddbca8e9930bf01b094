@@ -1,0 +1,19 @@
+pyproject.toml
+  s_7d77ecaccb5763::t_338af304fd5385 53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "c9093e223a34ab7d5d832ddbca8e9930bf01b094",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
