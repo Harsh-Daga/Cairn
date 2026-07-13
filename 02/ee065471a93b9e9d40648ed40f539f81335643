@@ -1,0 +1,19 @@
+README.md
+  s_7d77ecaccb5763::t_f4968f5e983d08 24,88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "02ee065471a93b9e9d40648ed40f539f81335643",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
