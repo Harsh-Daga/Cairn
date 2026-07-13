@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 import sqlite3
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
@@ -11,13 +12,17 @@ from typing import Any
 import numpy as np
 
 from server.analyze.diff import build_trace_diff_payload
+from server.analyze.fingerprint import FINGERPRINT_AXIS_LABELS
+from server.analyze.fingerprint_math import detect_drift, detect_gradual_drift
 from server.analyze.gauge import compute_gauge
 from server.analyze.tail import expected_worst
 from server.api.schemas import (
     AgentAggregate,
     AgentsResponse,
     BehaviorResponse,
+    BehaviorSeriesPoint,
     DataNote,
+    DriftEvent,
     EvidenceChainResponse,
     ExperimentDetailResponse,
     ExperimentRow,
@@ -42,11 +47,14 @@ from server.api.schemas import (
     TraceRow,
     TracesListResponse,
     UsageAnalyticsResponse,
+    UsageSeriesPoint,
     WasteAnalyticsResponse,
+    WasteCategory,
     WorkspaceAdapter,
     WorkspaceResponse,
 )
 from server.improve.experiments import preview as experiment_preview
+from server.models.fingerprint import Fingerprint
 from server.models.span import Span
 from server.store.migrate import FTS_AVAILABLE
 from server.store.repos.data_quality import DataQualityRepo
@@ -147,7 +155,10 @@ def build_overview(
     if traces:
         narrative.append(
             NarrativeSentence(
-                text=f"{traces} agent session(s) in the last {days} days.",
+                text=(
+                    f"{traces} agent {'session' if traces == 1 else 'sessions'} "
+                    f"in the last {days} days."
+                ),
                 filter={"days": str(days)},
             )
         )
@@ -198,7 +209,9 @@ def build_traces_list(
     source: str | None = None,
     project: str | None = None,
     actor: str | None = None,
+    agent: str | None = None,
     q: str | None = None,
+    sort: str = "recent",
     limit: int = 50,
     offset: int = 0,
 ) -> TracesListResponse:
@@ -208,19 +221,13 @@ def build_traces_list(
         source=source,
         project=project,
         actor=actor,
+        agent=agent,
+        q=q,
+        sort=sort,
         limit=limit,
         offset=offset,
     )
     traces = TraceRepo.list(conn, filters)
-    if q:
-        needle = q.lower()
-        traces = [
-            t
-            for t in traces
-            if (t.title and needle in t.title.lower())
-            or needle in t.trace_id.lower()
-            or (t.project and needle in t.project.lower())
-        ]
     total = TraceRepo.count(conn, filters)
     return TracesListResponse(
         traces=[_trace_row(t) for t in traces],
@@ -295,18 +302,29 @@ def build_trace_diff(
     return TraceDiffResponse.model_validate(payload)
 
 
-def _replay_summary(trace: object, spans: list[Span], seq: int) -> dict[str, Any]:
+def _replay_summary(
+    trace: object,
+    spans: list[Span],
+    seq: int,
+    *,
+    all_spans: list[Span],
+) -> dict[str, Any]:
     ctx = next(
         (s.context_tokens_after for s in reversed(spans) if s.context_tokens_after),
         None,
     )
     files = len({s.path_rel for s in spans if s.path_rel})
     agents = len({s.agent_id for s in spans if s.agent_id})
-    cost = getattr(trace, "cost", None)
+    final_cost = float(getattr(trace, "cost", 0.0) or 0.0)
+    all_tokens = sum((s.input_tokens or 0) + (s.output_tokens or 0) for s in all_spans)
+    visible_tokens = sum((s.input_tokens or 0) + (s.output_tokens or 0) for s in spans)
+    progress = visible_tokens / all_tokens if all_tokens else len(spans) / max(1, len(all_spans))
+    cost = round(final_cost * min(1.0, progress), 8)
     return {
         "turn": seq,
         "context_tokens": ctx,
         "cost": cost,
+        "cost_estimated": len(spans) < len(all_spans),
         "files_read": files,
         "agents": agents,
     }
@@ -316,12 +334,13 @@ def build_replay(conn: sqlite3.Connection, trace_id: str, seq: int) -> ReplayRes
     trace = TraceRepo.get(conn, trace_id)
     if trace is None:
         return None
-    spans = [s for s in SpanRepo.list_by_trace(conn, trace_id) if s.seq <= seq]
+    all_spans = SpanRepo.list_by_trace(conn, trace_id)
+    spans = [s for s in all_spans if s.seq <= seq]
     return ReplayResponse(
         trace_id=trace_id,
         seq=seq,
         spans=spans,
-        summary=_replay_summary(trace, spans, seq),
+        summary=_replay_summary(trace, spans, seq, all_spans=all_spans),
     )
 
 
@@ -342,7 +361,7 @@ def build_replay_checkpoints(conn: sqlite3.Connection, trace_id: str) -> ReplayR
             ReplayCheckpoint(
                 seq=capped,
                 spans=spans,
-                summary=_replay_summary(trace, spans, capped),
+                summary=_replay_summary(trace, spans, capped, all_spans=all_spans),
             )
         )
     if not checkpoints or checkpoints[-1].seq != max_seq:
@@ -351,7 +370,7 @@ def build_replay_checkpoints(conn: sqlite3.Connection, trace_id: str) -> ReplayR
             ReplayCheckpoint(
                 seq=max_seq,
                 spans=spans,
-                summary=_replay_summary(trace, spans, max_seq),
+                summary=_replay_summary(trace, spans, max_seq, all_spans=all_spans),
             )
         )
     return ReplayResponse(
@@ -371,15 +390,28 @@ def build_agents(
     since = _since_iso(days)
     rows = conn.execute(
         """
-        SELECT s.agent_id, t.actor_id,
-               COUNT(DISTINCT t.trace_id) AS traces,
-               SUM(COALESCE(s.input_tokens, 0)) AS input_tokens,
-               SUM(COALESCE(s.output_tokens, 0)) AS output_tokens,
-               SUM(COALESCE(t.cost, 0)) AS cost
-        FROM spans s
-        JOIN traces t ON t.trace_id = s.trace_id
-        WHERE t.workspace_id = ? AND (t.started_at IS NULL OR t.started_at >= ?)
-        GROUP BY s.agent_id, t.actor_id
+        WITH agent_trace AS (
+          SELECT s.trace_id, s.agent_id, t.actor_id, t.cost,
+                 SUM(COALESCE(s.input_tokens, 0)) AS input_tokens,
+                 SUM(COALESCE(s.output_tokens, 0)) AS output_tokens,
+                 SUM(COALESCE(s.input_tokens, 0) + COALESCE(s.output_tokens, 0)) AS agent_tokens
+          FROM spans s
+          JOIN traces t ON t.trace_id = s.trace_id
+          WHERE t.workspace_id = ? AND (t.started_at IS NULL OR t.started_at >= ?)
+          GROUP BY s.trace_id, s.agent_id, t.actor_id
+        ), attributed AS (
+          SELECT *, SUM(agent_tokens) OVER (PARTITION BY trace_id) AS trace_span_tokens,
+                    COUNT(*) OVER (PARTITION BY trace_id) AS trace_agents
+          FROM agent_trace
+        )
+        SELECT agent_id, actor_id, COUNT(*) AS traces,
+               SUM(input_tokens) AS input_tokens,
+               SUM(output_tokens) AS output_tokens,
+               SUM(CASE WHEN trace_span_tokens > 0
+                        THEN cost * agent_tokens / trace_span_tokens
+                        ELSE cost / trace_agents END) AS cost
+        FROM attributed
+        GROUP BY agent_id, actor_id
         ORDER BY cost DESC
         """,
         (workspace_id, since),
@@ -403,7 +435,8 @@ def build_agents(
         JOIN spans s1 ON s1.span_id = sl.from_span_id
         JOIN spans s2 ON s2.span_id = sl.to_span_id
         JOIN traces t ON t.trace_id = s1.trace_id
-        WHERE sl.link_type = 'handoff' AND t.workspace_id = ? AND t.started_at >= ?
+        WHERE sl.link_type = 'handoff' AND t.workspace_id = ?
+          AND (t.started_at IS NULL OR t.started_at >= ?)
         """,
         (workspace_id, since),
     ).fetchall()
@@ -425,26 +458,77 @@ def build_behavior(
         conn,
         TraceListFilters(workspace_id=workspace_id, days=days, limit=500),
     )
-    series: list[dict[str, Any]] = []
+    series: list[BehaviorSeriesPoint] = []
+    fingerprints: list[Fingerprint] = []
     for trace in traces:
         fp = FingerprintRepo.get(conn, trace.trace_id)
         if fp is None:
             continue
+        fingerprints.append(fp)
         series.append(
-            {
-                "trace_id": trace.trace_id,
-                "ts": trace.started_at,
-                "vector": fp.vector,
-                "project": trace.project,
-                "model": trace.model,
-            }
+            BehaviorSeriesPoint(
+                trace_id=trace.trace_id,
+                ts=trace.started_at,
+                vector=fp.vector,
+                project=trace.project,
+                model=trace.model,
+            )
         )
+    chronological = sorted(fingerprints, key=lambda fp: fp.ts or "")
+    drift: list[DriftEvent] = []
+    grouped: dict[tuple[str | None, str | None], list[Fingerprint]] = defaultdict(list)
+    for fp in chronological:
+        grouped[(fp.project, fp.model)].append(fp)
+    for (project_name, model_name), group in grouped.items():
+        if len(group) < 5:
+            continue
+        result = detect_drift(group[-1].vector, [fp.vector for fp in group[:-1]])
+        if result.drift:
+            drift.append(
+                DriftEvent(
+                    kind=result.kind,
+                    trace_id=group[-1].trace_id,
+                    project=project_name,
+                    model=model_name,
+                    distance=result.distance,
+                    threshold=result.threshold,
+                    per_dim_deltas=result.per_dim_deltas,
+                )
+            )
+    weekly: dict[str, list[list[float]]] = defaultdict(list)
+    for fp in chronological:
+        if fp.week:
+            weekly[fp.week].append(fp.vector)
+    weekly_means = [
+        (week, np.mean(vectors, axis=0).tolist()) for week, vectors in sorted(weekly.items())
+    ]
+    gradual = detect_gradual_drift(weekly_means, FINGERPRINT_AXIS_LABELS)
+    if gradual["drift"]:
+        drift.append(DriftEvent.model_validate({"kind": "gradual", **gradual}))
+
     baselines = FingerprintRepo.list_baselines(conn, limit=20)
     radar = baselines[0].model_dump() if baselines else None
+    if radar is None and chronological:
+        reference = max(grouped.values(), key=len)
+        reference_mean = np.mean([fp.vector for fp in reference], axis=0).tolist()
+        radar = {
+            "project": reference[-1].project or "(unknown)",
+            "model": reference[-1].model or "(unknown)",
+            "week": "selected window",
+            "mean_vector": reference_mean,
+            "cov_inv": [],
+            "n": len(reference),
+        }
+    if radar is not None:
+        radar["axes"] = [
+            {"axis": label, "value": abs(float(value))}
+            for label, value in zip(FINGERPRINT_AXIS_LABELS, radar["mean_vector"], strict=False)
+        ][:6]
+    series.sort(key=lambda row: row.ts or "")
     return BehaviorResponse(
         days=days,
         series=series,
-        drift=[],
+        drift=drift,
         radar=radar,
         data_notes=_data_notes(conn, workspace_id=workspace_id, since=since),
     )
@@ -506,7 +590,13 @@ def build_usage_analytics(
 ) -> UsageAnalyticsResponse:
     rollups = RollupRepo.list_by_workspace(conn, workspace_id, days=days)
     series_map: dict[str, dict[str, float | int]] = defaultdict(
-        lambda: {"input_tokens": 0, "output_tokens": 0, "cost": 0.0, "traces": 0}
+        lambda: {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "waste_tokens": 0,
+            "cost": 0.0,
+            "traces": 0,
+        }
     )
     for row in rollups:
         if group_by == "day":
@@ -522,9 +612,20 @@ def build_usage_analytics(
         bucket = series_map[key]
         bucket["input_tokens"] = int(bucket["input_tokens"]) + row.input_tokens
         bucket["output_tokens"] = int(bucket["output_tokens"]) + row.output_tokens
+        bucket["waste_tokens"] = int(bucket["waste_tokens"]) + row.waste_tokens
         bucket["cost"] = float(bucket["cost"]) + row.cost
         bucket["traces"] = int(bucket["traces"]) + row.traces
-    series = [{"key": k, **v} for k, v in sorted(series_map.items())]
+    series = [
+        UsageSeriesPoint(
+            key=key,
+            input_tokens=int(values["input_tokens"]),
+            output_tokens=int(values["output_tokens"]),
+            waste_tokens=int(values["waste_tokens"]),
+            cost=float(values["cost"]),
+            traces=int(values["traces"]),
+        )
+        for key, values in sorted(series_map.items())
+    ]
     return UsageAnalyticsResponse(days=days, group_by=group_by, series=series)
 
 
@@ -562,20 +663,61 @@ def build_waste_analytics(
     since = _since_iso(days)
     rows = conn.execute(
         """
-        SELECT s.waste_category AS category, SUM(s.waste_tokens) AS tokens
+        SELECT s.waste_category AS category, SUM(s.waste_tokens) AS tokens, COUNT(*) AS events
         FROM spans s
         JOIN traces t ON t.trace_id = s.trace_id
-        WHERE t.workspace_id = ? AND t.started_at >= ? AND s.waste_category IS NOT NULL
+        WHERE t.workspace_id = ? AND (t.started_at IS NULL OR t.started_at >= ?)
+          AND s.waste_category IS NOT NULL
         GROUP BY s.waste_category
         ORDER BY tokens DESC
         """,
         (workspace_id, since),
     ).fetchall()
     categories = [
-        {"category": r["category"], "tokens": int(r["tokens"] or 0)} for r in rows if r["category"]
+        WasteCategory(
+            category=str(r["category"]),
+            tokens=int(r["tokens"] or 0),
+            events=int(r["events"] or 0),
+        )
+        for r in rows
+        if r["category"]
     ]
-    total = sum(c["tokens"] for c in categories)
-    return WasteAnalyticsResponse(days=days, categories=categories, total_waste_tokens=total)
+    categorized_total = sum(category.tokens for category in categories)
+    trace_waste_row = conn.execute(
+        """
+        SELECT COALESCE(SUM(waste_tokens), 0) AS tokens
+        FROM traces
+        WHERE workspace_id = ? AND (started_at IS NULL OR started_at >= ?)
+        """,
+        (workspace_id, since),
+    ).fetchone()
+    trace_total = int(trace_waste_row["tokens"] or 0) if trace_waste_row else 0
+    residual = max(0, trace_total - categorized_total)
+    if residual:
+        residual_row = conn.execute(
+            """
+            SELECT COUNT(*) AS events
+            FROM traces t
+            WHERE t.workspace_id = ? AND (t.started_at IS NULL OR t.started_at >= ?)
+              AND t.waste_tokens > COALESCE((
+                SELECT SUM(s.waste_tokens) FROM spans s WHERE s.trace_id = t.trace_id
+              ), 0)
+            """,
+            (workspace_id, since),
+        ).fetchone()
+        categories.append(
+            WasteCategory(
+                category="other_detected",
+                tokens=residual,
+                events=int(residual_row["events"] or 0) if residual_row else 0,
+            )
+        )
+    categories.sort(key=lambda category: category.tokens, reverse=True)
+    return WasteAnalyticsResponse(
+        days=days,
+        categories=categories,
+        total_waste_tokens=trace_total,
+    )
 
 
 def build_tail_analytics(
@@ -635,7 +777,7 @@ def build_insights(
         )
         for row in rows
     ]
-    return InsightsResponse(insights=insights, total=len(insights))
+    return InsightsResponse(insights=insights, total=InsightRepo.count_by_state(conn, lifecycle))
 
 
 def build_evidence_chain(conn: sqlite3.Connection, insight_id: str) -> EvidenceChainResponse | None:
@@ -707,19 +849,54 @@ def build_search(
     q: str,
     limit: int = 20,
 ) -> SearchResponse:
-    hits: list[SearchHit] = []
     if not q.strip():
         return SearchResponse(q=q, hits=[], total=0)
 
-    title_rows = conn.execute(
-        """
-        SELECT trace_id, title FROM traces
-        WHERE workspace_id = ? AND title LIKE ?
-        ORDER BY started_at DESC
-        LIMIT ?
-        """,
-        (workspace_id, f"%{q}%", limit),
-    ).fetchall()
+    terms: list[str] = []
+    operators: dict[str, str] = {}
+    try:
+        tokens = shlex.split(q)
+    except ValueError:
+        tokens = q.split()
+    for token in tokens:
+        if ":" in token:
+            key, value = token.split(":", 1)
+            if key.lower() in {"tool", "source", "is"} and value:
+                operators[key.lower()] = value.lower()
+                continue
+        terms.append(token)
+    phrase = " ".join(terms).strip()
+    like = f"%{phrase}%"
+    source = operators.get("source")
+    status = operators.get("is")
+    tool = operators.get("tool")
+
+    trace_clauses = ["workspace_id = ?"]
+    trace_params: list[object] = [workspace_id]
+    if phrase:
+        trace_clauses.append(
+            "(LOWER(COALESCE(title, '')) LIKE LOWER(?) "
+            "OR LOWER(trace_id) LIKE LOWER(?) OR LOWER(COALESCE(project, '')) LIKE LOWER(?))"
+        )
+        trace_params.extend((like, like, like))
+    if source:
+        trace_clauses.append("LOWER(source) = ?")
+        trace_params.append(source)
+    if status:
+        trace_clauses.append("LOWER(status) = ?")
+        trace_params.append(status)
+    title_rows = []
+    if not tool:
+        title_rows = conn.execute(
+            f"""
+            SELECT trace_id, title FROM traces
+            WHERE {' AND '.join(trace_clauses)}
+            ORDER BY started_at DESC
+            """,
+            trace_params,
+        ).fetchall()
+
+    hits: list[SearchHit] = []
     for row in title_rows:
         hits.append(
             SearchHit(
@@ -731,33 +908,46 @@ def build_search(
             )
         )
 
-    if FTS_AVAILABLE and len(hits) < limit:
-        try:
-            fts_rows = conn.execute(
-                """
-                SELECT s.trace_id, s.span_id, s.text_inline
-                FROM spans_fts f
-                JOIN spans s ON s.span_id = f.span_id
-                JOIN traces t ON t.trace_id = s.trace_id
-                WHERE spans_fts MATCH ? AND t.workspace_id = ?
-                LIMIT ?
-                """,
-                (q, workspace_id, limit - len(hits)),
-            ).fetchall()
-            for row in fts_rows:
-                hits.append(
-                    SearchHit(
-                        trace_id=str(row["trace_id"]),
-                        span_id=str(row["span_id"]),
-                        title=None,
-                        snippet=str(row["text_inline"] or "")[:200],
-                        kind="span",
-                    )
-                )
-        except sqlite3.OperationalError:
-            pass
-
-    return SearchResponse(q=q, hits=hits[:limit], total=len(hits[:limit]))
+    span_clauses = ["t.workspace_id = ?"]
+    span_params: list[object] = [workspace_id]
+    if phrase:
+        span_clauses.append(
+            "(LOWER(COALESCE(s.text_inline, '')) LIKE LOWER(?) "
+            "OR LOWER(COALESCE(s.name, '')) LIKE LOWER(?) "
+            "OR LOWER(COALESCE(s.path_rel, '')) LIKE LOWER(?))"
+        )
+        span_params.extend((like, like, like))
+    if source:
+        span_clauses.append("LOWER(t.source) = ?")
+        span_params.append(source)
+    if status:
+        span_clauses.append("LOWER(s.status) = ?")
+        span_params.append(status)
+    if tool:
+        span_clauses.append("s.kind = 'tool_call' AND LOWER(COALESCE(s.name, '')) LIKE ?")
+        span_params.append(f"%{tool}%")
+    span_rows = conn.execute(
+        f"""
+        SELECT s.trace_id, s.span_id, s.text_inline, s.name, s.path_rel
+        FROM spans s
+        JOIN traces t ON t.trace_id = s.trace_id
+        WHERE {' AND '.join(span_clauses)}
+        ORDER BY COALESCE(s.started_at, t.started_at) DESC, s.seq DESC
+        """,
+        span_params,
+    ).fetchall()
+    for row in span_rows:
+        snippet = row["text_inline"] or row["path_rel"] or row["name"] or ""
+        hits.append(
+            SearchHit(
+                trace_id=str(row["trace_id"]),
+                span_id=str(row["span_id"]),
+                title=None,
+                snippet=str(snippet)[:200],
+                kind="span",
+            )
+        )
+    return SearchResponse(q=q, hits=hits[:limit], total=len(hits))
 
 
 def build_workspace(

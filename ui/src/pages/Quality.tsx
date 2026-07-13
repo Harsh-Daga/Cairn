@@ -64,7 +64,9 @@ export function QualityPage() {
     );
   }
 
-  const passed = data.outcomes.filter((o) => Number(o.tests_passed ?? 0) > 0).length;
+  const passed = data.outcomes.filter(
+    (o) => Number(o.tests_run ?? 0) > 0 && Number(o.tests_failed ?? 0) === 0,
+  ).length;
   const landed = data.outcomes.filter((o) => Number(o.commit_landed ?? 0) > 0).length;
   const funnel = [
     { label: "Sessions scored", value: data.outcomes.length },

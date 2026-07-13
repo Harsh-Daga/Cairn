@@ -21,8 +21,14 @@ export function LivePage() {
   const [dropped, setDropped] = useState(0);
   const [paused, setPaused] = useState(false);
   const [eventFilter, setEventFilter] = useState<string | null>(null);
-  const pendingRef = useRef(0);
+  const [pending, setPending] = useState(0);
+  const bufferRef = useRef<LiveRow[]>([]);
+  const pausedRef = useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     if (!watchOn) return;
@@ -35,8 +41,9 @@ export function LivePage() {
         spanId: typeof data.span_id === "string" ? data.span_id : undefined,
         detail: typeof data.kind === "string" ? data.kind : undefined,
       };
-      if (paused) {
-        pendingRef.current += 1;
+      if (pausedRef.current) {
+        bufferRef.current = [row, ...bufferRef.current].slice(0, 200);
+        setPending(bufferRef.current.length);
         return;
       }
       setRows((prev) => [row, ...prev].slice(0, 200));
@@ -44,9 +51,15 @@ export function LivePage() {
         setDropped(data.dropped_events);
       }
     });
-  }, [watchOn, paused]);
+  }, [watchOn]);
 
-  const pending = pendingRef.current;
+  const resume = () => {
+    const buffered = bufferRef.current;
+    bufferRef.current = [];
+    setRows((current) => [...buffered, ...current].slice(0, 200));
+    setPending(0);
+    setPaused(false);
+  };
   const eventTypes = [...new Set(rows.map((r) => r.event))];
   const visibleRows = eventFilter ? rows.filter((r) => r.event === eventFilter) : rows;
 
@@ -73,10 +86,7 @@ export function LivePage() {
               <button
                 type="button"
                 className="rounded-chip bg-granite px-2 py-1 font-mono text-[10px] text-copper"
-                onClick={() => {
-                  setPaused(false);
-                  pendingRef.current = 0;
-                }}
+                onClick={resume}
               >
                 ▶ resume · {pending} new
               </button>

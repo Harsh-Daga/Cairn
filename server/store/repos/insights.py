@@ -89,6 +89,22 @@ class InsightRepo:
         return [_insight_with_state_from_row(row) for row in rows]
 
     @staticmethod
+    def count_by_state(conn: sqlite3.Connection, state: InsightLifecycle | None = None) -> int:
+        if state is None:
+            row = conn.execute(f"SELECT COUNT(*) AS n FROM {_INSIGHTS}").fetchone()
+        else:
+            row = conn.execute(
+                f"""
+                SELECT COUNT(*) AS n
+                FROM {_INSIGHTS} i
+                LEFT JOIN {_STATES} s ON i.insight_id = s.insight_id
+                WHERE COALESCE(s.state, 'new') = ?
+                """,
+                (state,),
+            ).fetchone()
+        return int(row["n"] or 0) if row is not None else 0
+
+    @staticmethod
     def update(conn: sqlite3.Connection, insight: Insight) -> bool:
         return update(conn, _INSIGHTS, insight, _INSIGHT_PK)
 

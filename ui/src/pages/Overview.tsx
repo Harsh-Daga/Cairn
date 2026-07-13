@@ -90,7 +90,7 @@ export function OverviewPage() {
     spend: usageSeries.map((r: UsageSeriesRow) => Number(r.cost)),
     input: usageSeries.map((r: UsageSeriesRow) => Number(r.input_tokens)),
     output: usageSeries.map((r: UsageSeriesRow) => Number(r.output_tokens)),
-    waste: usageSeries.map((r: UsageSeriesRow) => Number(r.input_tokens) * 0.05),
+    waste: usageSeries.map((r: UsageSeriesRow) => Number(r.waste_tokens)),
   };
 
   const costStack = usageSeries.map((r: UsageSeriesRow) => ({

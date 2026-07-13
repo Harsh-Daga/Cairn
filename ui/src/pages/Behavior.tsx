@@ -112,6 +112,29 @@ export function BehaviorPage() {
               ? `Drift detected: ${data.drift.length} event(s) in the last ${days} days.`
               : `No drift — behavior within baseline for ${days} days.`}
           </p>
+          <p className="mt-1 text-sm text-cinder">
+            Cairn compares each project/model pair with its recent behavioral baseline across tool
+            mix, retries, context growth, duration, and token flow.
+          </p>
+          {data.drift.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {data.drift.map((event, index) => (
+                <li key={`${event.kind}-${event.trace_id ?? index}`} className="rounded-sm bg-cinnabar/5 px-3 py-2 text-sm">
+                  <span className="font-mono text-xs text-cinnabar">{event.kind.replace("_", " ")}</span>
+                  {event.project || event.model ? (
+                    <span className="ml-2 text-cinder">
+                      {[event.project, event.model].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : null}
+                  {event.distance != null ? (
+                    <span className="ml-2 font-mono text-xs text-bone">
+                      distance {event.distance.toFixed(2)}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
 
         {radarPoints.length >= 3 ? (
@@ -121,13 +144,16 @@ export function BehaviorPage() {
         ) : null}
 
         {metricSeries.length > 2 ? (
-          <ChartFrame title="Fingerprint drift" subtitle="Vector norm over sessions">
+          <ChartFrame
+            title="Behavior magnitude"
+            subtitle="Combined fingerprint magnitude in chronological session order"
+          >
             <ControlChart data={metricSeries} width={640} height={200} />
           </ChartFrame>
         ) : null}
 
         {ewmaSeries.length > 1 ? (
-          <ChartFrame title="EWMA smoothed" subtitle="Exponentially weighted moving average">
+          <ChartFrame title="Behavior trend" subtitle="EWMA smooths one-off noise to reveal sustained movement">
             <Sparkline data={ewmaSeries} width={640} height={64} />
           </ChartFrame>
         ) : null}

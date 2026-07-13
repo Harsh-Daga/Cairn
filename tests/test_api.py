@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sqlite3
+
 from fastapi.testclient import TestClient
 
 
@@ -23,6 +25,27 @@ def test_traces_list_shape(api_client: TestClient) -> None:
     assert "traces" in body
     assert body["total"] >= 1
     assert body["traces"][0]["trace_id"]
+
+
+def test_traces_search_total_matches_filtered_results(api_client: TestClient) -> None:
+    body = api_client.get("/api/traces?q=definitely-not-a-real-session").json()
+    assert body["traces"] == []
+    assert body["total"] == 0
+
+
+def test_traces_agent_filter_runs_in_database(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            "UPDATE spans SET agent_id = 'agent-main' WHERE trace_id = ? AND seq = 1",
+            (trace_id,),
+        )
+    matching = api_client.get("/api/traces?agent=agent-main").json()
+    assert matching["total"] == 1
+    missing = api_client.get("/api/traces?agent=not-a-real-agent").json()
+    assert missing["total"] == 0
 
 
 def test_trace_detail_shape(api_client: TestClient, api_workspace: tuple) -> None:
@@ -57,6 +80,19 @@ def test_trace_replay_checkpoints_shape(api_client: TestClient, api_workspace: t
     assert len(body["checkpoints"]) >= 1
 
 
+def test_trace_replay_cost_is_cumulative(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute("UPDATE traces SET cost = 8.0 WHERE trace_id = ?", (trace_id,))
+    checkpoints = api_client.get(f"/api/traces/{trace_id}/replay").json()["checkpoints"]
+    assert checkpoints[0]["summary"]["cost"] < 8.0
+    assert checkpoints[0]["summary"]["cost_estimated"] is True
+    assert checkpoints[-1]["summary"]["cost"] == 8.0
+    assert checkpoints[-1]["summary"]["cost_estimated"] is False
+
+
 def test_trace_diff_shape(api_client: TestClient, api_workspace: tuple) -> None:
     _root, _ws, trace_id = api_workspace
     resp = api_client.get(f"/api/traces/diff?a={trace_id}&b={trace_id}")
@@ -68,12 +104,16 @@ def test_trace_diff_shape(api_client: TestClient, api_workspace: tuple) -> None:
     assert "turns" in body
 
 
-def test_agents_shape(api_client: TestClient) -> None:
+def test_agents_shape(api_client: TestClient, api_workspace: tuple) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute("UPDATE traces SET cost = 7.5 WHERE trace_id = ?", (trace_id,))
     resp = api_client.get("/api/agents?days=90")
     assert resp.status_code == 200
     body = resp.json()
     assert "agents" in body
     assert "handoff_matrix" in body
+    assert sum(agent["cost"] for agent in body["agents"]) == 7.5
 
 
 def test_behavior_shape(api_client: TestClient) -> None:
@@ -100,6 +140,7 @@ def test_analytics_usage_shape(api_client: TestClient) -> None:
     body = resp.json()
     assert body["group_by"] == "day"
     assert "series" in body
+    assert all("waste_tokens" in row for row in body["series"])
 
 
 def test_analytics_regions_shape(api_client: TestClient) -> None:
@@ -114,6 +155,10 @@ def test_analytics_waste_shape(api_client: TestClient) -> None:
     body = resp.json()
     assert "categories" in body
     assert "total_waste_tokens" in body
+    assert all(category["events"] > 0 for category in body["categories"])
+    overview = api_client.get("/api/overview?days=30").json()
+    assert body["total_waste_tokens"] == overview["kpis"]["waste_tokens"]
+    assert sum(category["tokens"] for category in body["categories"]) == body["total_waste_tokens"]
 
 
 def test_analytics_tail_shape(api_client: TestClient) -> None:
@@ -144,6 +189,18 @@ def test_search_shape(api_client: TestClient) -> None:
     body = resp.json()
     assert body["q"] == "user"
     assert "hits" in body
+
+
+def test_search_operators_filter_real_fields(api_client: TestClient) -> None:
+    by_tool = api_client.get("/api/search", params={"q": "tool:grep"}).json()
+    assert by_tool["total"] > 0
+    assert all(hit["kind"] == "span" for hit in by_tool["hits"])
+
+    by_source = api_client.get("/api/search", params={"q": "source:claude_code"}).json()
+    assert by_source["total"] > 0
+
+    by_error = api_client.get("/api/search", params={"q": "is:error"}).json()
+    assert by_error["total"] > 0
 
 
 def test_workspace_shape(api_client: TestClient, api_workspace: tuple) -> None:

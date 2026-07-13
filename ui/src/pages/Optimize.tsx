@@ -22,6 +22,7 @@ function ExperimentCard({
   preview,
   onApply,
   onRevert,
+  onMeasure,
 }: {
   experimentId: string;
   status: string;
@@ -32,6 +33,7 @@ function ExperimentCard({
   preview?: VerdictPreviewData | null;
   onApply: () => void;
   onRevert: () => void;
+  onMeasure: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const detailQ = useQuery({
@@ -106,13 +108,22 @@ function ExperimentCard({
           </button>
         ) : null}
         {status === "applied" || status === "measuring" ? (
-          <button
-            type="button"
-            className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone"
-            onClick={onRevert}
-          >
-            Revert
-          </button>
+          <>
+            <button
+              type="button"
+              className="rounded-sm bg-copper px-3 py-1.5 font-mono text-xs text-anthracite"
+              onClick={onMeasure}
+            >
+              Measure now
+            </button>
+            <button
+              type="button"
+              className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone"
+              onClick={onRevert}
+            >
+              Revert
+            </button>
+          </>
         ) : null}
       </div>
     </div>
@@ -133,6 +144,7 @@ export function OptimizePage() {
       showToast("Experiment applied");
       queryClient.invalidateQueries({ queryKey: ["experiments"] });
     },
+    onError: () => showToast("Apply failed", undefined, "error"),
   });
 
   const revertMut = useMutation({
@@ -141,6 +153,25 @@ export function OptimizePage() {
       showToast("Experiment reverted", () => undefined);
       queryClient.invalidateQueries({ queryKey: ["experiments"] });
     },
+    onError: () => showToast("Revert failed", undefined, "error"),
+  });
+
+  const measureMut = useMutation({
+    mutationFn: (id: string) => runAction("experiment_measure", { experiment_id: id }),
+    onSuccess: () => {
+      showToast("Experiment measured");
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+    onError: () => showToast("Measurement failed", undefined, "error"),
+  });
+
+  const proposeMut = useMutation({
+    mutationFn: () => runAction("optimize_propose"),
+    onSuccess: () => {
+      showToast("Proposals generated");
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+    onError: () => showToast("Proposal generation failed", undefined, "error"),
   });
 
   if (isLoading) {
@@ -177,7 +208,7 @@ export function OptimizePage() {
             <button
               type="button"
               className="rounded-sm bg-copper px-3 py-2 font-mono text-xs text-anthracite"
-              onClick={() => runAction("optimize_propose")}
+              onClick={() => proposeMut.mutate()}
             >
               Generate proposals
             </button>
@@ -233,6 +264,7 @@ export function OptimizePage() {
               createdAt={exp.created_at}
               onApply={() => applyMut.mutate(exp.experiment_id)}
               onRevert={() => revertMut.mutate(exp.experiment_id)}
+              onMeasure={() => measureMut.mutate(exp.experiment_id)}
             />
           ))}
         </div>
@@ -240,7 +272,7 @@ export function OptimizePage() {
         <button
           type="button"
           className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone hover:bg-granite"
-          onClick={() => runAction("optimize_propose")}
+          onClick={() => proposeMut.mutate()}
         >
           Generate proposals
         </button>

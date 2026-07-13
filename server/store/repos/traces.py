@@ -21,6 +21,9 @@ class TraceListFilters:
     source: str | None = None
     project: str | None = None
     actor: str | None = None
+    agent: str | None = None
+    q: str | None = None
+    sort: str = "recent"
     workspace_id: str | None = None
     limit: int = 50
     offset: int = 0
@@ -48,6 +51,20 @@ def _list_where(filters: TraceListFilters) -> tuple[str, list[object]]:
     if filters.actor is not None:
         clauses.append("actor_id = ?")
         params.append(filters.actor)
+    if filters.agent is not None:
+        clauses.append(
+            "EXISTS (SELECT 1 FROM spans s "
+            "WHERE s.trace_id = traces.trace_id AND s.agent_id = ?)"
+        )
+        params.append(filters.agent)
+    if filters.q is not None and filters.q.strip():
+        clauses.append(
+            "(LOWER(COALESCE(title, '')) LIKE ? "
+            "OR LOWER(trace_id) LIKE ? "
+            "OR LOWER(COALESCE(project, '')) LIKE ?)"
+        )
+        needle = f"%{filters.q.strip().lower()}%"
+        params.extend((needle, needle, needle))
     where = " AND ".join(clauses) if clauses else "1 = 1"
     return where, params
 
@@ -84,9 +101,13 @@ class TraceRepo:
     @staticmethod
     def list(conn: sqlite3.Connection, filters: TraceListFilters) -> list[Trace]:
         where, params = _list_where(filters)
+        order_by = {
+            "cost": "cost DESC, started_at DESC, trace_id DESC",
+            "waste": "waste_tokens DESC, started_at DESC, trace_id DESC",
+        }.get(filters.sort, "started_at DESC, trace_id DESC")
         sql = (
             f"SELECT * FROM {_TABLE} WHERE {where} "
-            "ORDER BY started_at DESC, trace_id DESC "
+            f"ORDER BY {order_by} "
             "LIMIT ? OFFSET ?"
         )
         return fetch_all(conn, sql, (*params, filters.limit, filters.offset), Trace)

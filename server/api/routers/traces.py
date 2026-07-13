@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -33,12 +33,12 @@ def list_traces(
     source: str | None = None,
     project: str | None = None,
     actor: str | None = None,
+    agent: str | None = None,
     q: str | None = None,
-    sort: str | None = None,
+    sort: Literal["recent", "waste", "cost"] = "recent",
     limit: int = 50,
     offset: int = 0,
 ) -> TracesListResponse:
-    del sort  # reserved for future sort keys
     return build_traces_list(
         runtime.database.reader,
         workspace_id=workspace_id,
@@ -46,7 +46,9 @@ def list_traces(
         source=source,
         project=project,
         actor=actor,
+        agent=agent,
         q=q,
+        sort=sort,
         limit=limit,
         offset=offset,
     )

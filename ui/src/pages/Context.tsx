@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { fetchRegions, fetchUsage, fetchWaste, timeRangeDays } from "@/lib/api";
-import { formatCost, formatTokens } from "@/lib/format";
+import { formatTokens } from "@/lib/format";
 import { useUiStore } from "@/state/ui";
 import type { UsageSeriesRow } from "@/lib/types";
 import { PageShell } from "@/components/common/PageShell";
@@ -103,7 +103,7 @@ export function ContextPage() {
             <p className="mt-1 text-sm text-cinder">Your context is {toolPct}% tool results on average.</p>
           </div>
           <div className="card p-4">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Re-billed waste</p>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Avoidable context</p>
             <p className="mt-1 font-display text-2xl text-bone">
               {formatTokens(waste?.total_waste_tokens ?? 0)}
             </p>
@@ -174,7 +174,7 @@ export function ContextPage() {
           )}
         </ChartFrame>
 
-        <ChartFrame title="Waste ledger" subtitle="Re-billing categories">
+        <ChartFrame title="Waste ledger" subtitle="Detected categories; uncategorized estimates remain explicit">
           {(waste?.categories ?? []).length > 0 ? (
             <HorizontalBars
               items={(waste?.categories ?? []).map((c) => ({
@@ -188,7 +188,8 @@ export function ContextPage() {
           )}
           {waste && waste.total_waste_tokens > 0 ? (
             <p className="mt-4 text-sm text-cinder">
-              Estimated re-billing cost: {formatCost(waste.total_waste_tokens * 0.000003)}
+              Waste is a subset of input tokens, not an additional token charge. Cost impact uses
+              each session&apos;s measured or estimated model price on Overview.
             </p>
           ) : null}
         </ChartFrame>

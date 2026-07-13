@@ -145,10 +145,31 @@ class AgentsResponse(BaseModel):
     handoff_matrix: list[dict[str, Any]]
 
 
+class BehaviorSeriesPoint(BaseModel):
+    trace_id: str
+    ts: str | None
+    vector: list[float]
+    project: str | None
+    model: str | None
+
+
+class DriftEvent(BaseModel):
+    kind: str
+    trace_id: str | None = None
+    project: str | None = None
+    model: str | None = None
+    distance: float | None = None
+    threshold: float | None = None
+    per_dim_deltas: list[float] = Field(default_factory=list)
+    drift: bool | None = None
+    axes: list[dict[str, Any]] = Field(default_factory=list)
+    data_notes: list[str] = Field(default_factory=list)
+
+
 class BehaviorResponse(BaseModel):
     days: int
-    series: list[dict[str, Any]]
-    drift: list[dict[str, Any]]
+    series: list[BehaviorSeriesPoint]
+    drift: list[DriftEvent]
     radar: dict[str, Any] | None
     data_notes: list[DataNote]
 
@@ -161,10 +182,19 @@ class QualityResponse(BaseModel):
     data_notes: list[DataNote]
 
 
+class UsageSeriesPoint(BaseModel):
+    key: str
+    input_tokens: int
+    output_tokens: int
+    waste_tokens: int
+    cost: float
+    traces: int
+
+
 class UsageAnalyticsResponse(BaseModel):
     days: int
     group_by: str
-    series: list[dict[str, Any]]
+    series: list[UsageSeriesPoint]
 
 
 class RegionsAnalyticsResponse(BaseModel):
@@ -172,9 +202,15 @@ class RegionsAnalyticsResponse(BaseModel):
     regions: list[dict[str, Any]]
 
 
+class WasteCategory(BaseModel):
+    category: str
+    tokens: int
+    events: int
+
+
 class WasteAnalyticsResponse(BaseModel):
     days: int
-    categories: list[dict[str, Any]]
+    categories: list[WasteCategory]
     total_waste_tokens: int
 
 

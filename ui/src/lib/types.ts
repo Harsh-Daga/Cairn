@@ -234,8 +234,22 @@ export interface AgentsResponse {
 
 export interface BehaviorResponse {
   days: number;
-  series: Record<string, unknown>[];
-  drift: Record<string, unknown>[];
+  series: {
+    trace_id: string;
+    ts: string | null;
+    vector: number[];
+    project: string | null;
+    model: string | null;
+  }[];
+  drift: {
+    kind: string;
+    trace_id?: string;
+    project?: string | null;
+    model?: string | null;
+    distance?: number | null;
+    threshold?: number | null;
+    axes?: { axis_label: string; weeks_outside: number }[];
+  }[];
   radar: Record<string, unknown> | null;
   data_notes: DataNote[];
 }
@@ -263,6 +277,7 @@ export interface UsageSeriesRow {
   key: string;
   input_tokens: number;
   output_tokens: number;
+  waste_tokens: number;
   cost: number;
   traces: number;
 }

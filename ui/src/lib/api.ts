@@ -106,14 +106,18 @@ export function fetchOverview(days: number): Promise<OverviewResponse> {
 export function fetchTraces(params: {
   days?: number;
   source?: string;
+  agent?: string;
   q?: string;
+  sort?: "recent" | "waste" | "cost";
   limit?: number;
   offset?: number;
 }): Promise<TracesListResponse> {
   const qs = new URLSearchParams();
   if (params.days) qs.set("days", String(params.days));
   if (params.source) qs.set("source", params.source);
+  if (params.agent) qs.set("agent", params.agent);
   if (params.q) qs.set("q", params.q);
+  if (params.sort && params.sort !== "recent") qs.set("sort", params.sort);
   qs.set("limit", String(params.limit ?? 50));
   qs.set("offset", String(params.offset ?? 0));
   return fetchJson(`/traces?${qs}`);

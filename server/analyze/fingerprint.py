@@ -266,15 +266,6 @@ def _update_weekly_baseline(
             n=len(vectors),
         ),
     )
-    packed = {"d_eff": d_eff, "components": components.tolist(), "cov_inv": cov_inv.tolist()}
-    conn.execute(
-        """
-        UPDATE fingerprint_baselines
-        SET cov_inv_json = ?
-        WHERE project = ? AND model = ? AND week = ?
-        """,
-        (json.dumps(packed), project, model, week),
-    )
 
 
 def _decode_vector(raw: str | None) -> list[float]:
