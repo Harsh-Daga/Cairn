@@ -1,0 +1,62 @@
+ui/src/lib/types.ts
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 280
+  s_6dffa805dc7e47::t_7c07c7a9a8e299 237-252
+ui/src/pages/Behavior.tsx
+  s_6dffa805dc7e47::t_20bf61ced139f6 115-137,147-150,156
+ui/src/pages/Optimize.tsx
+  s_6dffa805dc7e47::t_20bf61ced139f6 147,156
+  s_6dffa805dc7e47::t_7c07c7a9a8e299 25,36,111-126,157-174,211,267,275
+server/api/payloads.py
+  s_6dffa805dc7e47::t_df64f234e0b6f7 25,50,461,469-475,478,488-496,507,527,677-681,685,709-713,715
+  s_6dffa805dc7e47::t_3947a211faae17 23,52
+  s_6dffa805dc7e47::t_2853cb9548f356 511-521,686-708,714,716-720
+  s_6dffa805dc7e47::t_69b62846da2d41 57,462,479
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 212,214,224,226,593-599,615
+  s_6dffa805dc7e47::t_7e07bbbb2c7323 780,855-899,911-950
+  s_6dffa805dc7e47::t_714e06e6c25cb5 5,15-16,158-161,225,305-311,318-322,327,337-338,343,364,373,393-414,438-439,467,477,480-487,497-506,508,522-526,531,666,669-670,682-683
+  s_6dffa805dc7e47::t_e9fc1662481d93 618-628
+server/api/routers/traces.py
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 5,36,38,49,51
+ui/src/pages/Sessions.tsx
+  s_6dffa805dc7e47::t_1f649cd797ac09 3,19,36,39-49,52-54,92,267,332-354
+ui/src/pages/Live.tsx
+  s_6dffa805dc7e47::t_7c07c7a9a8e299 24-26,29-32,44-46,54,56-62,89
+ui/src/pages/Overview.tsx
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 93
+ui/src/lib/api.ts
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 109,111,118,120
+ui/src/pages/Quality.tsx
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 67-69
+server/store/repos/insights.py
+  s_6dffa805dc7e47::t_7e07bbbb2c7323 92-106
+  s_6dffa805dc7e47::t_0635776d916c0d 91
+server/store/repos/traces.py
+  s_6dffa805dc7e47::t_714e06e6c25cb5 25,60-67
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 24,26,54-59,104-107,110
+server/api/schemas.py
+  s_6dffa805dc7e47::t_69b62846da2d41 148-168,171-172,185-193,197,205-210,213
+ui/src/pages/Context.tsx
+  s_6dffa805dc7e47::t_f5d4e50882cf8c 4,106,177,191-192
+tests/test_api.py
+  s_6dffa805dc7e47::t_2853cb9548f356 159-161
+  s_6dffa805dc7e47::t_344417d22e6a4b 45-50,143
+  s_6dffa805dc7e47::t_76c9053e11d4d7 5-6,30-35,83-95,107-110,116,158,194-203
+  s_6dffa805dc7e47::t_526105c098ee63 36-44
+  s_6dffa805dc7e47::t_e1308e8cbe6358 204-205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "43077a8f576b9421281d52ac81c1ab58cbfc2e77",
+  "prompts": {},
+  "sessions": {
+    "s_6dffa805dc7e47": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5c18-4c3a-77e2-b2a8-9fe7efff4b69",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
