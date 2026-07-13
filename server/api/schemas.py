@@ -133,6 +133,7 @@ class ReplayResponse(BaseModel):
 class AgentAggregate(BaseModel):
     agent_id: str | None
     actor_id: str | None
+    actor_name: str | None
     traces: int
     input_tokens: int
     output_tokens: int

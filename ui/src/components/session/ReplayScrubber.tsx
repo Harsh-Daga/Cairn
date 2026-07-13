@@ -12,7 +12,7 @@ interface ReplayScrubberProps {
 export function ReplayScrubber({ maxSeq, seq, spans, onChange }: ReplayScrubberProps) {
   const ctx = [...spans].reverse().find((s) => s.context_tokens_after)?.context_tokens_after;
   const files = new Set(spans.map((s) => s.path_rel).filter(Boolean)).size;
-  const agents = new Set(spans.map((s) => s.agent_id).filter(Boolean)).size;
+  const actors = new Set(spans.map((s) => s.agent_id).filter(Boolean)).size;
 
   return (
     <div className="card p-4">
@@ -35,7 +35,7 @@ export function ReplayScrubber({ maxSeq, seq, spans, onChange }: ReplayScrubberP
         </button>
       </div>
       <p className="mt-2 font-mono text-[11px] text-cinder">
-        turn {seq} · {ctx ? formatTokens(ctx) : "—"} ctx · files read {files} · {agents} agents
+        turn {seq} · {ctx ? formatTokens(ctx) : "—"} ctx · files read {files} · {actors} actors
       </p>
     </div>
   );

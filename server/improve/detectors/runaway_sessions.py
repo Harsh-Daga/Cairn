@@ -17,7 +17,8 @@ def rule_runaway_sessions(ctx: dict[str, Any]) -> Insight | None:
         severity="warning",
         title="Runaway sessions",
         body=(
-            f"{len(runaways)} session(s) exceeded difficulty-adjusted expectations "
+            f"{len(runaways)} {'session' if len(runaways) == 1 else 'sessions'} "
+            "exceeded difficulty-adjusted expectations "
             f"(worst: {top['ratio']:.1f}x per-turn growth in {top['run_id'][:12]}). "
             "Context is growing unbounded — split tasks or compact sooner."
         ),

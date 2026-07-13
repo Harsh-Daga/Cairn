@@ -109,7 +109,7 @@ export function BehaviorPage() {
         <div className={`card p-4 ${drifting ? "border-l-2 border-cinnabar" : ""}`}>
           <p className="display text-lg text-bone">
             {drifting
-              ? `Drift detected: ${data.drift.length} event(s) in the last ${days} days.`
+              ? `Drift detected: ${data.drift.length} ${data.drift.length === 1 ? "event" : "events"} in the last ${days} days.`
               : `No drift — behavior within baseline for ${days} days.`}
           </p>
           <p className="mt-1 text-sm text-cinder">
@@ -131,6 +131,11 @@ export function BehaviorPage() {
                       distance {event.distance.toFixed(2)}
                     </span>
                   ) : null}
+                  {event.axes?.length ? (
+                    <span className="ml-2 text-xs text-cinder">
+                      {event.axes.slice(0, 3).map((axis) => axis.axis_label).join(", ")}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -138,7 +143,7 @@ export function BehaviorPage() {
         </div>
 
         {radarPoints.length >= 3 ? (
-          <ChartFrame title="Baseline radar" subtitle="Current vs baseline fingerprint">
+          <ChartFrame title="Reference tool mix" subtitle="Mean profile for the strongest project/model baseline">
             <Radar points={radarPoints} width={280} height={280} />
           </ChartFrame>
         ) : null}

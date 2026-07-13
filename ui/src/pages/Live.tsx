@@ -172,8 +172,8 @@ export function LivePage() {
             </p>
           </div>
           <div className="card p-4 text-sm text-cinder">
-            Active session cards appear when trace-updated events include running cost and context
-            fill. Connect an adapter and keep Watch on.
+            Trace and span updates appear here as they are ingested. Open any linked event to jump
+            directly to its session and inspect the affected span.
           </div>
         </div>
       </div>

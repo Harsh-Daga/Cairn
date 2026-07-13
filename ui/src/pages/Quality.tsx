@@ -7,7 +7,7 @@ import { useToastStore } from "@/state/toast";
 import { PageShell } from "@/components/common/PageShell";
 import { ChartFrame } from "@/components/common/Chip";
 import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
-import { HorizontalBars, IntervalPlot, Sparkline } from "@/components/charts";
+import { HorizontalBars, Sparkline } from "@/components/charts";
 
 export function QualityPage() {
   const timeRange = useUiStore((s) => s.timeRange);
@@ -78,21 +78,6 @@ export function QualityPage() {
     .map((row) => Number(row.cost_per_success))
     .filter((v) => Number.isFinite(v));
 
-  const histogramIntervals = data.histogram.map((b) => {
-    const parts = b.bucket.split("-").map(Number);
-    const lo = parts[0] ?? 0;
-    const hi = parts[1] ?? 1;
-    const mid = (lo + hi) / 2;
-    const spread = (hi - lo) / 4;
-    return {
-      label: b.bucket,
-      value: mid,
-      low: mid - spread,
-      high: mid + spread,
-      count: b.count,
-    };
-  });
-
   return (
     <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
       <div className="space-y-6">
@@ -124,26 +109,13 @@ export function QualityPage() {
 
         {data.histogram.length > 0 ? (
           <ChartFrame title="Quality histogram" subtitle="Score distribution 0–1">
-            {histogramIntervals.length >= 2 ? (
-              <IntervalPlot
-                points={histogramIntervals.map((h) => ({
-                  label: h.label,
-                  value: h.value,
-                  low: h.low,
-                  high: h.high,
-                }))}
-                width={480}
-                height={Math.max(120, histogramIntervals.length * 36)}
-              />
-            ) : (
-              <HorizontalBars
-                items={data.histogram.map((b) => ({
-                  label: b.bucket,
-                  value: b.count,
-                }))}
-                width={480}
-              />
-            )}
+            <HorizontalBars
+              items={data.histogram.map((bucket) => ({
+                label: bucket.bucket,
+                value: bucket.count,
+              }))}
+              width={480}
+            />
           </ChartFrame>
         ) : null}
 

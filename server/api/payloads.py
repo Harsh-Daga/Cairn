@@ -391,27 +391,28 @@ def build_agents(
     rows = conn.execute(
         """
         WITH agent_trace AS (
-          SELECT s.trace_id, s.agent_id, t.actor_id, t.cost,
+          SELECT s.trace_id, s.agent_id, t.actor_id, a.display_name AS actor_name, t.cost,
                  SUM(COALESCE(s.input_tokens, 0)) AS input_tokens,
                  SUM(COALESCE(s.output_tokens, 0)) AS output_tokens,
                  SUM(COALESCE(s.input_tokens, 0) + COALESCE(s.output_tokens, 0)) AS agent_tokens
           FROM spans s
           JOIN traces t ON t.trace_id = s.trace_id
+          LEFT JOIN actors a ON a.actor_id = t.actor_id
           WHERE t.workspace_id = ? AND (t.started_at IS NULL OR t.started_at >= ?)
-          GROUP BY s.trace_id, s.agent_id, t.actor_id
+          GROUP BY s.trace_id, s.agent_id, t.actor_id, a.display_name
         ), attributed AS (
           SELECT *, SUM(agent_tokens) OVER (PARTITION BY trace_id) AS trace_span_tokens,
                     COUNT(*) OVER (PARTITION BY trace_id) AS trace_agents
           FROM agent_trace
         )
-        SELECT agent_id, actor_id, COUNT(*) AS traces,
+        SELECT agent_id, actor_id, actor_name, COUNT(*) AS traces,
                SUM(input_tokens) AS input_tokens,
                SUM(output_tokens) AS output_tokens,
                SUM(CASE WHEN trace_span_tokens > 0
                         THEN cost * agent_tokens / trace_span_tokens
                         ELSE cost / trace_agents END) AS cost
         FROM attributed
-        GROUP BY agent_id, actor_id
+        GROUP BY agent_id, actor_id, actor_name
         ORDER BY cost DESC
         """,
         (workspace_id, since),
@@ -420,6 +421,7 @@ def build_agents(
         AgentAggregate(
             agent_id=row["agent_id"],
             actor_id=row["actor_id"],
+            actor_name=row["actor_name"],
             traces=int(row["traces"] or 0),
             input_tokens=int(row["input_tokens"] or 0),
             output_tokens=int(row["output_tokens"] or 0),
@@ -976,6 +978,7 @@ def build_workspace(
         "SELECT COUNT(*) AS n FROM traces WHERE workspace_id = ?",
         (workspace_id,),
     ).fetchone()
+    insight_count = conn.execute("SELECT COUNT(*) AS n FROM insights").fetchone()
     raw_gauge = compute_gauge(Path(root_path)).as_dict()
     gauge: PlanWindowGauge | None = None
     if raw_gauge.get("total_tokens") or raw_gauge.get("limit") is not None:
@@ -993,6 +996,7 @@ def build_workspace(
         adapters=adapters,
         health={
             "trace_count": int(trace_count["n"] or 0) if trace_count else 0,
+            "insight_count": int(insight_count["n"] or 0) if insight_count else 0,
             "fts_available": FTS_AVAILABLE,
         },
         gauge=gauge,

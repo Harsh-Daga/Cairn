@@ -58,7 +58,7 @@ export function SessionDiffPage() {
         <div className="card p-3">
           <div className="font-mono text-[10px] uppercase tracking-wide text-cinder">Cost delta</div>
           <div className="mt-1 text-lg text-bone">
-            {formatCost(data.summary.cost_a)} → {formatCost(data.summary.cost_b)}
+            {formatCost(data.summary.cost_a, 4)} → {formatCost(data.summary.cost_b, 4)}
           </div>
           <div className="font-mono text-xs text-copper">{formatDelta(data.summary.delta_cost, 4)}</div>
         </div>

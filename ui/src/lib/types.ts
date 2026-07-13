@@ -220,6 +220,7 @@ export interface ActionsManifestResponse {
 export interface AgentAggregate {
   agent_id: string | null;
   actor_id: string | null;
+  actor_name: string | null;
   traces: number;
   input_tokens: number;
   output_tokens: number;

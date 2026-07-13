@@ -14,6 +14,7 @@ const AGENT_SETUP_URL = "https://github.com/Harsh-Daga/Cairn/blob/main/AGENT_SET
 export function SettingsPage() {
   const showToast = useToastStore((s) => s.show);
   const [copied, setCopied] = useState(false);
+  const [mcpClient, setMcpClient] = useState("cursor");
   const { data, isLoading, isError } = useQuery({
     queryKey: ["workspace"],
     queryFn: fetchWorkspace,
@@ -37,6 +38,18 @@ export function SettingsPage() {
 
   const traceCount = Number(data.health.trace_count ?? 0);
   const insightCount = Number(data.health.insight_count ?? 0);
+  const handleAction = async (
+    name: string,
+    success: string,
+    params?: Record<string, unknown>,
+  ) => {
+    try {
+      await runAction(name, params);
+      showToast(success, undefined, "good");
+    } catch {
+      showToast(`${success.replace(/ started$/, "")} failed`, undefined, "error");
+    }
+  };
 
   return (
     <PageShell title="Settings" question="Manage workspace sources, local data, integrations, and maintenance.">
@@ -116,9 +129,7 @@ export function SettingsPage() {
             <button
               type="button"
               className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone hover:bg-granite"
-              onClick={() =>
-                runAction("workspace_scan").then(() => showToast("Workspace scan started"))
-              }
+              onClick={() => void handleAction("workspace_scan", "Workspace scan started")}
             >
               Rescan adapters
             </button>
@@ -131,14 +142,14 @@ export function SettingsPage() {
             <button
               type="button"
               className="rounded-sm bg-copper px-3 py-2 font-mono text-xs text-anthracite"
-              onClick={() => runAction("sync").then(() => showToast("Sync started"))}
+              onClick={() => void handleAction("sync", "Sync started")}
             >
               Sync now
             </button>
             <button
               type="button"
               className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
-              onClick={() => runAction("export_bundle").then(() => showToast("Export started"))}
+              onClick={() => void handleAction("export_bundle", "Export started")}
             >
               Export scrubbed bundle
             </button>
@@ -148,9 +159,7 @@ export function SettingsPage() {
               onClick={() => {
                 const word = window.prompt('Type "rebuild" to rebuild all views');
                 if (word === "rebuild") {
-                  runAction("rebuild_view", { view: "all" }).then(() =>
-                    showToast("Rebuild started"),
-                  );
+                  void handleAction("rebuild_view", "Rebuild started", { view: "all" });
                 }
               }}
             >
@@ -198,13 +207,29 @@ export function SettingsPage() {
           <p className="mt-2 text-sm text-cinder">
             Install Cairn MCP tools for Claude Code, Cursor, and Codex.
           </p>
-          <button
-            type="button"
-            className="mt-3 rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
-            onClick={() => runAction("mcp_install").then(() => showToast("MCP install started"))}
-          >
-            Install MCP config
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <select
+              value={mcpClient}
+              onChange={(event) => setMcpClient(event.target.value)}
+              aria-label="MCP client"
+              className="rounded-sm border border-quartz-vein bg-slate px-3 py-2 font-mono text-xs text-bone"
+            >
+              <option value="cursor">Cursor</option>
+              <option value="claude-code">Claude Code</option>
+              <option value="codex">Codex</option>
+            </select>
+            <button
+              type="button"
+              className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
+              onClick={() =>
+                void handleAction("mcp_install", "MCP config installed", {
+                  client: mcpClient,
+                })
+              }
+            >
+              Install MCP config
+            </button>
+          </div>
         </section>
       </div>
     </PageShell>

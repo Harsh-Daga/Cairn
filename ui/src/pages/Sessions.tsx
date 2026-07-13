@@ -15,7 +15,7 @@ import { useUiStore } from "@/state/ui";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 
-const SOURCES = ["claude_code", "cursor", "codex"] as const;
+const SOURCES = ["claude_code", "cursor", "codex", "cline"] as const;
 const PAGE_SIZE = 50;
 
 export function SessionsPage() {
@@ -271,11 +271,11 @@ export function SessionsPage() {
               <tr>
                 <th className="px-4 py-3">Compare</th>
                 <th className="px-4 py-3">Session</th>
-                <th className="px-4 py-3">Source</th>
-                <th className="px-4 py-3 text-right">Tokens</th>
-                <th className="px-4 py-3 text-right">Waste</th>
-                <th className="px-4 py-3 text-right">Cost</th>
-                <th className="px-4 py-3 text-right">When</th>
+                <th className="hidden px-4 py-3 sm:table-cell">Source</th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell">Tokens</th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell">Waste</th>
+                <th className="hidden px-4 py-3 text-right md:table-cell">Cost</th>
+                <th className="hidden px-4 py-3 text-right xl:table-cell">When</th>
               </tr>
             </thead>
             <tbody>
@@ -306,20 +306,23 @@ export function SessionsPage() {
                         {trace.title ?? trace.trace_id.slice(0, 12)}
                       </Link>
                       <p className="mt-0.5 font-mono text-[10px] text-cinder">{trace.trace_id}</p>
+                      <span className="mt-2 inline-block sm:hidden">
+                        <Chip label={trace.source} tone="patina" />
+                      </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 sm:table-cell">
                       <Chip label={trace.source} tone="patina" />
                     </td>
-                    <td className={`px-4 py-3 text-right font-mono text-xs ${estimated ? "estimated-chip" : ""}`}>
+                    <td className={`hidden px-4 py-3 text-right font-mono text-xs lg:table-cell ${estimated ? "estimated-chip" : ""}`}>
                       {formatTokens(trace.input_tokens + trace.output_tokens)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs text-ochre">
+                    <td className="hidden px-4 py-3 text-right font-mono text-xs text-ochre lg:table-cell">
                       {trace.waste_tokens > 0 ? formatTokens(trace.waste_tokens) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs">
+                    <td className="hidden px-4 py-3 text-right font-mono text-xs md:table-cell">
                       {formatCost(trace.cost)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[10px] text-cinder">
+                    <td className="hidden px-4 py-3 text-right font-mono text-[10px] text-cinder xl:table-cell">
                       {trace.started_at ? formatRelative(trace.started_at) : "—"}
                     </td>
                   </tr>

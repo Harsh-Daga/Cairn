@@ -21,7 +21,8 @@ def rule_unused_tools(ctx: dict[str, Any]) -> Insight | None:
         title=f"Unused MCP tool: {name}",
         body=(
             f"Remove `{name}` — ~{tokens_per_turn} tokens/turn × {turns_per_week} turns/wk "
-            f"of schema overhead across {tool.get('sessions', 0)} session(s)."
+            f"of schema overhead across {tool.get('sessions', 0)} "
+            f"{'session' if tool.get('sessions', 0) == 1 else 'sessions'}."
         ),
         evidence=tool,
         savings_estimate=None,

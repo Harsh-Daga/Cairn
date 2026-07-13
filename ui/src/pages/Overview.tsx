@@ -152,7 +152,7 @@ export function OverviewPage() {
                     className="inline-flex items-center gap-2 rounded-sm border border-quartz-vein/80 bg-anthracite/40 px-3 py-2 text-left text-xs text-bone transition-colors hover:border-copper/50 hover:bg-granite/50"
                     onClick={() => navigate(sentence.filter?.view === "waste" ? "/sessions?sort=waste" : "/sessions")}
                   >
-                    {sentence.text.replace("session(s)", "sessions")} <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-copper" />
+                    {sentence.text} <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-copper" />
                   </button>
                 ))}
               </div>

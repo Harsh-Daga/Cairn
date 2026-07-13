@@ -62,7 +62,11 @@ export function AgentsPage() {
             <div key={`${agent.agent_id}-${agent.actor_id}-${i}`} className="card p-4">
               <div className="flex items-center gap-2">
                 <Chip label={agent.agent_id ?? "default"} tone="patina" />
-                {agent.actor_id ? <Chip label={agent.actor_id.slice(0, 8)} /> : null}
+                {agent.actor_name ? (
+                  <Chip label={agent.actor_name} />
+                ) : agent.actor_id ? (
+                  <Chip label={agent.actor_id.slice(0, 8)} />
+                ) : null}
               </div>
               <dl className="mt-3 space-y-1 font-mono text-xs text-cinder">
                 <div className="flex justify-between">

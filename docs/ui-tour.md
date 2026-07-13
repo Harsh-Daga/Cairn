@@ -37,10 +37,11 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 
 ## 5. Context (`/context`)
 
-**Question:** *Where does every token go, and what's re-billed?*
+**Question:** *What filled the context window, what repeated, and where can waste be cut?*
 
 - Stacked region breakdown (system, tool schema, tool results, retrieved, user, history).
-- Waste analytics with taxonomy chips and links to affected sessions.
+- Waste analytics with categorized span events plus an explicit uncategorized remainder, reconciled
+  to the session-level waste total.
 - Data from `/api/analytics/regions` and `/api/analytics/waste`.
 
 ## 6. Agents (`/agents`)
