@@ -52,7 +52,7 @@ export function LivePage() {
 
   if (!watchOn) {
     return (
-      <PageShell title="Live" question="What are my agents doing right now?">
+      <PageShell title="Live" question="Follow active runs, ingest events, and emerging signals as they happen.">
         <EmptyCard
           title="Watch is off"
           detail="Turn on Watch in the top bar to stream live span events."
@@ -62,7 +62,7 @@ export function LivePage() {
   }
 
   return (
-    <PageShell title="Live" question="What are my agents doing right now?">
+    <PageShell title="Live" question="Follow active runs, ingest events, and emerging signals as they happen.">
       <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-quartz-vein px-4 py-2">

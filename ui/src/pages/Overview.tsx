@@ -1,5 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  Activity,
+  ArrowUpRight,
+  CircleDollarSign,
+  Layers3,
+  ShieldCheck,
+  Sparkles,
+  TriangleAlert,
+} from "lucide-react";
 import {
   fetchInsights,
   fetchOverview,
@@ -52,7 +62,7 @@ export function OverviewPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Overview" question="What happened, and what should I look at?">
+      <PageShell title="Overview" question="Health, cost, and improvement signals across your agent workspace.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -60,7 +70,7 @@ export function OverviewPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Overview" question="What happened, and what should I look at?">
+      <PageShell title="Overview" question="Health, cost, and improvement signals across your agent workspace.">
         <div className="card p-6 text-cinnabar">
           Couldn&apos;t reach the local server — is <span className="mono">cairn ui</span> running?
         </div>
@@ -98,135 +108,151 @@ export function OverviewPage() {
   ).slice(0, 6);
 
   const tailExceedances = tailQ.data?.exceedances ?? [];
+  const totalTokens = inputTokens + outputTokens;
+  const wasteRate = inputTokens > 0 ? (waste / inputTokens) * 100 : 0;
+  const averageCost = traces > 0 ? cost / traces : 0;
+  const recentSpend = spark.spend.slice(Math.floor(spark.spend.length / 2));
+  const previousSpend = spark.spend.slice(0, Math.floor(spark.spend.length / 2));
+  const recentSpendTotal = recentSpend.reduce((sum, value) => sum + value, 0);
+  const previousSpendTotal = previousSpend.reduce((sum, value) => sum + value, 0);
+  const spendDelta = previousSpendTotal > 0
+    ? ((recentSpendTotal - previousSpendTotal) / previousSpendTotal) * 100
+    : 0;
+  const spendVelocity = Math.abs(spendDelta) > 999
+    ? "Recent spend spike"
+    : `${spendDelta >= 0 ? "+" : ""}${spendDelta.toFixed(1)}% recent velocity`;
+  const pulseTitle = attention.length > 0
+    ? `${attention.length} signal${attention.length === 1 ? "" : "s"} need your attention`
+    : traces > 0
+      ? "Your agent system is operating normally"
+      : "Cairn is ready for its first sync";
 
   return (
-    <PageShell title="Overview" question="What happened, and what should I look at?">
-      <div className="space-y-6">
-        <section className="card relative overflow-hidden p-6 sm:p-7">
-          <div className="absolute right-0 top-0 h-28 w-48 opacity-40 [background-image:radial-gradient(var(--copper)_0.75px,transparent_0.75px)] [background-size:5px_5px]" aria-hidden="true" />
-          <p className="page-kicker relative">Situation report</p>
-          {data.narrative.length > 0 ? (
-            <div className="space-y-2">
-              {data.narrative.map((sentence, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="display relative block max-w-3xl text-left text-xl text-bone transition-colors hover:text-copper sm:text-2xl"
-                  onClick={() => {
-                    if (sentence.filter?.days) {
-                      navigate(`/sessions?days=${sentence.filter.days}`);
-                    } else if (sentence.filter?.view === "waste") {
-                      navigate("/sessions?sort=waste");
-                    } else {
-                      navigate("/sessions");
-                    }
-                  }}
-                >
-                  {sentence.text}
-                </button>
-              ))}
+    <PageShell title="Overview" question="Health, cost, and improvement signals across your agent workspace.">
+      <div className="space-y-4">
+        <section className="signal-panel relative grid overflow-hidden p-6 lg:grid-cols-[1fr_280px] lg:p-7">
+          <div className="relative z-10 max-w-3xl">
+            <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-patina">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Workspace pulse
             </div>
-          ) : (
-            <p className="display text-xl text-bone">
-              No sessions yet — run <span className="mono text-copper">cairn sync</span> to begin.
+            <h2 className="font-display text-2xl font-[720] tracking-[-0.04em] text-bone sm:text-3xl">
+              {pulseTitle}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-cinder">
+              {traces > 0
+                ? `${traces} sessions produced ${formatTokens(totalTokens)} tokens at ${formatCost(cost)} total cost. ${formatTokens(waste)} tokens were flagged as avoidable context.`
+                : "Run a sync to turn local agent activity into cost, quality, context, and behavior signals."}
             </p>
-          )}
+            {data.narrative.length > 0 ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {data.narrative.slice(0, 2).map((sentence, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-sm border border-quartz-vein/80 bg-anthracite/40 px-3 py-2 text-left text-xs text-bone transition-colors hover:border-copper/50 hover:bg-granite/50"
+                    onClick={() => navigate(sentence.filter?.view === "waste" ? "/sessions?sort=waste" : "/sessions")}
+                  >
+                    {sentence.text.replace("session(s)", "sessions")} <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-copper" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div className="relative hidden items-center justify-center lg:flex" aria-hidden="true">
+            <div className="signal-orb flex h-44 w-44 flex-col items-center justify-center rounded-full">
+              <span className="font-display text-4xl font-bold tracking-[-0.06em] text-bone">{wasteRate.toFixed(1)}%</span>
+              <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-cinder">context waste</span>
+            </div>
+          </div>
         </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <Kpi label="Sessions" value={String(traces)} spark={spark.sessions} detail="Observed work runs" />
-          <Kpi label="Spend" value={formatCost(cost)} spark={spark.spend} detail="Model usage this window" />
-          <Kpi label="Input tokens" value={formatTokens(inputTokens)} spark={spark.input} detail="Context sent to models" />
-          <Kpi label="Output tokens" value={formatTokens(outputTokens)} spark={spark.output} detail="Generated by agents" />
-          <Kpi label="Waste" value={formatTokens(waste)} spark={spark.waste} estimated={waste > 0} />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Kpi icon={<Activity />} label="Sessions" value={String(traces)} spark={spark.sessions} detail="Observed runs" accent="violet" />
+          <Kpi icon={<CircleDollarSign />} label="Total spend" value={formatCost(cost)} spark={spark.spend} detail={spendVelocity} accent="blue" />
+          <Kpi icon={<TriangleAlert />} label="Waste rate" value={`${wasteRate.toFixed(1)}%`} spark={spark.waste} detail={`${formatTokens(waste)} avoidable tokens`} accent="amber" estimated={waste > 0} />
+          <Kpi icon={<Layers3 />} label="Cost / session" value={formatCost(averageCost)} detail={`${formatTokens(totalTokens)} total tokens`} accent="mint" />
         </div>
 
-        {usageSeries.length > 1 ? (
-          <ChartFrame title="Daily spend" subtitle={`${days}-day cost trend`}>
-            <StackedArea
-              data={costStack}
-              keys={["cost"]}
-              xKey="day"
-              width={640}
-              height={180}
-            />
-          </ChartFrame>
-        ) : null}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,.75fr)]">
+          {usageSeries.length > 1 ? (
+            <ChartFrame
+              title="Spend velocity"
+              subtitle={`${days}-day model cost · scrub to inspect`}
+              action={<span className="font-mono text-sm text-bone">{formatCost(cost)}</span>}
+            >
+              <StackedArea data={costStack} keys={["cost"]} xKey="day" width={900} height={260} />
+            </ChartFrame>
+          ) : <div className="card skeleton h-[350px]" />}
 
-        {wasteItems.length > 0 ? (
-          <ChartFrame title="Waste categories" subtitle="Re-billing by category">
-            <HorizontalBars items={wasteItems} width={480} />
-          </ChartFrame>
-        ) : null}
-
-        {attention.length > 0 ? (
-          <ChartFrame title="Needs attention" subtitle="New and warning insights">
-            <ul className="divide-y divide-quartz-vein/50">
-              {attention.map((insight) => (
-                <li key={insight.insight_id}>
-                  <Link
-                    to="/insights"
-                    className="flex items-start justify-between gap-4 px-1 py-3 hover:bg-granite/20"
-                  >
-                    <div>
-                      <p className="text-sm text-bone">{insight.title}</p>
-                      <p className="mt-0.5 font-mono text-[10px] text-cinder">{insight.detector}</p>
-                    </div>
-                    <Chip
-                      label={insight.severity}
-                      tone={
-                        insight.severity === "error" || insight.severity === "warning"
-                          ? "cinnabar"
-                          : "default"
-                      }
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </ChartFrame>
-        ) : null}
-
-        {tailExceedances.length > 0 || data.tail_risk.expected_worst_cost != null ? (
-          <ChartFrame title="Tail risk" subtitle="Cost exceedances above 90th percentile">
-            <div className="flex flex-wrap items-end gap-6">
-              {data.tail_risk.expected_worst_cost != null ? (
-                <p className="font-mono text-sm text-ochre">
-                  {formatCost(data.tail_risk.expected_worst_cost)} expected worst
-                </p>
-              ) : null}
-              {tailExceedances.length > 0 ? (
-                <Sparkline
-                  data={tailExceedances}
-                  width={200}
-                  height={48}
-                  color={chartColors.fillWarn}
-                />
-              ) : null}
+          <section className="card overflow-hidden">
+            <div className="border-b border-quartz-vein/70 px-5 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="page-kicker">Priority queue</p>
+                  <h3 className="font-display text-base font-semibold text-bone">What to look at next</h3>
+                </div>
+                <span className="rounded-full bg-copper/10 px-2 py-1 font-mono text-[10px] text-copper">{attention.length} open</span>
+              </div>
             </div>
+            {attention.length > 0 ? (
+              <ul className="divide-y divide-quartz-vein/50">
+                {attention.slice(0, 5).map((insight, index) => (
+                  <li key={insight.insight_id}>
+                    <Link to="/insights" className="group flex gap-3 px-5 py-4 transition-colors hover:bg-granite/20">
+                      <span className="mt-0.5 font-mono text-[10px] text-ash">0{index + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-medium text-bone group-hover:text-copper">{insight.title}</p>
+                        <p className="mt-1 font-mono text-[9px] uppercase tracking-wide text-ash">{insight.detector}</p>
+                      </div>
+                      <Chip label={insight.severity} tone={insight.severity === "error" || insight.severity === "warning" ? "cinnabar" : "default"} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="flex flex-col items-center px-6 py-12 text-center">
+                <ShieldCheck className="h-8 w-8 text-malachite" strokeWidth={1.5} />
+                <p className="mt-3 text-sm font-medium text-bone">No urgent signals</p>
+                <p className="mt-1 text-xs text-cinder">Cairn will surface anomalies here.</p>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          {wasteItems.length > 0 ? (
+            <ChartFrame title="Context waste" subtitle="Avoidable re-billing by category">
+              <HorizontalBars items={wasteItems.slice(0, 6)} width={620} />
+            </ChartFrame>
+          ) : null}
+
+          <ChartFrame title="Token economics" subtitle="How this window was allocated">
+            <div className="grid grid-cols-3 gap-3">
+              <TokenStat label="Input" value={inputTokens} total={totalTokens} color="bg-copper" />
+              <TokenStat label="Output" value={outputTokens} total={totalTokens} color="bg-patina" />
+              <TokenStat label="Waste" value={waste} total={totalTokens} color="bg-cinnabar" />
+            </div>
+            <div className="mt-6 flex h-2 overflow-hidden rounded-full bg-granite/60">
+              <div className="bg-copper" style={{ width: `${totalTokens ? inputTokens / totalTokens * 100 : 0}%` }} />
+              <div className="bg-patina" style={{ width: `${totalTokens ? outputTokens / totalTokens * 100 : 0}%` }} />
+            </div>
+            {data.tail_risk.expected_worst_cost != null ? (
+              <div className="mt-6 flex items-center justify-between rounded-sm border border-quartz-vein/60 bg-anthracite/30 px-4 py-3">
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-wide text-ash">Expected worst session</p>
+                  <p className="mt-1 text-sm font-semibold text-bone">{formatCost(data.tail_risk.expected_worst_cost)}</p>
+                </div>
+                {tailExceedances.length > 0 ? <Sparkline data={tailExceedances} width={160} height={42} color={chartColors.fillWarn} /> : null}
+              </div>
+            ) : null}
           </ChartFrame>
-        ) : null}
+        </div>
 
         {data.data_notes.length > 0 ? (
-          <div className="card p-4">
-            <h3 className="font-mono text-[10px] uppercase tracking-wide text-cinder">Data notes</h3>
-            <ul className="mt-2 space-y-2 text-sm text-cinder">
-              {data.data_notes.map((note, i) => (
-                <li key={i}>
-                  <Chip label={note.source} /> {note.message}
-                </li>
-              ))}
-            </ul>
+          <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-cinder">
+            <span className="font-mono text-[9px] uppercase tracking-wide text-ash">Data notes</span>
+            {data.data_notes.map((note, index) => <span key={index}><Chip label={note.source} /> {note.message}</span>)}
           </div>
-        ) : null}
-
-        {traces > 0 ? (
-          <Link
-            to="/sessions"
-            className="inline-flex font-mono text-sm text-copper hover:underline"
-          >
-            View all sessions →
-          </Link>
         ) : null}
       </div>
     </PageShell>
@@ -239,23 +265,47 @@ function Kpi({
   spark,
   estimated,
   detail,
+  icon,
+  accent,
 }: {
   label: string;
   value: string;
   spark?: number[];
   estimated?: boolean;
   detail?: string;
+  icon: ReactNode;
+  accent: "violet" | "blue" | "amber" | "mint";
 }) {
+  const accents = {
+    violet: "text-copper bg-copper/10",
+    blue: "text-lapis bg-lapis/10",
+    amber: "text-ochre bg-ochre/10",
+    mint: "text-patina bg-patina/10",
+  };
   return (
-    <div className={`card card--interactive metric-card p-4 ${estimated ? "estimated-chip" : ""}`}>
-      <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">{label}</p>
-      <p className="mt-1 font-display text-2xl text-bone">{value}</p>
-      {detail ? <p className="mt-1 text-xs text-cinder">{detail}</p> : null}
+    <div className={`card card--interactive metric-card p-5 ${estimated ? "estimated-chip" : ""}`}>
+      <div className="flex items-center justify-between">
+        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-cinder">{label}</p>
+        <span className={`flex h-7 w-7 items-center justify-center rounded-sm [&>svg]:h-3.5 [&>svg]:w-3.5 ${accents[accent]}`}>{icon}</span>
+      </div>
+      <p className="mt-3 font-display text-[28px] font-[700] tracking-[-0.05em] text-bone">{value}</p>
+      {detail ? <p className="mt-1 text-[11px] text-cinder">{detail}</p> : null}
       {spark && spark.length > 0 ? (
-        <div className="mt-2">
-          <Sparkline data={spark} width={120} height={28} />
+        <div className="mt-3">
+          <Sparkline data={spark} width={180} height={30} />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function TokenStat({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
+  const share = total > 0 ? value / total * 100 : 0;
+  return (
+    <div className="rounded-sm border border-quartz-vein/60 bg-anthracite/25 p-3">
+      <div className="flex items-center gap-2"><span className={`h-1.5 w-1.5 rounded-full ${color}`} /><span className="font-mono text-[9px] uppercase tracking-wide text-cinder">{label}</span></div>
+      <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-bone">{formatTokens(value)}</p>
+      <p className="mt-0.5 font-mono text-[9px] text-ash">{share.toFixed(1)}% of total</p>
     </div>
   );
 }

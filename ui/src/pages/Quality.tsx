@@ -30,7 +30,7 @@ export function QualityPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+      <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -38,7 +38,7 @@ export function QualityPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+      <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
         <ErrorCard />
       </PageShell>
     );
@@ -46,7 +46,7 @@ export function QualityPage() {
 
   if (data.outcomes.length === 0) {
     return (
-      <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+      <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
         <EmptyCard
           title="Outcomes not captured yet"
           detail="Enable outcome capture in Settings to score sessions against git and tests."
@@ -92,7 +92,7 @@ export function QualityPage() {
   });
 
   return (
-    <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+    <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
       <div className="space-y-6">
         <div className="card p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">

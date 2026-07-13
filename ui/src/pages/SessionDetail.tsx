@@ -108,7 +108,7 @@ export function SessionDetailPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Session" question="Replay, inspect, and understand what happened.">
+      <PageShell title="Session" question="Replay the run, inspect every span, and localize where behavior changed.">
         <div className="card h-64 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -116,7 +116,7 @@ export function SessionDetailPage() {
 
   if (isError || !detail) {
     return (
-      <PageShell title="Session" question="Replay, inspect, and understand what happened.">
+      <PageShell title="Session" question="Replay the run, inspect every span, and localize where behavior changed.">
         <div className="card p-6 text-cinnabar">Session not found.</div>
       </PageShell>
     );
@@ -138,7 +138,7 @@ export function SessionDetailPage() {
   };
 
   return (
-    <PageShell title={trace.title ?? "Session"} question="Replay, inspect, and understand what happened.">
+    <PageShell title={trace.title ?? "Session"} question="Replay the run, inspect every span, and localize where behavior changed.">
       <div className="mb-4">
         <Link to="/sessions" className="font-mono text-xs text-copper hover:underline">
           ← Sessions

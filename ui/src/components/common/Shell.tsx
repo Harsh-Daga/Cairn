@@ -5,6 +5,7 @@ import { CommandPalette } from "./CommandPalette";
 import { KeyboardOverlay } from "./KeyboardOverlay";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 import { isStaticMode } from "@/lib/api";
+import { MobileDock } from "./MobileDock";
 
 interface ShellProps {
   children: ReactNode;
@@ -24,8 +25,9 @@ export function Shell({ children }: ShellProps) {
             Read-only static snapshot: actions and live ingest are disabled.
           </div>
         ) : null}
-        <main className="flex-1 overflow-y-auto p-6 page-enter">{children}</main>
+        <main className="workspace-main flex-1 overflow-y-auto p-6 page-enter">{children}</main>
       </div>
+      <MobileDock />
       <CommandPalette />
       <KeyboardOverlay />
     </div>

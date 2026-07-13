@@ -5,8 +5,8 @@ All notable changes to **cairn-workspace** follow [Semantic Versioning](https://
 ## [1.0.1] — 2026-07-13
 
 ### Changed
-- Rebuilt the dashboard visual system around a clearer signal hierarchy, tactile dithered chart surfaces, richer metric cards, and refined navigation.
-- Added interactive point inspection to the daily spend chart and clearer, information-rich dashboard framing.
+- Rebuilt the dashboard visual system around Manrope Variable typography, high-contrast violet and mint signals, denser cards, responsive navigation, and modern page-level copy.
+- Added interactive point inspection, responsive gradient and dither chart surfaces, inline values, token allocation, cost-per-session, waste-rate, priority, and tail-risk views.
 - Added `cairn upgrade` and Settings guidance for a one-command local update path.
 
 ## [1.0.0] — 2026-07-13

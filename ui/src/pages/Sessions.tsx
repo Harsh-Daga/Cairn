@@ -125,7 +125,7 @@ export function SessionsPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Sessions" question="Find the session that matters.">
+      <PageShell title="Sessions" question="Filter, compare, and investigate the runs behind your workspace signals.">
         <div className="card h-48 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -133,14 +133,14 @@ export function SessionsPage() {
 
   if (isError) {
     return (
-      <PageShell title="Sessions" question="Find the session that matters.">
+      <PageShell title="Sessions" question="Filter, compare, and investigate the runs behind your workspace signals.">
         <div className="card p-6 text-cinnabar">Failed to load sessions.</div>
       </PageShell>
     );
   }
 
   return (
-    <PageShell title="Sessions" question="Find the session that matters.">
+    <PageShell title="Sessions" question="Filter, compare, and investigate the runs behind your workspace signals.">
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {views.map((view) => (
           <div key={view.id} className="flex items-center gap-1">

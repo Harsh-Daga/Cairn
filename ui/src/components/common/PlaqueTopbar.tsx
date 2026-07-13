@@ -62,10 +62,10 @@ export function PlaqueTopbar() {
     : `${traceCount} sessions · surveyed just now`;
 
   return (
-    <header className="flex h-[60px] shrink-0 items-center gap-4 border-b border-t border-quartz-vein/80 bg-shale/90 px-6 backdrop-blur-xl">
-      <div className="flex min-w-0 items-baseline gap-3">
+    <header className="plaque-topbar flex h-[60px] shrink-0 items-center gap-4 border-b border-t border-quartz-vein/80 bg-shale/90 px-6 backdrop-blur-xl">
+      <div className="plaque-workspace flex min-w-0 items-baseline gap-3">
         <span className="display text-[15px] text-bone">{workspace?.name ?? "workspace"}</span>
-        <span className="mono text-[11px] text-cinder">{meta}</span>
+        <span className="plaque-meta mono text-[11px] text-cinder">{meta}</span>
         {watchEnabled ? (
           <span
             className={`inline-flex items-center gap-1.5 font-mono text-[10px] ${
@@ -87,7 +87,7 @@ export function PlaqueTopbar() {
 
       <div className="ml-auto flex items-center gap-2.5">
         <div
-          className="flex rounded-sm border border-quartz-vein bg-slate p-0.5"
+          className="plaque-ranges flex rounded-sm border border-quartz-vein bg-slate p-0.5"
           role="group"
           aria-label="Time range"
         >
@@ -111,7 +111,7 @@ export function PlaqueTopbar() {
           <button
             type="button"
             onClick={() => setWatch(!watchEnabled)}
-            className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`plaque-watch rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors ${
               watchEnabled
                 ? "border-copper bg-copper/10 text-copper"
                 : "border-quartz-vein text-cinder hover:text-bone"
@@ -137,7 +137,7 @@ export function PlaqueTopbar() {
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-cinder hover:text-bone"
+          className="plaque-command rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-cinder hover:text-bone"
           aria-label="Open command palette"
         >
           <Command className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />K

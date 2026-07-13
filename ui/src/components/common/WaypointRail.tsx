@@ -106,7 +106,7 @@ export function WaypointRail() {
 
   return (
     <aside
-      className={`flex flex-col border-r border-quartz-vein/80 bg-slate/95 shadow-[12px_0_36px_rgba(0,0,0,0.12)] transition-all duration-200 ${
+      className={`waypoint-rail flex flex-col border-r border-quartz-vein/80 bg-slate/95 shadow-[12px_0_36px_rgba(0,0,0,0.12)] transition-all duration-200 ${
         collapsed ? "w-[72px]" : "w-[240px]"
       }`}
       aria-label="Main navigation"
@@ -119,8 +119,8 @@ export function WaypointRail() {
         <CairnGlyph />
         {!collapsed && (
           <div>
-            <div className="display text-base tracking-widest text-bone">CAIRN</div>
-            <div className="mono text-[10px] text-cinder">field notebook</div>
+            <div className="display text-[15px] font-bold tracking-[0.18em] text-bone">CAIRN</div>
+            <div className="mono mt-0.5 text-[9px] text-ash">agent intelligence</div>
           </div>
         )}
       </div>

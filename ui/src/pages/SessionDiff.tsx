@@ -22,7 +22,7 @@ export function SessionDiffPage() {
 
   if (!traceIdA || !traceIdB) {
     return (
-      <PageShell title="Session diff" question="Compare two sessions turn by turn.">
+      <PageShell title="Session diff" question="Compare two runs turn by turn to explain changes in cost, waste, and quality.">
         <div className="card p-6 text-cinnabar">Select two sessions first from the Sessions page.</div>
       </PageShell>
     );
@@ -30,7 +30,7 @@ export function SessionDiffPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Session diff" question="Compare two sessions turn by turn.">
+      <PageShell title="Session diff" question="Compare two runs turn by turn to explain changes in cost, waste, and quality.">
         <div className="card h-64 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -38,14 +38,14 @@ export function SessionDiffPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Session diff" question="Compare two sessions turn by turn.">
+      <PageShell title="Session diff" question="Compare two runs turn by turn to explain changes in cost, waste, and quality.">
         <div className="card p-6 text-cinnabar">Failed to load diff payload.</div>
       </PageShell>
     );
   }
 
   return (
-    <PageShell title="Session diff" question="Compare two sessions turn by turn.">
+    <PageShell title="Session diff" question="Compare two runs turn by turn to explain changes in cost, waste, and quality.">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Link to="/sessions" className="font-mono text-xs text-copper hover:underline">
           ← Sessions

@@ -43,7 +43,7 @@ export function ChartFrame({ title, subtitle, children, action }: ChartFrameProp
     <section className="card overflow-hidden">
       <div className="flex items-start justify-between gap-4 border-b border-quartz-vein/80 px-5 py-4">
         <div>
-          <h3 className="font-display text-base font-medium text-bone">{title}</h3>
+          <h3 className="font-display text-[15px] font-semibold tracking-[-0.025em] text-bone">{title}</h3>
           {subtitle ? <p className="mt-1 font-mono text-[10px] text-cinder">{subtitle}</p> : null}
         </div>
         {action}

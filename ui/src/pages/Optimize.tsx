@@ -145,7 +145,7 @@ export function OptimizePage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+      <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -153,7 +153,7 @@ export function OptimizePage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+      <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
         <ErrorCard />
       </PageShell>
     );
@@ -169,7 +169,7 @@ export function OptimizePage() {
 
   if (data.experiments.length === 0) {
     return (
-      <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+      <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
         <EmptyCard
           title="No proposals yet"
           detail="Cairn needs about a week of sessions to find leverage. Run sync and check Insights first."
@@ -188,7 +188,7 @@ export function OptimizePage() {
   }
 
   return (
-    <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+    <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
       <div className="space-y-6">
         <div className="card p-4">
           <div className="flex flex-wrap items-center gap-2">

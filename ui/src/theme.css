@@ -1,9 +1,4 @@
-@import "@fontsource/fraunces/400.css";
-@import "@fontsource/fraunces/500.css";
-@import "@fontsource/space-grotesk/400.css";
-@import "@fontsource/space-grotesk/500.css";
-@import "@fontsource/space-grotesk/600.css";
-@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource-variable/manrope";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 
@@ -11,35 +6,36 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Cairn 1.0.1 — signal field: calm data, tactile surfaces. */
+/* Cairn 1.0.1 — modern signal workspace. */
 :root {
-  --anthracite: #101319;
-  --slate: #171c24;
-  --shale: #202733;
-  --granite: #2a3442;
-  --quartz-vein: #3b485a;
-  --bone: #f2efe8;
-  --cinder: #a3adba;
-  --ash: #687586;
-  --copper: #f0a35c;
-  --copper-dim: #a96732;
-  --patina: #77c5d4;
-  --malachite: #8bce83;
-  --ochre: #f1bc57;
-  --cinnabar: #ed7777;
-  --lapis: #a5a8ff;
-  --signal: #86a8ff;
+  color-scheme: dark;
+  --anthracite: #090b10;
+  --slate: #0f1219;
+  --shale: #151923;
+  --granite: #1c2230;
+  --quartz-vein: #2a3242;
+  --bone: #f7f8fa;
+  --cinder: #98a2b3;
+  --ash: #596273;
+  --copper: #8b7cff;
+  --copper-dim: #5b4fc7;
+  --patina: #4de2c5;
+  --malachite: #7be495;
+  --ochre: #f2c94c;
+  --cinnabar: #ff6b7a;
+  --lapis: #60a5fa;
+  --signal: #8b7cff;
 
-  --font-display: "Fraunces", Georgia, serif;
-  --font-ui: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Manrope Variable", "Manrope", system-ui, sans-serif;
+  --font-ui: "Manrope Variable", "Manrope", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --shadow-stone: 0 1px 2px rgba(0, 0, 0, 0.26), 0 14px 36px rgba(0, 0, 0, 0.22);
-  --shadow-lift: 0 18px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.025) inset;
-  --r-chip: 4px;
-  --r-sm: 8px;
-  --r-card: 12px;
-  --r-modal: 16px;
+  --shadow-stone: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 32px rgba(0, 0, 0, 0.16);
+  --shadow-lift: 0 20px 55px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(139, 124, 255, 0.12);
+  --r-chip: 6px;
+  --r-sm: 9px;
+  --r-card: 14px;
+  --r-modal: 18px;
   --rail-w: 240px;
   --rail-collapsed: 72px;
 
@@ -53,8 +49,7 @@
   --s-error: var(--cinnabar);
   --s-good: var(--malachite);
 
-  /* Contour field — tileable isobaths @ 5.5% opacity */
-  --contour: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'><g fill='none' stroke='%23D08C4F' stroke-width='1' opacity='0.055'><path d='M-20 60 Q 90 10 210 70 T 440 60'/><path d='M-20 130 Q 110 80 210 140 T 440 130'/><path d='M-20 200 Q 80 150 210 210 T 440 200'/><path d='M-20 270 Q 120 220 210 280 T 440 270'/><path d='M-20 340 Q 90 290 210 350 T 440 340'/><path d='M60 -20 Q 110 90 70 210 T 60 440'/><path d='M150 -20 Q 200 90 160 210 T 150 440'/><path d='M250 -20 Q 300 90 260 210 T 250 440'/><path d='M340 -20 Q 390 90 350 210 T 340 440'/></g></svg>");
+  --grid-field: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><path d='M32 0H0V32' fill='none' stroke='%232A3242' stroke-width='1' opacity='.2'/></svg>");
 }
 
 * {
@@ -70,23 +65,24 @@ body,
 
 body {
   background-color: var(--anthracite);
-  background-image: radial-gradient(circle at 82% -10%, rgba(119, 197, 212, 0.12), transparent 31rem), radial-gradient(circle at 3% 3%, rgba(240, 163, 92, 0.1), transparent 26rem), var(--contour);
+  background-image: radial-gradient(circle at 70% -15%, rgba(139, 124, 255, 0.13), transparent 34rem), radial-gradient(circle at 10% 0%, rgba(77, 226, 197, 0.06), transparent 25rem), var(--grid-field);
   background-attachment: fixed;
   background-repeat: repeat;
   color: var(--bone);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.55;
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: rgba(208, 140, 79, 0.32);
+  background: rgba(139, 124, 255, 0.34);
   color: var(--bone);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(208, 140, 79, 0.6);
+  outline: 2px solid rgba(139, 124, 255, 0.8);
   outline-offset: 2px;
   border-radius: var(--r-chip);
 }
@@ -180,10 +176,10 @@ body.ready .cairn-glyph .stone.top {
 
 @keyframes pulse-once {
   0% {
-    box-shadow: 0 0 0 0 rgba(208, 140, 79, 0.5);
+    box-shadow: 0 0 0 0 rgba(139, 124, 255, 0.5);
   }
   100% {
-    box-shadow: 0 0 0 8px rgba(208, 140, 79, 0);
+    box-shadow: 0 0 0 8px rgba(139, 124, 255, 0);
   }
 }
 
@@ -236,11 +232,12 @@ body.ready .cairn-glyph .stone.top {
 
 .display {
   font-family: var(--font-display);
+  letter-spacing: -0.025em;
 }
 
 .card {
-  background: linear-gradient(145deg, rgba(38, 47, 60, 0.94), rgba(28, 35, 45, 0.96));
-  border: 1px solid color-mix(in srgb, var(--quartz-vein) 88%, white);
+  background: linear-gradient(180deg, rgba(22, 27, 38, 0.97), rgba(15, 18, 25, 0.98));
+  border: 1px solid rgba(152, 162, 179, 0.14);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-stone);
 }
@@ -250,7 +247,7 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .card--interactive:hover {
-  border-color: color-mix(in srgb, var(--copper) 58%, var(--quartz-vein));
+  border-color: rgba(139, 124, 255, 0.46);
   box-shadow: var(--shadow-lift);
   transform: translateY(-2px);
 }
@@ -260,16 +257,16 @@ body.ready .cairn-glyph .stone.top {
   align-items: end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
 }
 
 .page-kicker {
   margin: 0 0 7px;
-  color: var(--copper);
+  color: var(--patina);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -279,23 +276,26 @@ body.ready .cairn-glyph .stone.top {
 
 .page-title {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(28px, 2.8vw, 38px);
-  letter-spacing: -0.035em;
+  font-weight: 720;
+  font-size: clamp(27px, 2.5vw, 34px);
+  letter-spacing: -0.045em;
   color: var(--bone);
   margin: 0 0 8px;
 }
 
 .page-question {
-  font-size: 15px;
+  font-size: 13px;
   color: var(--cinder);
   margin: 0 0 24px;
 }
 
 .page-status {
-  border: 1px solid rgba(119, 197, 212, 0.25);
+  align-items: center;
+  background: rgba(77, 226, 197, 0.06);
+  border: 1px solid rgba(77, 226, 197, 0.18);
   border-radius: 999px;
-  color: var(--patina);
+  color: color-mix(in srgb, var(--patina) 80%, white);
+  display: inline-flex;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.04em;
@@ -304,13 +304,13 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .metric-card {
-  min-height: 138px;
+  min-height: 156px;
   overflow: hidden;
   position: relative;
 }
 
 .metric-card::after {
-  background-image: radial-gradient(rgba(240, 163, 92, 0.28) 0.7px, transparent 0.8px);
+  background-image: radial-gradient(rgba(139, 124, 255, 0.32) 0.7px, transparent 0.8px);
   background-size: 5px 5px;
   content: "";
   inset: auto -18px -24px auto;
@@ -323,7 +323,29 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .chart-surface {
-  background: linear-gradient(180deg, rgba(16, 19, 25, 0.18), transparent);
+  background: radial-gradient(circle at 50% 0%, rgba(139, 124, 255, 0.055), transparent 48%), linear-gradient(180deg, rgba(9, 11, 16, 0.16), transparent);
+}
+
+.signal-panel {
+  background: linear-gradient(120deg, rgba(139, 124, 255, 0.12), rgba(77, 226, 197, 0.035) 52%, transparent), var(--slate);
+  border: 1px solid rgba(139, 124, 255, 0.24);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-stone);
+}
+
+.signal-orb {
+  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.28), transparent 12%), radial-gradient(circle, rgba(139,124,255,.38), rgba(139,124,255,.06) 58%, transparent 70%);
+  filter: drop-shadow(0 0 34px rgba(139, 124, 255, 0.2));
+}
+
+.skeleton {
+  background: linear-gradient(100deg, var(--shale) 30%, var(--granite) 45%, var(--shale) 60%);
+  background-size: 220% 100%;
+  animation: skeleton-shift 1.3s ease-in-out infinite;
+}
+
+@keyframes skeleton-shift {
+  to { background-position-x: -220%; }
 }
 
 .chart-entrance {
@@ -358,4 +380,81 @@ body.ready .cairn-glyph .stone.top {
 @media (max-width: 700px) {
   .page-header { align-items: start; flex-direction: column; gap: 10px; }
   .page-status { display: none; }
+}
+
+.mobile-dock {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .waypoint-rail {
+    display: none;
+  }
+
+  .workspace-main {
+    padding: 18px 16px 88px;
+  }
+
+  .plaque-topbar {
+    gap: 8px;
+    padding-inline: 14px;
+  }
+
+  .plaque-meta,
+  .plaque-watch {
+    display: none;
+  }
+
+  .mobile-dock {
+    align-items: center;
+    background: rgba(15, 18, 25, 0.92);
+    border: 1px solid rgba(152, 162, 179, 0.16);
+    border-radius: 16px;
+    bottom: 10px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    left: 10px;
+    padding: 6px;
+    position: fixed;
+    right: 10px;
+    z-index: 90;
+    backdrop-filter: blur(18px);
+  }
+
+  .mobile-dock__item {
+    align-items: center;
+    border-radius: 10px;
+    color: var(--ash);
+    display: flex;
+    flex-direction: column;
+    font-size: 9px;
+    font-weight: 600;
+    gap: 3px;
+    justify-content: center;
+    min-height: 46px;
+  }
+
+  .mobile-dock__item.is-active {
+    background: rgba(139, 124, 255, 0.12);
+    color: var(--bone);
+  }
+}
+
+@media (max-width: 640px) {
+  .plaque-ranges {
+    display: none;
+  }
+
+  .plaque-topbar {
+    height: 54px;
+  }
+
+  .plaque-workspace {
+    flex: 1;
+  }
+
+  .page-title {
+    font-size: 27px;
+  }
 }

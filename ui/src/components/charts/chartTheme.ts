@@ -17,7 +17,7 @@ export function seriesColor(index: number): string {
 }
 
 export const chartColors = {
-  axis: "var(--cinder)",
+  axis: "var(--ash)",
   grid: "var(--quartz-vein)",
   fill: "var(--copper)",
   fillWarn: "var(--cinnabar)",
@@ -25,7 +25,7 @@ export const chartColors = {
   stroke: "var(--copper)",
   band: "var(--granite)",
   text: "var(--bone)",
-  muted: "var(--cinder)",
+  muted: "var(--ash)",
 } as const;
 
 export function defaultMargin(top = 8, right = 8, bottom = 24, left = 32) {

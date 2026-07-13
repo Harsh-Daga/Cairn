@@ -13,7 +13,10 @@ export function PageShell({ title, question, children }: PageShellProps) {
           <h1 className="page-title">{title}</h1>
           <p className="page-question">{question}</p>
         </div>
-        <span className="page-status">local-first · private by default</span>
+        <span className="page-status">
+          <span className="mr-2 h-1.5 w-1.5 rounded-full bg-patina" aria-hidden="true" />
+          Data stays on this device
+        </span>
       </header>
       {children ?? (
         <div className="card empty-state">

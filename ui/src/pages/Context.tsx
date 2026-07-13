@@ -37,7 +37,7 @@ export function ContextPage() {
 
   if (regionsQ.isLoading || wasteQ.isLoading) {
     return (
-      <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+      <PageShell title="Context" question="See what filled the context window, what was re-billed, and where to cut waste.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -45,7 +45,7 @@ export function ContextPage() {
 
   if (regionsQ.isError || wasteQ.isError) {
     return (
-      <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+      <PageShell title="Context" question="See what filled the context window, what was re-billed, and where to cut waste.">
         <ErrorCard />
       </PageShell>
     );
@@ -61,7 +61,7 @@ export function ContextPage() {
 
   if (regions.length === 0) {
     return (
-      <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+      <PageShell title="Context" question="See what filled the context window, what was re-billed, and where to cut waste.">
         <EmptyCard
           title="No region data yet"
           detail="Sessions from this source don't expose context internals — check data notes after sync."
@@ -94,7 +94,7 @@ export function ContextPage() {
         }));
 
   return (
-    <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+    <PageShell title="Context" question="See what filled the context window, what was re-billed, and where to cut waste.">
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="card p-4">

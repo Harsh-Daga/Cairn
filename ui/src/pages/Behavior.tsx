@@ -68,7 +68,7 @@ export function BehaviorPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Behavior" question="Has my agent changed?">
+      <PageShell title="Behavior" question="Detect drift, compare behavioral fingerprints, and identify what moved.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -76,7 +76,7 @@ export function BehaviorPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Behavior" question="Has my agent changed?">
+      <PageShell title="Behavior" question="Detect drift, compare behavioral fingerprints, and identify what moved.">
         <ErrorCard />
       </PageShell>
     );
@@ -87,7 +87,7 @@ export function BehaviorPage() {
 
   if (sessionCount < 10) {
     return (
-      <PageShell title="Behavior" question="Has my agent changed?">
+      <PageShell title="Behavior" question="Detect drift, compare behavioral fingerprints, and identify what moved.">
         <EmptyCard
           title="Fingerprinting needs ~10 sessions"
           detail={`Have ${sessionCount} fingerprinted sessions in this window.`}
@@ -104,7 +104,7 @@ export function BehaviorPage() {
   const radarPoints = data.radar ? radarFromBaseline(data.radar) : [];
 
   return (
-    <PageShell title="Behavior" question="Has my agent changed?">
+    <PageShell title="Behavior" question="Detect drift, compare behavioral fingerprints, and identify what moved.">
       <div className="space-y-6">
         <div className={`card p-4 ${drifting ? "border-l-2 border-cinnabar" : ""}`}>
           <p className="display text-lg text-bone">

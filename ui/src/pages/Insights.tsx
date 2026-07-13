@@ -69,7 +69,7 @@ export function InsightsPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Insights" question="What should I fix, and is it worth it?">
+      <PageShell title="Insights" question="Prioritize evidence-backed improvements by severity, impact, and confidence.">
         <div className="card h-48 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -77,14 +77,14 @@ export function InsightsPage() {
 
   if (isError) {
     return (
-      <PageShell title="Insights" question="What should I fix, and is it worth it?">
+      <PageShell title="Insights" question="Prioritize evidence-backed improvements by severity, impact, and confidence.">
         <div className="card p-6 text-cinnabar">Failed to load insights.</div>
       </PageShell>
     );
   }
 
   return (
-    <PageShell title="Insights" question="What should I fix, and is it worth it?">
+    <PageShell title="Insights" question="Prioritize evidence-backed improvements by severity, impact, and confidence.">
       {insights.length === 0 ? (
         <div className="card empty-state">
           <h2>No insights yet</h2>

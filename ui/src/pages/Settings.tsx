@@ -21,7 +21,7 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Settings" question="See what Cairn sees; change what it does.">
+      <PageShell title="Settings" question="Manage workspace sources, local data, integrations, and maintenance.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -29,7 +29,7 @@ export function SettingsPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Settings" question="See what Cairn sees; change what it does.">
+      <PageShell title="Settings" question="Manage workspace sources, local data, integrations, and maintenance.">
         <ErrorCard />
       </PageShell>
     );
@@ -39,7 +39,7 @@ export function SettingsPage() {
   const insightCount = Number(data.health.insight_count ?? 0);
 
   return (
-    <PageShell title="Settings" question="See what Cairn sees; change what it does.">
+    <PageShell title="Settings" question="Manage workspace sources, local data, integrations, and maintenance.">
       <div className="mx-auto max-w-2xl space-y-6">
         <section className="card p-4">
           <h2 className="font-display text-sm text-bone">Workspace</h2>
