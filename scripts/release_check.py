@@ -10,10 +10,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 README = ROOT / "README.md"
 PYPROJECT = ROOT / "pyproject.toml"
 SERVER_INIT = ROOT / "server" / "__init__.py"
+GITHUB_DIR = ROOT / ".github"
 
 VERSION_RE = re.compile(r'^version\s*=\s*"([^"]+)"\s*$')
 SERVER_VERSION_RE = re.compile(r'^__version__\s*=\s*"([^"]+)"\s*$')
@@ -77,6 +80,18 @@ def check_readme_links() -> None:
     print("readme links ok")
 
 
+def check_github_yaml() -> None:
+    """Ensure workflow and issue-template YAML can be loaded by GitHub."""
+    paths = sorted([*GITHUB_DIR.rglob("*.yml"), *GITHUB_DIR.rglob("*.yaml")])
+    for path in paths:
+        try:
+            yaml.safe_load(_read_text(path))
+        except yaml.YAMLError as exc:
+            relative = path.relative_to(ROOT)
+            raise ValueError(f"invalid GitHub YAML: {relative}: {exc}") from exc
+    print(f"github yaml ok: {len(paths)} file(s)")
+
+
 def _run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None) -> None:
     proc = subprocess.run(
         cmd,
@@ -123,6 +138,7 @@ def main() -> int:
     check_version_sync()
     check_readme_assets()
     check_readme_links()
+    check_github_yaml()
     check_doctor_on_wheel()
     print("release_check passed")
     return 0

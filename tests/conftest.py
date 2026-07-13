@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for v4 scaffold tests."""
+"""Shared pytest fixtures for integration and API tests."""
 
 from __future__ import annotations
 

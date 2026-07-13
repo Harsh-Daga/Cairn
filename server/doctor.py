@@ -74,7 +74,7 @@ def _check_legacy_shim() -> CheckResult:
         return CheckResult(
             "CLI entrypoint",
             False,
-            f"legacy v3 shim at {cairn}",
+            f"legacy CLI shim at {cairn}",
             "Reinstall: uv tool install --force cairn-workspace  (or use: uv run cairn …)",
         )
     return CheckResult("CLI entrypoint", True, cairn, None)
