@@ -140,10 +140,14 @@ def _check_mcp_config() -> CheckResult:
             continue
         if "cairn" in text.lower():
             found.append(str(path))
-    ok = bool(found)
-    detail = ", ".join(found) if found else "no cairn MCP entry found"
-    fix = "Run: cairn mcp install" if not ok else None
-    return CheckResult("MCP config", ok, detail, fix)
+    if found:
+        return CheckResult("MCP config", True, ", ".join(found), None)
+    return CheckResult(
+        "MCP config",
+        True,
+        "not configured (optional; run: cairn mcp install)",
+        None,
+    )
 
 
 def run_doctor(*, workspace: Path | None = None, port: int = 8787) -> list[CheckResult]:
