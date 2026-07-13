@@ -17,7 +17,7 @@ def _make_fake_static_dir(path: Path) -> None:
     (path / "assets" / "main.js").write_text("console.log('demo');\n", encoding="utf-8")
     (path / "index.html").write_text(
         (
-            "<!doctype html><html><head><meta charset='utf-8'></head>"
+            "<!doctype html><html><head><script src='/assets/main.js'></script></head>"
             "<body><div id='root'></div></body></html>\n"
         ),
         encoding="utf-8",
@@ -38,6 +38,8 @@ def test_export_static_snapshot_writes_payloads(tmp_path: Path, monkeypatch) -> 
 
     index_html = (out_dir / "index.html").read_text(encoding="utf-8")
     assert "window.__CAIRN_STATIC__=true;" in index_html
+    assert "./assets/main.js" in index_html
+    assert 'src="/assets/' not in index_html
     assert (out_dir / "assets" / "main.js").is_file()
     assert (out_dir / "api" / "overview__days=30.json").is_file()
     assert (out_dir / "api" / "traces__days=30__limit=100__offset=0.json").is_file()

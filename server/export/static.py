@@ -70,13 +70,17 @@ def _write_payload(
 def _inject_static_flag(index_path: Path) -> None:
     html = index_path.read_text(encoding="utf-8")
     marker = "window.__CAIRN_STATIC__=true;"
-    if marker in html:
-        return
-    script = "<script>window.__CAIRN_STATIC__=true;</script>"
-    if "<head>" in html:
-        html = html.replace("<head>", f"<head>\n  {script}", 1)
-    else:
-        html = f"{script}\n{html}"
+    if marker not in html:
+        script = "<script>window.__CAIRN_STATIC__=true;</script>"
+        if "<head>" in html:
+            html = html.replace("<head>", f"<head>\n  {script}", 1)
+        else:
+            html = f"{script}\n{html}"
+    # Vite's production build uses root-relative asset URLs for the local
+    # server. A Pages project site is hosted below /Cairn/, so those URLs must
+    # be relative to the exported index instead.
+    html = html.replace('="/assets/', '="./assets/')
+    html = html.replace("='/assets/", "='./assets/")
     index_path.write_text(html, encoding="utf-8")
 
 

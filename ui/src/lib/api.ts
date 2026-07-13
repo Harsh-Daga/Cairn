@@ -21,6 +21,7 @@ import type {
 } from "./types";
 
 const API_BASE = "/api";
+const STATIC_API_BASE = "./api";
 const STATIC_SLUG_RE = /[^A-Za-z0-9._-]+/g;
 
 declare global {
@@ -47,7 +48,7 @@ function staticQuerySuffix(rawQuery: string): string {
 function staticJsonPath(path: string): string {
   const [rawPath, rawQuery = ""] = path.split("?");
   const rel = (rawPath ?? "").replace(/^\/+/, "") || "root";
-  return `${API_BASE}/${rel}${staticQuerySuffix(rawQuery)}.json`;
+  return `${STATIC_API_BASE}/${rel}${staticQuerySuffix(rawQuery)}.json`;
 }
 
 export function isStaticMode(): boolean {
