@@ -1,0 +1,21 @@
+.github/workflows/demo-pages.yml
+  s_7d77ecaccb5763::t_b58f2f596b2054 4-6
+CHANGELOG.md
+  s_7d77ecaccb5763::t_b58f2f596b2054 3,5,18-20,25-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "5f1089a947b44777ed991cf6baa900771f9c8f73",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
