@@ -1,0 +1,40 @@
+docs/getting-started.md
+  s_6dffa805dc7e47::t_176b3fb7f65c70 42-45
+README.md
+  s_6dffa805dc7e47::t_176b3fb7f65c70 139-141
+server/api/action_handlers.py
+  s_6dffa805dc7e47::t_3ab5e54c20c0bb 102,106,114-119
+tests/test_pipeline.py
+  s_6dffa805dc7e47::t_144b5d5810bfbd 131,136,141
+  s_6dffa805dc7e47::t_98c0f17b0e1dbe 16,123-130,132-135,137-140,142-171
+server/ingest/pipeline.py
+  s_6dffa805dc7e47::t_48384529f33ca0 119
+  s_6dffa805dc7e47::t_fec310f100944b 5
+  s_6dffa805dc7e47::t_144b5d5810bfbd 28,107-115
+  s_6dffa805dc7e47::t_3ab5e54c20c0bb 37,64,106,117,121-124,126,134,167-172
+CHANGELOG.md
+  s_6dffa805dc7e47::t_b489fcee8be3e0 12-16
+server/ingest/writer.py
+  s_6dffa805dc7e47::t_3ab5e54c20c0bb 37,53,55-56,60
+tests/test_ingest_claude.py
+  s_6dffa805dc7e47::t_176b3fb7f65c70 5,120-153
+  s_6dffa805dc7e47::t_b6ce5731db650c 154-155
+ui/src/components/common/PlaqueTopbar.tsx
+  s_6dffa805dc7e47::t_3ab5e54c20c0bb 35-42,45-47,49-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "117fb228b5ee9c98edc9df5d6354abf2e4fd8be7",
+  "prompts": {},
+  "sessions": {
+    "s_6dffa805dc7e47": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5c18-4c3a-77e2-b2a8-9fe7efff4b69",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
