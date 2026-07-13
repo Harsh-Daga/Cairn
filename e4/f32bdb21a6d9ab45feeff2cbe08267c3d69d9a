@@ -1,0 +1,80 @@
+ui/src/components/charts/chartTheme.ts
+  s_6dffa805dc7e47::t_408139b3e18a50 20,28
+ui/src/components/common/WaypointRail.tsx
+  s_6dffa805dc7e47::t_5ed1dd3ed0e0a0 109
+  s_6dffa805dc7e47::t_041451cef90dbd 122-123
+ui/src/components/charts/StackedArea.tsx
+  s_6dffa805dc7e47::t_408139b3e18a50 1,7,27,53,55-57,59,61,63-64,73-75,78-81,92,94-105,107-112,114,118-119
+ui/src/pages/Behavior.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 71,79,90,107
+ui/src/pages/SessionDiff.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 25,33,41,48
+ui/src/pages/Sessions.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 128,136,143
+ui/src/pages/Context.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 40,48,64,97
+ui/package.json
+  s_6dffa805dc7e47::t_9f413e80e00392 16
+ui/src/theme.css
+  s_6dffa805dc7e47::t_9fb7c3729fdfa8 1,9,11-30,33-38,52,68,73,75,80,85,235,239-240,250,260,265,269,279-281,287,293-295,297-298,307,313,326-348
+  s_6dffa805dc7e47::t_041451cef90dbd 179,182
+  s_6dffa805dc7e47::t_5ed1dd3ed0e0a0 384-460
+ui/tailwind.config.ts
+  s_6dffa805dc7e47::t_9fb7c3729fdfa8 7-8,21-35
+ui/src/components/common/Chip.tsx
+  s_6dffa805dc7e47::t_408139b3e18a50 46
+ui/src/pages/Overview.tsx
+  s_6dffa805dc7e47::t_5ed1dd3ed0e0a0 121-123,155,171
+  s_6dffa805dc7e47::t_689a918f2a97c1 65,73
+  s_6dffa805dc7e47::t_6e3be3b8118f3d 2,4-12,111-120,124-128,131-136,138-144,146-154,156-166,169-170,172-173,176-185,187-220,222-227,229-237,239-247,249,252-254,268-269,276-277,279-284,286-292,294-295,301-308
+  s_6dffa805dc7e47::t_1480e0ac49fe86 309-311
+ui/src/pages/SessionDetail.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 111,119,141
+ui/src/components/common/MobileDock.tsx
+  s_6dffa805dc7e47::t_5ed1dd3ed0e0a0 1-2,4,6-10,12-29
+  s_6dffa805dc7e47::t_d9e95a8af753ce 3,5,11
+ui/src/components/common/PlaqueTopbar.tsx
+  s_6dffa805dc7e47::t_5ed1dd3ed0e0a0 65-66,68,90,114,140
+ui/src/components/common/PageShell.tsx
+  s_6dffa805dc7e47::t_041451cef90dbd 16-19
+ui/src/pages/Agents.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 22,30,41,51
+ui/src/pages/Search.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 52
+ui/src/pages/Settings.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 24,32,42
+ui/src/components/charts/Sparkline.tsx
+  s_6dffa805dc7e47::t_408139b3e18a50 1,5,24,51-65,72-74
+ui/src/components/charts/HorizontalBars.tsx
+  s_6dffa805dc7e47::t_408139b3e18a50 28,41-55,61-67,71-73,78-79
+ui/src/components/common/Shell.tsx
+  s_6dffa805dc7e47::t_5ed1dd3ed0e0a0 8,28,30
+ui/src/pages/Optimize.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 148,156,172,191
+ui/src/pages/Live.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 55,65
+ui/src/pages/Insights.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 72,80,87
+ui/src/pages/Quality.tsx
+  s_6dffa805dc7e47::t_689a918f2a97c1 33,41,49,95
+CHANGELOG.md
+  s_6dffa805dc7e47::t_eeb80836ae6dd7 8-9
+ui/package-lock.json
+  s_6dffa805dc7e47::t_471a89c827e6f5 11,933-936
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "e4f32bdb21a6d9ab45feeff2cbe08267c3d69d9a",
+  "prompts": {},
+  "sessions": {
+    "s_6dffa805dc7e47": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5c18-4c3a-77e2-b2a8-9fe7efff4b69",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
