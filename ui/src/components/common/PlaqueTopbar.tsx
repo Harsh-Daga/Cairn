@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUiStore } from "@/state/ui";
 import { useToastStore } from "@/state/toast";
-import { fetchWorkspace, runAction } from "@/lib/api";
+import { fetchWorkspace, isStaticMode, runAction } from "@/lib/api";
 import { formatRelative } from "@/lib/format";
 import { connectLiveEvents } from "@/lib/sse";
 
@@ -18,6 +18,7 @@ export function PlaqueTopbar() {
   const showToast = useToastStore((s) => s.show);
   const [ssePulse, setSsePulse] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const staticMode = isStaticMode();
 
   const { data: workspace } = useQuery({
     queryKey: ["workspace"],
@@ -26,7 +27,7 @@ export function PlaqueTopbar() {
   });
 
   useEffect(() => {
-    if (!watchEnabled) {
+    if (!watchEnabled || staticMode) {
       setSsePulse(false);
       return;
     }
@@ -34,7 +35,7 @@ export function PlaqueTopbar() {
       setSsePulse(true);
       window.setTimeout(() => setSsePulse(false), 1200);
     });
-  }, [watchEnabled]);
+  }, [watchEnabled, staticMode]);
 
   const syncMut = useMutation({
     mutationFn: () => runAction("sync"),
@@ -104,27 +105,31 @@ export function PlaqueTopbar() {
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setWatch(!watchEnabled)}
-          className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors ${
-            watchEnabled
-              ? "border-copper bg-copper/10 text-copper"
-              : "border-quartz-vein text-cinder hover:text-bone"
-          }`}
-          aria-pressed={watchEnabled}
-        >
-          Watch
-        </button>
+        {!staticMode ? (
+          <button
+            type="button"
+            onClick={() => setWatch(!watchEnabled)}
+            className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors ${
+              watchEnabled
+                ? "border-copper bg-copper/10 text-copper"
+                : "border-quartz-vein text-cinder hover:text-bone"
+            }`}
+            aria-pressed={watchEnabled}
+          >
+            Watch
+          </button>
+        ) : null}
 
-        <button
-          type="button"
-          disabled={syncing}
-          onClick={() => syncMut.mutate()}
-          className="rounded-sm border border-copper-dim px-3 py-1.5 text-xs font-medium text-copper hover:bg-granite disabled:opacity-50"
-        >
-          {syncing ? "Syncing…" : "Sync now"}
-        </button>
+        {!staticMode ? (
+          <button
+            type="button"
+            disabled={syncing}
+            onClick={() => syncMut.mutate()}
+            className="rounded-sm border border-copper-dim px-3 py-1.5 text-xs font-medium text-copper hover:bg-granite disabled:opacity-50"
+          >
+            {syncing ? "Syncing…" : "Sync now"}
+          </button>
+        ) : null}
 
         <button
           type="button"

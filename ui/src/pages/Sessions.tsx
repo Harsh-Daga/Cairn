@@ -25,6 +25,7 @@ export function SessionsPage() {
   const [activeViewId, setActiveViewId] = useState("default");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [saveName, setSaveName] = useState("");
+  const [compareIds, setCompareIds] = useState<string[]>([]);
 
   const days = Number(params.get("days")) || timeRangeDays(timeRange);
   const q = params.get("q") ?? undefined;
@@ -111,6 +112,17 @@ export function SessionsPage() {
     }
   };
 
+  const toggleCompare = (traceId: string) => {
+    setCompareIds((current) => {
+      if (current.includes(traceId)) return current.filter((id) => id !== traceId);
+      if (current.length >= 2) {
+        const carry = current[1];
+        return carry ? [carry, traceId] : [traceId];
+      }
+      return [...current, traceId];
+    });
+  };
+
   if (isLoading) {
     return (
       <PageShell title="Sessions" question="Find the session that matters.">
@@ -172,6 +184,31 @@ export function SessionsPage() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className={`rounded-chip border px-2 py-1 font-mono text-[10px] ${
+            compareIds.length === 2
+              ? "border-copper text-copper hover:bg-copper/10"
+              : "border-quartz-vein text-cinder"
+          }`}
+          disabled={compareIds.length !== 2}
+          onClick={() => {
+            const [a, b] = compareIds;
+            if (!a || !b) return;
+            navigate(`/sessions/diff?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+          }}
+        >
+          Compare selected ({compareIds.length}/2)
+        </button>
+        {compareIds.length > 0 ? (
+          <button
+            type="button"
+            className="rounded-chip border border-quartz-vein px-2 py-1 font-mono text-[10px] text-cinder hover:text-bone"
+            onClick={() => setCompareIds([])}
+          >
+            Clear selection
+          </button>
+        ) : null}
         <span className="font-mono text-[10px] uppercase tracking-wide text-cinder">Sort</span>
         {(["recent", "waste", "cost"] as const).map((s) => (
           <button
@@ -229,6 +266,7 @@ export function SessionsPage() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-quartz-vein bg-slate font-mono text-[10px] uppercase tracking-wide text-cinder">
               <tr>
+                <th className="px-4 py-3">Compare</th>
                 <th className="px-4 py-3">Session</th>
                 <th className="px-4 py-3">Source</th>
                 <th className="px-4 py-3 text-right">Tokens</th>
@@ -249,6 +287,14 @@ export function SessionsPage() {
                       selected ? "bg-copper/10 ring-1 ring-inset ring-copper/30" : ""
                     }`}
                   >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={compareIds.includes(trace.trace_id)}
+                        onChange={() => toggleCompare(trace.trace_id)}
+                        aria-label={`Select ${trace.trace_id} for compare`}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <Link
                         to={`/sessions/${trace.trace_id}`}

@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/hero.gif" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
+  <img src="docs/assets/hero.svg" width="720" alt="Cairn demo: Overview → session → replay scrub → blame toggle">
 </p>
 
 ---
@@ -49,7 +49,9 @@ curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/insta
 cd your-repo && cairn
 ```
 
-No account, no cloud, no config. `cairn stop` to quit.
+No account, no cloud, no config. `cairn stop` to quit (or `uv run cairn stop` from a dev checkout).
+
+> **Note:** If `cairn stop` fails because an older installation is first on PATH, reinstall with `uv tool install --force cairn-workspace` or use `uv run cairn` from the repository.
 
 ### Or let your agent install it
 
@@ -83,11 +85,7 @@ Full prompt: [AGENT_SETUP.md](AGENT_SETUP.md) · `cairn setup-prompt`
 
 | Overview | Session waterfall + strata | Optimize verdict |
 |----------|---------------------------|------------------|
-| ![Overview](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/overview.png) | ![Session detail](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/session-detail.png) | ![Optimize verdict](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/optimize-verdict.png) |
-
-Live demo (Phase L7): GitHub Pages link coming soon.
-
----
+| ![Overview](docs/assets/overview.svg) | ![Session detail](docs/assets/session-detail.svg) | ![Optimize verdict](docs/assets/optimize-verdict.svg) |
 
 ## Supported agents
 
@@ -104,8 +102,10 @@ Live demo (Phase L7): GitHub Pages link coming soon.
 | Gemini CLI | `gemini_cli` | `~/.gemini/tmp/`, `~/.config/gemini/` |
 | OpenCode | `opencode` | `~/.local/share/opencode/sessions/` |
 | Hermes | `hermes` | `~/.hermes/sessions/*.json` |
+| OpenClaw | `openclaw` | `~/.openclaw/` session logs |
+| Generic JSONL | `agent_jsonl` | Aider, Goose, and OpenCode-compatible JSONL logs |
 
-Adding an adapter is one file + one fixture — see `cairn adapter new` ([adapters.md](docs/adapters.md)) *(scaffold lands in L6)*.
+Adding an adapter is one parser, one fixture, and a conformance test — see `cairn adapter new` and [adapters.md](docs/adapters.md).
 
 ---
 
@@ -170,6 +170,7 @@ Local-first. Loopback-only default (`127.0.0.1`). No telemetry, no accounts, no 
 
 ## Documentation
 
+- [Documentation home](docs/README.md)
 - [Getting started](docs/getting-started.md)
 - [Concepts](docs/concepts.md)
 - [UI tour](docs/ui-tour.md)
@@ -179,13 +180,12 @@ Local-first. Loopback-only default (`127.0.0.1`). No telemetry, no accounts, no 
 - [Optimize loop](docs/optimize.md)
 - [CI gates](docs/ci.md)
 - [Configuration](docs/configuration.md)
-- [Legacy v3](docs/legacy-v3.md)
 - [Accuracy](ACCURACY.md)
 
 ---
 
 ## Contributing · License
 
-Adapter PRs welcome — one parser, one fixture, conformance harness green. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Adapter PRs welcome — one parser, one fixture, conformance harness green. See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SUPPORT.md](SUPPORT.md). If Cairn is useful to you, you can [support its development](https://buymeacoffee.com/harshdaga).
 
 Apache-2.0 — see [LICENSE](LICENSE).

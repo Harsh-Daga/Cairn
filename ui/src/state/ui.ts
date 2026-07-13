@@ -20,7 +20,7 @@ export const useUiStore = create<UiState>()(
     (set) => ({
       railCollapsed: false,
       timeRange: "30d",
-      watchEnabled: false,
+      watchEnabled: true,
       paletteOpen: false,
       shortcutsOpen: false,
       toggleRail: () => set((s) => ({ railCollapsed: !s.railCollapsed })),

@@ -1,6 +1,6 @@
 # UI tour
 
-The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `http://127.0.0.1:8787`. Navigation is in the left **Waypoint rail**; Settings sits at the bottom. Twelve pages map to the routes in `ui/src/router.tsx`.
+The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `http://127.0.0.1:8787`. Navigation is in the left **Waypoint rail**; Settings sits at the bottom. Thirteen pages map to the routes in `ui/src/router.tsx`.
 
 ## 1. Overview (`/`)
 
@@ -19,7 +19,14 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Respects global time range and URL filters (`?days=`, `?source=`, `?q=`).
 - Click a row to open Session detail.
 
-## 3. Session detail (`/sessions/:id`)
+## 3. Session diff (`/sessions/diff`)
+
+**Question:** *How did two sessions differ?*
+
+- Compare two selected sessions side by side from the Sessions page.
+- The command palette also provides a **Session diff** entry.
+
+## 4. Session detail (`/sessions/:id`)
 
 **Question:** *What happened turn by turn?*
 
@@ -28,7 +35,7 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - **Span inspector** — select a span for payload, regions, and waste tags.
 - **Context timeline** — region fill over the session.
 
-## 4. Context (`/context`)
+## 5. Context (`/context`)
 
 **Question:** *Where does every token go, and what's re-billed?*
 
@@ -36,7 +43,7 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Waste analytics with taxonomy chips and links to affected sessions.
 - Data from `/api/analytics/regions` and `/api/analytics/waste`.
 
-## 5. Agents (`/agents`)
+## 6. Agents (`/agents`)
 
 **Question:** *Who's doing what, and how do they handoff?*
 
@@ -44,7 +51,7 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Handoff matrix showing transitions between actors.
 - Links to filtered Sessions per agent.
 
-## 6. Behavior (`/behavior`)
+## 7. Behavior (`/behavior`)
 
 **Question:** *Has my agent changed?*
 
@@ -52,7 +59,7 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Drift alerts when AMDM detects behavioral change.
 - Needs ~10 fingerprinted sessions; empty state explains the threshold.
 
-## 7. Quality (`/quality`)
+## 8. Quality (`/quality`)
 
 **Question:** *Is the work actually good, and what does success cost?*
 
@@ -60,7 +67,7 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Enable outcome capture from Settings or `config_set` when no outcomes exist.
 - Data from `/api/quality`.
 
-## 8. Insights (`/insights`)
+## 9. Insights (`/insights`)
 
 **Question:** *What should I fix?*
 
@@ -69,7 +76,7 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Badge count on the rail for new insights.
 - Evidence chain via `/api/insights/{id}/evidence`.
 
-## 9. Optimize (`/optimize`)
+## 10. Optimize (`/optimize`)
 
 **Question:** *Close the loop: propose → apply → measure → verdict.*
 
@@ -78,15 +85,15 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Copper dot on the rail when proposals are pending.
 - See [Optimize loop](optimize.md).
 
-## 10. Live (`/live`)
+## 11. Live (`/live`)
 
 **Question:** *What's happening right now?*
 
-- SSE stream from `/api/live/events` when **Watch** is on (topbar toggle).
+- SSE stream from `/api/live/events` is enabled by default and can be paused with the **Watch** topbar toggle.
 - Pulsing badge on the rail while watching.
 - Pause, dropped-event counter, links to traces as events arrive.
 
-## 11. Search (`/search`)
+## 12. Search (`/search`)
 
 **Question:** *Find anything across sessions.*
 
@@ -94,7 +101,7 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 - Example chips: `pytest`, `tool:read`, `source:claude_code`, `is:error`.
 - Results grouped by trace with highlighted snippets.
 
-## 12. Settings (`/settings`)
+## 13. Settings (`/settings`)
 
 **Question:** *See what Cairn sees; change what it does.*
 

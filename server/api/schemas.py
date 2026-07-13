@@ -64,6 +64,35 @@ class TracesListResponse(BaseModel):
     offset: int
 
 
+class TraceDiffTurn(BaseModel):
+    index: int
+    op: Literal["match", "insert", "delete"]
+    a: Span | None
+    b: Span | None
+    delta_tokens: int
+    delta_waste_tokens: int
+    delta_quality: float
+
+
+class TraceDiffSummary(BaseModel):
+    cost_a: float
+    cost_b: float
+    delta_cost: float
+    waste_a: int
+    waste_b: int
+    delta_waste_tokens: int
+    quality_a: float
+    quality_b: float
+    delta_quality: float
+
+
+class TraceDiffResponse(BaseModel):
+    a: Trace
+    b: Trace
+    summary: TraceDiffSummary
+    turns: list[TraceDiffTurn]
+
+
 class SpanNode(BaseModel):
     span: Span
     children: list[SpanNode] = Field(default_factory=list)

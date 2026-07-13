@@ -1,14 +1,16 @@
 name: Publish
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
+  contents: read
   id-token: write
 
 jobs:
-  publish:
+  publish-if-unreleased:
     runs-on: ubuntu-latest
     environment: pypi
     steps:
@@ -22,15 +24,35 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Check whether this version is already on PyPI
+        id: release
+        shell: bash
+        run: |
+          set +e
+          python scripts/check_pypi_version.py
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          elif [ "$status" -eq 1 ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            exit "$status"
+          fi
+
       - name: Build UI
+        if: steps.release.outputs.publish == 'true'
         run: python scripts/build_ui.py
 
       - name: Build package
+        if: steps.release.outputs.publish == 'true'
         run: uv build
 
       - name: Verify wheel contains UI
+        if: steps.release.outputs.publish == 'true'
         run: |
           unzip -l dist/*.whl | grep -F 'server/static/index.html'
 
       - name: Publish to PyPI
+        if: steps.release.outputs.publish == 'true'
         run: uv publish

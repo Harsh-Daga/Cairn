@@ -24,6 +24,4 @@ def test_cline_parse_is_deterministic(tmp_path: Path) -> None:
     second = adapter.parse_path(CLINE_TASK)
     assert first is not None and second is not None
     assert first.external_id == second.external_id
-    assert [e.get("event_id") for e in first.events] == [
-        e.get("event_id") for e in second.events
-    ]
+    assert [e.get("event_id") for e in first.events] == [e.get("event_id") for e in second.events]

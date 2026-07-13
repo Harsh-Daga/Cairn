@@ -14,6 +14,7 @@ After sync, the improve engine runs modular detectors (`server/improve/detectors
 | `identical-tool-calls` | Repeated read/search with same args |
 | `oversize-tool-results` | Tool outputs dominating context |
 | `high-file-churn` | Excessive file touches per session |
+| `reread-hotspot` | Repeated reads of unchanged file content (same hash) |
 | `retry-loops-detected` | Blind retry patterns |
 | `cache-misuse` | Prompt caching opportunities missed |
 | `multi-model-cost-spread` | Cost variance across models |
@@ -23,6 +24,10 @@ After sync, the improve engine runs modular detectors (`server/improve/detectors
 | `quality-regression` | Outcome score drops |
 | `unused-tools` | Tool schemas rarely invoked |
 | `subagent-heavy` | High subagent fan-out |
+| `stale-tool-results` | Tool output still in context after last reference |
+| `failing-command` | Same command failing ≥3× |
+| `error-streak` | ≥4 consecutive tool errors |
+| `cost-anomaly` | Session cost > μ+3σ for difficulty bucket |
 
 Insights appear on the **Insights** page and feed the proposal generator.
 
@@ -106,9 +111,9 @@ Without LLM config, Cairn uses templated rewrites from evidence.
 | Revert | `cairn experiments revert ID` | Optimize → Revert |
 | List | `cairn experiments ls` | Optimize board |
 
-## Appendix — statistics formulas (v4)
+## Appendix — statistics formulas
 
-Cairn v4 replaces fixed-*z* sequential tests with **anytime-valid confidence sequences** (CS) on CUPED-adjusted holdout effects.
+Cairn uses **anytime-valid confidence sequences** (CS) on CUPED-adjusted holdout effects instead of fixed-*z* sequential tests.
 
 ### CUPED adjustment
 

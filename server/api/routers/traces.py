@@ -12,9 +12,15 @@ from server.api.payloads import (
     build_replay,
     build_replay_checkpoints,
     build_trace_detail,
+    build_trace_diff,
     build_traces_list,
 )
-from server.api.schemas import ReplayResponse, TraceDetailResponse, TracesListResponse
+from server.api.schemas import (
+    ReplayResponse,
+    TraceDetailResponse,
+    TraceDiffResponse,
+    TracesListResponse,
+)
 
 router = APIRouter(prefix="/traces", tags=["traces"])
 
@@ -44,6 +50,21 @@ def list_traces(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/diff", response_model=TraceDiffResponse)
+def diff_traces(
+    a: str,
+    b: str,
+    runtime: Annotated[AppRuntime, Depends(get_runtime)],
+) -> TraceDiffResponse:
+    payload = build_trace_diff(runtime.database.reader, a, b)
+    if payload is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": {"code": "not_found", "message": "One or both traces not found"}},
+        )
+    return payload
 
 
 @router.get("/{trace_id}", response_model=TraceDetailResponse)

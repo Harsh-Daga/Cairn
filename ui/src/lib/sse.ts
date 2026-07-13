@@ -1,3 +1,5 @@
+import { isStaticMode } from "./api";
+
 export type SseHandler = (event: string, data: Record<string, unknown>) => void;
 
 const LIVE_EVENT_TYPES = [
@@ -9,6 +11,9 @@ const LIVE_EVENT_TYPES = [
 ] as const;
 
 export function connectLiveEvents(onEvent: SseHandler): () => void {
+  if (isStaticMode()) {
+    return () => undefined;
+  }
   const source = new EventSource("/api/live/events");
 
   const dispatch =

@@ -28,11 +28,15 @@ def test_write_cursor_json(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "server.mcp.install.CLIENT_TARGETS",
         {
-            "cursor": type("T", (), {
-                "client": "cursor",
-                "config_path": cfg,
-                "merge_key": "mcpServers",
-            })()
+            "cursor": type(
+                "T",
+                (),
+                {
+                    "client": "cursor",
+                    "config_path": cfg,
+                    "merge_key": "mcpServers",
+                },
+            )()
         },
     )
     result = install_mcp_config(workspace_root=tmp_path, client="cursor", write=True)

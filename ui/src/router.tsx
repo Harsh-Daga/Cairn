@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { OverviewPage } from "./pages/Overview";
 import { SessionsPage } from "./pages/Sessions";
 import { SessionDetailPage } from "./pages/SessionDetail";
+import { SessionDiffPage } from "./pages/SessionDiff";
 import { ContextPage } from "./pages/Context";
 import { AgentsPage } from "./pages/Agents";
 import { BehaviorPage } from "./pages/Behavior";
@@ -17,6 +18,7 @@ export function AppRouter() {
     <Routes>
       <Route path="/" element={<OverviewPage />} />
       <Route path="/sessions" element={<SessionsPage />} />
+      <Route path="/sessions/diff" element={<SessionDiffPage />} />
       <Route path="/sessions/:id" element={<SessionDetailPage />} />
       <Route path="/context" element={<ContextPage />} />
       <Route path="/agents" element={<AgentsPage />} />

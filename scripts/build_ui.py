@@ -152,7 +152,7 @@ def _openapi_to_typescript(openapi: dict[str, Any]) -> str:
             continue
         if schema.get("type") == "string" and "enum" in schema:
             enum_types.append(
-                f'export type {name} = {" | ".join(json.dumps(v) for v in schema["enum"])};'
+                f"export type {name} = {' | '.join(json.dumps(v) for v in schema['enum'])};"
             )
         else:
             interfaces.append(_render_interface(name, schema, schemas))
@@ -207,6 +207,9 @@ def build_ui() -> None:
     """Run vite build."""
     ensure_npm_deps()
     run(["npm", "run", "build"], UI_DIR)
+    # Vite clears its output directory before emitting assets. Keep the tracked
+    # placeholder so a local build does not leave the repository dirty.
+    (STATIC_DIR / ".gitkeep").write_text("\n", encoding="utf-8")
     if not (STATIC_DIR / "index.html").is_file():
         print("ERROR: build did not produce index.html", file=sys.stderr)
         sys.exit(1)

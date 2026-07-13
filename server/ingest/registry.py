@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -25,6 +26,14 @@ ADAPTER_IDS: list[str] = [
 ]
 
 
+def _entry_point_adapters(workspace_root: Path, workspace_id: str) -> list[Adapter]:
+    adapters: list[Adapter] = []
+    for entry in importlib.metadata.entry_points(group="cairn.adapters"):
+        cls = entry.load()
+        adapters.append(cls(workspace_root, workspace_id))
+    return adapters
+
+
 def build_adapters(workspace_root: Path, workspace_id: str) -> list[Adapter]:
     """Instantiate all ingest adapters for a workspace."""
     from server.ingest.adapters.claude_code_adapter import ClaudeCodeAdapter
@@ -40,7 +49,7 @@ def build_adapters(workspace_root: Path, workspace_id: str) -> list[Adapter]:
     from server.ingest.adapters.hermes_adapter import HermesAdapter
     from server.ingest.adapters.openclaw_adapter import OpenClawAdapter
 
-    return [
+    built: list[Adapter] = [
         ClaudeCodeAdapter(workspace_root, workspace_id),
         CodexAdapter(workspace_root, workspace_id),
         CursorAdapter(workspace_root, workspace_id),
@@ -54,3 +63,5 @@ def build_adapters(workspace_root: Path, workspace_id: str) -> list[Adapter]:
         HermesAdapter(workspace_root, workspace_id),
         OpenClawAdapter(workspace_root, workspace_id),
     ]
+    built.extend(_entry_point_adapters(workspace_root, workspace_id))
+    return built

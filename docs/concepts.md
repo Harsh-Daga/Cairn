@@ -50,5 +50,3 @@ adapters/OTLP → pipeline → SQLite → views → detectors/experiments
 4. **Measured optimize** — holdout verdicts with clustered ESS.
 5. **MCP self-awareness** — six stdio tools via `cairn mcp`.
 6. **Causal traces** — waterfall blame view, retry/handoff link arcs.
-
-See [legacy-v3.md](legacy-v3.md) for v3 → v4 mapping.

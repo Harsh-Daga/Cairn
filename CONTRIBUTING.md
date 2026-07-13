@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Cairn. v4 lives under `server/` (Python) and `ui/` (React/Vite).
+Thanks for helping improve Cairn. The application lives under `server/` (Python) and `ui/` (React/Vite).
 
 ## Dev setup
 
@@ -21,7 +21,7 @@ Requires Python 3.11+. UI: Node 22+, `cd ui && npm ci && npx tsc --noEmit`.
 1. Add parser under `server/ingest/adapters/`
 2. Register in `server/ingest/registry.py`
 3. Add fixture under `tests/fixtures/ingest/`
-4. Run conformance: `uv run pytest tests/adapter_conformance.py` *(L6)*
+4. Run conformance: `uv run pytest tests/adapter_conformance.py`
 
 One parser + one fixture + harness green = mergeable adapter PR.
 
@@ -46,7 +46,3 @@ uv run pytest tests/test_docs.py -q   # docs + CLI surface
 - One logical change per PR when possible
 - Update docs when CLI or behavior changes
 - Keep `tests/test_docs.py` green
-
-## Legacy v3
-
-The v3 tree was removed in 4.0.0. Reference tag `v3-final` — see [docs/legacy-v3.md](docs/legacy-v3.md).

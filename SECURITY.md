@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.0.x   | Yes |
-| < 2.0   | No |
+| 1.0.x   | Yes |
+| < 1.0   | No |
 
 ## Reporting a Vulnerability
 
@@ -34,6 +34,6 @@ Cairn is designed with these security properties:
 
 ## Known Considerations
 
-- The live dashboard server (`cairn dash`) binds to `127.0.0.1` by default and should not be exposed to the internet
-- SSE endpoints (`/v2/events`) are localhost-only
+- The live dashboard server (`cairn ui`) binds to `127.0.0.1` by default and should not be exposed to the internet
+- SSE endpoints (`/api/live/events`) are localhost-only
 - The `~/.cairn/config.toml` file may contain backend preferences — avoid committing it to public repos

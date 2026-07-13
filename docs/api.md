@@ -1,6 +1,6 @@
 # API overview
 
-Cairn v4 serves a FastAPI application from `server/app.py`. All JSON routes use the `/api` prefix unless noted. OpenAPI docs are at `/api/docs` when the server is running.
+Cairn serves a FastAPI application from `server/app.py`. All JSON routes use the `/api` prefix unless noted. OpenAPI docs are at `/api/docs` when the server is running.
 
 Start the server with `cairn ui` (default `http://127.0.0.1:8787`).
 
@@ -8,7 +8,7 @@ Start the server with `cairn ui` (default `http://127.0.0.1:8787`).
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/health` | `{ "status": "ok", "version": "4.0.0" }` |
+| GET | `/api/health` | `{ "status": "ok", "version": "1.0.0" }` |
 | GET | `/api/docs` | Swagger UI |
 | GET | `/api/openapi.json` | OpenAPI schema (also used to generate UI types) |
 
@@ -103,7 +103,6 @@ Registered actions (from `server/api/actions.py`):
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/live/events` | Server-sent events stream (ingest, insight, job updates) |
-| GET | `/api/live/events` | Legacy alias at app root also works |
 
 The UI connects via `ui/src/lib/sse.ts` when **Watch** is enabled on the Live page.
 
@@ -111,7 +110,9 @@ The UI connects via `ui/src/lib/sse.ts` when **Watch** is enabled on the Live pa
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/v1/traces` | Accept OTLP/JSON trace payloads (not under `/api`) |
+| POST | `/v1/traces` | Accept OTLP/JSON or protobuf trace payloads (not under `/api`) |
+
+See [OTLP ingest](otlp.md) for content types, examples, and idempotency behavior.
 
 ## Static UI
 
@@ -119,7 +120,7 @@ Non-API paths serve the built React app from `server/static/` (produced by `scri
 
 ## Auth
 
-By default the server binds to loopback only. To bind elsewhere, pass `--token` to `cairn ui` and set `CAIRN_TOKEN`. Non-loopback bind without a token is refused at startup.
+By default the server binds to loopback only. To bind elsewhere, pass `--token` to `cairn ui`. Every route then requires either `Authorization: Bearer <token>` or the `cairn_token` browser cookie. Opening `http://HOST:PORT/?token=<token>` establishes that HttpOnly cookie and redirects to the token-free URL. Non-loopback bind without a token is refused at startup.
 
 ## Error shape
 

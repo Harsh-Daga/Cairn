@@ -1,4 +1,4 @@
-"""Convert trace spans to legacy event dicts for ported analyzers."""
+"""Convert trace spans to event dictionaries used by analyzers."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ _KIND_TO_TYPE: dict[str, str] = {
 
 
 def spans_to_events(spans: list[Span]) -> list[dict[str, Any]]:
-    """Map v4 spans to legacy ingest event shape."""
+    """Map spans to the analyzer event shape."""
     events: list[dict[str, Any]] = []
     for span in spans:
         event_type = _KIND_TO_TYPE.get(span.kind, span.kind)

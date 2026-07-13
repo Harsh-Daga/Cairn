@@ -32,7 +32,5 @@ def evaluate(
     mark_stale_fixed(conn, active_fps)
 
     severity_order = {"error": 0, "warning": 1, "info": 2, "suggestion": 3}
-    insights.sort(
-        key=lambda i: (severity_order.get(i.severity, 4), -(i.savings_estimate or 0))
-    )
+    insights.sort(key=lambda i: (severity_order.get(i.severity, 4), -(i.savings_estimate or 0)))
     return insights

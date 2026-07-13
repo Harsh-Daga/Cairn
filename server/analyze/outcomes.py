@@ -75,9 +75,7 @@ def agent_quality_score(
         if (commit_landed and (tests_unknown or (tests_passed or 0) > (tests_failed or 0)))
         else 0.0
     )
-    efficiency = (
-        1.0 - _clamp01(waste_tokens / max(1, total_tokens)) if total_tokens > 0 else 0.0
-    )
+    efficiency = 1.0 - _clamp01(waste_tokens / max(1, total_tokens)) if total_tokens > 0 else 0.0
     context_efficiency = (
         1.0 - _clamp01((peak_context_pct / 100.0) * context_rot_penalty)
         if peak_context_pct is not None
@@ -234,9 +232,7 @@ def _run_tests_if_configured(cwd: str | None, project: str | None) -> TestResult
 def _retry_rate(events: list[dict[str, Any]]) -> float:
     waste = compute_waste(events, has_cost=False, peak_context_pct=None)
     retry = sum(
-        1
-        for _seq, category, _tokens in waste.tags
-        if category in {"retry_loop", "blind_retry"}
+        1 for _seq, category, _tokens in waste.tags if category in {"retry_loop", "blind_retry"}
     )
     tool_calls = sum(1 for event in events if event.get("type") == "tool_call")
     if tool_calls == 0:

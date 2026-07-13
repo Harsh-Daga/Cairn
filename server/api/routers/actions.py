@@ -42,6 +42,7 @@ def run_action(
         ) from exc
 
     if action_def.async_job:
+
         def _job(progress: Callable[[float, str], None]) -> dict[str, Any]:
             progress(0.1, "starting")
             result = action_def.handler(params, ctx)

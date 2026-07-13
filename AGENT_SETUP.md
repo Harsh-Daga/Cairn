@@ -45,7 +45,7 @@ PY
 
 Preference order:
 
-1. `uv tool install cairn-workspace` (or `uv tool install cairn-workspace==4.0.0` to pin)
+1. `uv tool install cairn-workspace` (or `uv tool install cairn-workspace==<published-version>` to pin)
 2. `pipx install cairn-workspace`
 3. `pip install --user cairn-workspace`
 
@@ -64,7 +64,7 @@ export PATH="$(uv tool dir --bin 2>/dev/null):$PATH"
 cairn --version
 ```
 
-**VERIFY:** `cairn --version` prints `4.` (e.g. `4.0.0`).
+**VERIFY:** `cairn --version` prints the installed Cairn version.
 
 ## Step 2 — initialize in this repo
 

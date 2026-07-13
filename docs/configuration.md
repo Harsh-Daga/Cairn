@@ -8,7 +8,7 @@ Cairn reads `~/.config/cairn/config.toml` for user-level settings. Runtime overr
 |----------|---------|-------------|
 | `CAIRN_HOST` | `127.0.0.1` | Bind address (loopback only unless `--token`) |
 | `CAIRN_PORT` | `8787` | HTTP port |
-| `CAIRN_TOKEN` | — | Required for non-loopback bind |
+| `CAIRN_TOKEN` | — | Required for non-loopback bind; protects every route with Bearer or browser-cookie auth |
 | `CAIRN_WORKSPACE_ROOT` | cwd | Active workspace |
 
 ## config.toml sections

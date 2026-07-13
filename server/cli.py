@@ -7,6 +7,7 @@ import webbrowser
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
 import typer
 import uvicorn
@@ -18,7 +19,9 @@ from server.api.context import ActionCtx
 from server.api.show import render_waterfall
 from server.app import create_app
 from server.config import Settings
+from server.demo.seed import DEMO_ROOT
 from server.doctor import print_doctor
+from server.export.static import export_static_snapshot
 
 app = typer.Typer(
     name="cairn",
@@ -84,20 +87,36 @@ def ui(
     workspace: Annotated[Path | None, typer.Option("--workspace", help="Workspace root")] = None,
 ) -> None:
     """Start the Cairn web UI server."""
+    from server.util.runtime_state import register_server, unregister_server
+
     settings = Settings(host=host, port=port, token=token, workspace_root=workspace)
     settings.validate_bind()
     application = create_app(settings)
 
     if open_browser:
-        webbrowser.open(f"http://{host}:{port}")
+        query = f"?{urlencode({'token': token})}" if token else ""
+        webbrowser.open(f"http://{host}:{port}/{query}")
 
-    uvicorn.run(application, host=host, port=port, log_level="info")
+    register_server(host=host, port=port, workspace=workspace)
+    try:
+        uvicorn.run(application, host=host, port=port, log_level="info")
+    finally:
+        unregister_server(port)
 
 
 @app.command()
-def stop() -> None:
-    """Stop a running Cairn background server."""
-    typer.echo("No running server found.")
+def stop(
+    port: Annotated[int, typer.Option("--port", "-p", help="HTTP port")] = 8787,
+) -> None:
+    """Stop a running Cairn UI server (by port)."""
+    from server.util.runtime_state import stop_server
+
+    ok, message = stop_server(port)
+    if ok:
+        typer.echo(message)
+    else:
+        typer.echo(message, err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -241,11 +260,37 @@ def experiments_revert(
 @app.command()
 def export(
     trace_id: Annotated[str | None, typer.Option("--trace-id")] = None,
+    static: Annotated[
+        Path | None,
+        typer.Option("--static", help="Export static read-only snapshot to directory"),
+    ] = None,
     workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
 ) -> None:
     """Export a scrubbed trace bundle."""
+    if static is not None:
+        if trace_id is not None:
+            typer.echo("Cannot combine --trace-id with --static.", err=True)
+            raise typer.Exit(code=2)
+        out_dir = static.expanduser().resolve()
+        root = workspace.resolve() if workspace is not None else None
+        result = export_static_snapshot(root, out_dir)
+        typer.echo(json.dumps(result, indent=2))
+        return
     result = _run_action("export_bundle", {"trace_id": trace_id, "scrub": True}, workspace)
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command()
+def demo(
+    reset: Annotated[
+        bool,
+        typer.Option("--reset", help="Reset and reseed ~/.cairn-demo"),
+    ] = False,
+) -> None:
+    """Seed a deterministic local demo workspace."""
+    result = _run_action("demo_seed", {"reset": reset}, None)
+    typer.echo(json.dumps(result, indent=2))
+    typer.echo(f'Run "cairn ui --workspace {DEMO_ROOT}" to open the demo workspace.')
 
 
 mcp_app = typer.Typer(help="MCP integration helpers.")
@@ -317,6 +362,36 @@ def rebuild(
     """Rebuild an incremental analyzer view."""
     result = _run_action("rebuild_view", {"view": view}, workspace)
     typer.echo(json.dumps(result, indent=2))
+
+
+adapter_app = typer.Typer(help="Ingest adapter scaffolding.")
+app.add_typer(adapter_app, name="adapter")
+
+
+@adapter_app.command("new")
+def adapter_new(
+    name: str,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Scaffold a new ingest adapter module, fixture, and test."""
+    from server.ingest.scaffold import scaffold_adapter
+
+    root = (workspace or Path.cwd()).resolve()
+    try:
+        created = scaffold_adapter(root, name)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Scaffolded {name} adapter:")
+    for path in created:
+        typer.echo(f"  {path.relative_to(root)}")
+    from server.ingest.scaffold import entry_point_snippet
+
+    class_name = "".join(part.capitalize() for part in name.split("_")) + "Adapter"
+    typer.echo(
+        'Next: add to pyproject.toml [project.entry-points."cairn.adapters"] '
+        f"or server/ingest/registry.py:\n  {entry_point_snippet(name, class_name)}"
+    )
 
 
 def _register_action_commands() -> None:

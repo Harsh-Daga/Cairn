@@ -26,6 +26,4 @@ def test_codex_tokens_parse_is_deterministic(tmp_path: Path) -> None:
     assert first is not None and second is not None
     assert first.external_id == second.external_id
     assert first.usage.input_tokens == second.usage.input_tokens
-    assert [e.get("event_id") for e in first.events] == [
-        e.get("event_id") for e in second.events
-    ]
+    assert [e.get("event_id") for e in first.events] == [e.get("event_id") for e in second.events]

@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from server.api.sse import EventBus
 from server.app import create_app
 from server.ingest.otlp import OtlpReceiver, parse_otlp_json
+from server.ingest.otlp_pb import decode_export_trace_service_request
 from server.models.workspace import Workspace
 from server.store.db import Database
 from server.store.repos.spans import SpanRepo
@@ -27,60 +28,9 @@ async def _noop_lifespan(_application: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-SAMPLE_OTLP = {
-    "resourceSpans": [
-        {
-            "resource": {
-                "attributes": [{"key": "service.name", "value": {"stringValue": "demo-agent"}}]
-            },
-            "scopeSpans": [
-                {
-                    "spans": [
-                        {
-                            "traceId": "abc123",
-                            "spanId": "span001",
-                            "name": "chat turn",
-                            "kind": 4,
-                            "startTimeUnixNano": "1700000000000000000",
-                            "endTimeUnixNano": "1700000001000000000",
-                            "attributes": [
-                                {
-                                    "key": "gen_ai.request.model",
-                                    "value": {"stringValue": "gpt-4o"},
-                                },
-                                {
-                                    "key": "gen_ai.usage.input_tokens",
-                                    "value": {"intValue": "120"},
-                                },
-                                {
-                                    "key": "gen_ai.usage.output_tokens",
-                                    "value": {"intValue": "45"},
-                                },
-                            ],
-                            "status": {"code": 1},
-                        },
-                        {
-                            "traceId": "abc123",
-                            "spanId": "span002",
-                            "parentSpanId": "span001",
-                            "name": "tool.read_file",
-                            "kind": 2,
-                            "startTimeUnixNano": "1700000002000000000",
-                            "endTimeUnixNano": "1700000003000000000",
-                            "attributes": [
-                                {
-                                    "key": "gen_ai.tool.name",
-                                    "value": {"stringValue": "read_file"},
-                                }
-                            ],
-                            "status": {"code": 1},
-                        },
-                    ]
-                }
-            ],
-        }
-    ]
-}
+FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "otlp"
+SAMPLE_OTLP = json.loads((FIXTURE_DIR / "sample_trace.json").read_text(encoding="utf-8"))
+SAMPLE_OTLP_PB = (FIXTURE_DIR / "sample_trace.pb").read_bytes()
 
 
 @pytest.fixture
@@ -128,6 +78,24 @@ def test_otlp_receiver_round_trip(otlp_setup: tuple[Database, str, EventBus]) ->
     assert len(spans) == 2
 
 
+def test_decode_otlp_protobuf_maps_to_json_shape() -> None:
+    decoded = decode_export_trace_service_request(SAMPLE_OTLP_PB)
+    traces = parse_otlp_json(decoded)
+    assert len(traces) == 1
+    trace, spans, _quality = traces[0]
+    assert trace.source == "otlp:demo_agent"
+    assert trace.model == "gpt-4o"
+    assert trace.input_tokens == 120
+    assert trace.output_tokens == 45
+    assert len(spans) == 2
+    assert spans[1].kind == "tool_call"
+
+
+def test_decode_otlp_protobuf_rejects_malformed_payload() -> None:
+    with pytest.raises(ValueError, match="invalid OTLP protobuf payload"):
+        decode_export_trace_service_request(b"\xff")
+
+
 def test_otlp_http_endpoint(tmp_path: Path) -> None:
     from server.api.bootstrap import bootstrap_runtime
     from server.config import Settings
@@ -143,6 +111,32 @@ def test_otlp_http_endpoint(tmp_path: Path) -> None:
 
     client = TestClient(app)
     response = client.post("/v1/traces", content=json.dumps(SAMPLE_OTLP))
+    assert response.status_code == 200
+    body = response.json()
+    assert body["results"][0]["inserted"] is True
+    assert body["results"][0]["span_count"] == 2
+
+
+@pytest.mark.parametrize("content_type", ["application/x-protobuf", "application/protobuf"])
+def test_otlp_http_endpoint_protobuf(tmp_path: Path, content_type: str) -> None:
+    from server.api.bootstrap import bootstrap_runtime
+    from server.config import Settings
+
+    settings = Settings(workspace_root=tmp_path)
+    runtime = bootstrap_runtime(settings)
+    app = create_app(settings)
+    app.router.lifespan_context = _noop_lifespan
+    app.state.runtime = runtime
+    app.state.database = runtime.database
+    app.state.workspace_id = runtime.workspace_id
+    app.state.event_bus = runtime.event_bus
+
+    client = TestClient(app)
+    response = client.post(
+        "/v1/traces",
+        content=SAMPLE_OTLP_PB,
+        headers={"content-type": content_type},
+    )
     assert response.status_code == 200
     body = response.json()
     assert body["results"][0]["inserted"] is True

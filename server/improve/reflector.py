@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2 as httpx
 
 from server.improve.evidence_pack import EvidencePack
 
@@ -166,9 +166,7 @@ def _run_provider(name: str, prompt: str, *, timeout: int) -> BackendResult:
     return BackendResult(backend=name, ok=True, text=text)
 
 
-def _openai_chat(
-    base: str, model: str, key: str, system: str, prompt: str, *, timeout: int
-) -> str:
+def _openai_chat(base: str, model: str, key: str, system: str, prompt: str, *, timeout: int) -> str:
     url = base.rstrip("/")
     if not url.endswith("/chat/completions"):
         url = url + "/chat/completions"
@@ -185,9 +183,7 @@ def _openai_chat(
     }
     resp = httpx.post(url, json=payload, headers=headers, timeout=timeout)
     if resp.status_code != 200:
-        raise httpx.HTTPStatusError(
-            f"HTTP {resp.status_code}", request=resp.request, response=resp
-        )
+        raise httpx.HTTPStatusError(f"HTTP {resp.status_code}", request=resp.request, response=resp)
     data = resp.json()
     content = data["choices"][0]["message"]["content"]
     return str(content)
@@ -210,9 +206,7 @@ def _anthropic_chat(
     }
     resp = httpx.post(url, json=payload, headers=headers, timeout=timeout)
     if resp.status_code != 200:
-        raise httpx.HTTPStatusError(
-            f"HTTP {resp.status_code}", request=resp.request, response=resp
-        )
+        raise httpx.HTTPStatusError(f"HTTP {resp.status_code}", request=resp.request, response=resp)
     data = resp.json()
     blocks = data["content"]
     parts = [str(b.get("text", "")) for b in blocks if isinstance(b, dict)]
@@ -231,9 +225,7 @@ def _ollama_chat(base: str, model: str, system: str, prompt: str, *, timeout: in
     }
     resp = httpx.post(url, json=payload, timeout=timeout)
     if resp.status_code != 200:
-        raise httpx.HTTPStatusError(
-            f"HTTP {resp.status_code}", request=resp.request, response=resp
-        )
+        raise httpx.HTTPStatusError(f"HTTP {resp.status_code}", request=resp.request, response=resp)
     data = resp.json()
     return str(data["message"]["content"])
 
@@ -259,9 +251,7 @@ class ReflectorError(Exception):
     """Raised when the backend cannot produce valid proposals."""
 
 
-def resolve_evidence(
-    proposal: Proposal, pack: EvidencePack | None = None
-) -> dict[str, Any]:
+def resolve_evidence(proposal: Proposal, pack: EvidencePack | None = None) -> dict[str, Any]:
     """Convert evidence_refs into a measurable evidence dict.
 
     When ``pack`` is supplied, unknown ``evidence_refs`` raise ``ReflectorError``.

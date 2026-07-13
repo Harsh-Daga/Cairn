@@ -1,4 +1,4 @@
-"""Build detector evaluation context from v4 traces/spans."""
+"""Build detector evaluation context from Cairn traces and spans."""
 
 from __future__ import annotations
 
@@ -44,9 +44,7 @@ def build_context(
             total_cost += float(r["cost"] or 0)
         pct = r["peak_context_pct"]
         if pct is not None and float(pct) >= 70:
-            high_context.append(
-                {"run_id": str(r["trace_id"]), "peak_context_pct": float(pct)}
-            )
+            high_context.append({"run_id": str(r["trace_id"]), "peak_context_pct": float(pct)})
 
     model_rows = conn.execute(
         """
@@ -108,6 +106,8 @@ def build_context(
         "identical_call_events": waste_by_cat.get("identical_call", {}).get("events", 0),
         "oversize_result_tokens": waste_by_cat.get("oversize_result", {}).get("tokens", 0),
         "retry_loop_events": waste_by_cat.get("retry_loop", {}).get("events", 0),
+        "stale_tool_result_events": waste_by_cat.get("stale_context", {}).get("events", 0),
+        "stale_tool_result_tokens": waste_by_cat.get("stale_context", {}).get("tokens", 0),
         "file_churn": file_churn,
         "cache_stats_7d": _cache_stats(conn, workspace_id=workspace_id, days=7),
         "model_costs_30d": dict(model_costs_30d),
@@ -118,6 +118,10 @@ def build_context(
         "behavioral_drift": {"drift": False},
         "quality_regression": _quality_regression(conn, workspace_id),
         "subagent_heavy": _subagent_heavy(conn, run_rows),
+        "failing_commands": _failing_commands(conn, workspace_id, days),
+        "max_error_streak": _max_error_streak(conn, workspace_id, since),
+        "cost_anomalies": _cost_anomalies(conn, workspace_id, since),
+        "read_rereads": _read_rereads(conn, workspace_id, since),
     }
 
 
@@ -219,9 +223,7 @@ def _quality_regression(conn: sqlite3.Connection, workspace_id: str) -> dict[str
     }
 
 
-def _subagent_heavy(
-    conn: sqlite3.Connection, run_rows: list[sqlite3.Row]
-) -> list[dict[str, Any]]:
+def _subagent_heavy(conn: sqlite3.Connection, run_rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in run_rows:
         trace_id = str(r["trace_id"])
@@ -255,3 +257,121 @@ def _subagent_heavy(
             }
         )
     return out
+
+
+def _failing_commands(
+    conn: sqlite3.Connection, workspace_id: str, days: int
+) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT s.name, COUNT(*) AS failures
+        FROM spans s
+        JOIN traces t ON t.trace_id = s.trace_id
+        WHERE s.status = 'error' AND s.name IS NOT NULL
+          AND t.workspace_id = ?
+          AND date(t.started_at) >= date('now', ?)
+        GROUP BY s.name
+        HAVING failures >= 3
+        ORDER BY failures DESC
+        LIMIT 10
+        """,
+        (workspace_id, f"-{days} days"),
+    ).fetchall()
+    return [{"name": str(r["name"]), "failures": int(r["failures"])} for r in rows]
+
+
+def _max_error_streak(conn: sqlite3.Connection, workspace_id: str, since: str) -> int:
+    trace_rows = conn.execute(
+        """
+        SELECT trace_id FROM traces
+        WHERE workspace_id = ?
+          AND (started_at IS NULL OR date(started_at) >= date('now', ?))
+        """,
+        (workspace_id, since),
+    ).fetchall()
+    max_streak = 0
+    for row in trace_rows:
+        spans = conn.execute(
+            """
+            SELECT status FROM spans
+            WHERE trace_id = ?
+            ORDER BY seq
+            """,
+            (str(row["trace_id"]),),
+        ).fetchall()
+        streak = 0
+        for span in spans:
+            if str(span["status"]) == "error":
+                streak += 1
+                max_streak = max(max_streak, streak)
+            else:
+                streak = 0
+    return max_streak
+
+
+def _cost_anomalies(
+    conn: sqlite3.Connection, workspace_id: str, since: str
+) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT trace_id, cost, difficulty
+        FROM traces
+        WHERE workspace_id = ?
+          AND cost > 0
+          AND (started_at IS NULL OR date(started_at) >= date('now', ?))
+        """,
+        (workspace_id, since),
+    ).fetchall()
+    by_bucket: dict[str, list[tuple[str, float]]] = defaultdict(list)
+    for row in rows:
+        bucket = str(row["difficulty"] if row["difficulty"] is not None else "unknown")
+        by_bucket[bucket].append((str(row["trace_id"]), float(row["cost"] or 0.0)))
+
+    anomalies: list[dict[str, Any]] = []
+    for items in by_bucket.values():
+        if len(items) < 20:
+            continue
+        costs = [cost for _, cost in items]
+        mean = sum(costs) / len(costs)
+        variance = sum((c - mean) ** 2 for c in costs) / max(len(costs) - 1, 1)
+        std = variance**0.5
+        threshold = mean + 3.0 * std
+        for trace_id, cost in items:
+            if cost > threshold:
+                anomalies.append(
+                    {
+                        "trace_id": trace_id,
+                        "cost": cost,
+                        "threshold": round(threshold, 4),
+                    }
+                )
+    anomalies.sort(key=lambda item: float(item["cost"]), reverse=True)
+    return anomalies[:5]
+
+
+def _read_rereads(conn: sqlite3.Connection, workspace_id: str, since: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT s.path_rel, COALESCE(s.text_hash, s.args_hash) AS content_hash, COUNT(*) AS n
+        FROM spans s
+        JOIN traces t ON t.trace_id = s.trace_id
+        WHERE s.name = 'read'
+          AND s.path_rel IS NOT NULL
+          AND COALESCE(s.text_hash, s.args_hash) IS NOT NULL
+          AND t.workspace_id = ?
+          AND (t.started_at IS NULL OR date(t.started_at) >= date('now', ?))
+        GROUP BY s.path_rel, content_hash
+        HAVING n >= 3
+        ORDER BY n DESC
+        LIMIT 10
+        """,
+        (workspace_id, since),
+    ).fetchall()
+    return [
+        {
+            "path": str(r["path_rel"]),
+            "content_hash": str(r["content_hash"]),
+            "reads": int(r["n"]),
+        }
+        for r in rows
+    ]

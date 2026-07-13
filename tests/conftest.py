@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for v4 scaffold tests."""
+"""Shared pytest fixtures for integration and API tests."""
 
 from __future__ import annotations
 
@@ -78,4 +78,3 @@ def api_client(api_workspace: tuple[Path, str, str]) -> Generator[TestClient, No
     application.state.event_bus = runtime.event_bus
     client = TestClient(application)
     yield client
-

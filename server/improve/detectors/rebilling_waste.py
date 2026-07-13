@@ -11,7 +11,7 @@ def rule_rebilling_waste(ctx: dict[str, Any]) -> Insight | None:
     rebilled = int(ctx.get("rebilling_tokens_14d", 0))
     if rebilled <= 50_000:
         return None
-    days = int(ctx.get("days", 14))
+    days = max(1, int(ctx.get("days", 14)))
     total_cost = float(ctx.get("total_cost", 0))
     has_cost = ctx.get("has_cost_sessions", 0) > 0
     rebilling_cost = float(ctx.get("rebilling_cost_14d", 0.0) or 0.0)

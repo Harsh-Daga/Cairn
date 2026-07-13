@@ -1,0 +1,55 @@
+name: Bug report
+description: Report a reproducible Cairn bug
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: What did you expect and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Run `cairn sync`
+        2. Open `/sessions`
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Cairn version
+      placeholder: "e.g. 1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Install method
+      options:
+        - uv tool
+        - pip
+        - wheel
+        - source checkout
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`cairn doctor --json` output (redact paths/secrets if needed)"
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs/screenshots
+      description: Paste terminal output, traceback, or screenshots.

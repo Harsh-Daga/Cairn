@@ -16,6 +16,7 @@ from server.analyze.registry import build_views
 from server.analyze.tail import return_level
 from server.analyze.views import ViewScheduler
 from server.api.context import ActionCtx
+from server.demo.seed import seed_demo_workspace
 from server.improve.engine import evaluate as evaluate_insights
 from server.improve.proposals import generate_proposals
 from server.models.annotation import Annotation
@@ -91,6 +92,10 @@ class ConfigSetParams(BaseModel):
 class McpInstallParams(BaseModel):
     client: str = "cursor"
     print_only: bool = False
+
+
+class DemoSeedParams(BaseModel):
+    reset: bool = False
 
 
 def _sync_action(params: SyncParams, ctx: ActionCtx) -> dict[str, Any]:
@@ -195,6 +200,18 @@ def _mcp_install_action(params: McpInstallParams, ctx: ActionCtx) -> dict[str, A
         client=client,  # type: ignore[arg-type]
         write=not params.print_only,
     )
+
+
+def _demo_seed_action(params: DemoSeedParams, _ctx: ActionCtx) -> dict[str, Any]:
+    result = seed_demo_workspace(reset=params.reset)
+    return {
+        "root": str(result.root),
+        "workspace_id": result.workspace_id,
+        "trace_count": result.trace_count,
+        "actor_count": result.actor_count,
+        "source_count": result.source_count,
+        "reset": result.reset,
+    }
 
 
 def _optimize_propose_action(params: OptimizeProposeParams, ctx: ActionCtx) -> dict[str, Any]:

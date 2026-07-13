@@ -57,6 +57,17 @@ def test_trace_replay_checkpoints_shape(api_client: TestClient, api_workspace: t
     assert len(body["checkpoints"]) >= 1
 
 
+def test_trace_diff_shape(api_client: TestClient, api_workspace: tuple) -> None:
+    _root, _ws, trace_id = api_workspace
+    resp = api_client.get(f"/api/traces/diff?a={trace_id}&b={trace_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["a"]["trace_id"] == trace_id
+    assert body["b"]["trace_id"] == trace_id
+    assert "summary" in body
+    assert "turns" in body
+
+
 def test_agents_shape(api_client: TestClient) -> None:
     resp = api_client.get("/api/agents?days=90")
     assert resp.status_code == 200
@@ -153,7 +164,8 @@ def test_actions_manifest_shape(api_client: TestClient) -> None:
     names = {item["name"] for item in body["actions"]}
     assert "sync" in names
     assert "check" in names
-    assert len(names) == 15
+    assert "demo_seed" in names
+    assert len(names) == 16
 
 
 def test_action_check_runs(api_client: TestClient) -> None:

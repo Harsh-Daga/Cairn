@@ -56,9 +56,7 @@ class Fingerprint(BaseModel):
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> Fingerprint:
         traj_raw = row["context_fill_traj_json"]
-        context_fill_traj = (
-            parse_float_list(traj_raw) if traj_raw is not None else None
-        )
+        context_fill_traj = parse_float_list(traj_raw) if traj_raw is not None else None
         return cls(
             trace_id=row_required_text(row, "trace_id"),
             project=row_text(row, "project"),

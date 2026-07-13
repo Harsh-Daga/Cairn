@@ -34,15 +34,15 @@ def _check_cairn_on_path() -> CheckResult:
     cairn = shutil.which("cairn")
     ok = cairn is not None
     detail = cairn or "not found on PATH"
-    fix = "Add uv tool dir to PATH: export PATH=\"$(uv tool dir --bin):$PATH\"" if not ok else None
+    fix = 'Add uv tool dir to PATH: export PATH="$(uv tool dir --bin):$PATH"' if not ok else None
     return CheckResult("cairn on PATH", ok, detail, fix)
 
 
 def _check_version() -> CheckResult:
     detail = __version__
-    ok = detail.startswith("4.")
-    fix = "Upgrade: uv tool install --upgrade cairn-workspace" if not ok else None
-    return CheckResult("Cairn version 4.x", ok, detail, fix)
+    ok = True
+    fix = None
+    return CheckResult("Cairn package version", ok, detail, fix)
 
 
 def _detect_install_method() -> CheckResult:
@@ -60,6 +60,24 @@ def _detect_install_method() -> CheckResult:
     else:
         method = "other"
     return CheckResult("Install method", True, method, None)
+
+
+def _check_legacy_shim() -> CheckResult:
+    cairn = shutil.which("cairn")
+    if not cairn:
+        return CheckResult("CLI entrypoint", True, "n/a", None)
+    try:
+        text = Path(cairn).read_text(encoding="utf-8", errors="ignore")[:800]
+    except OSError:
+        return CheckResult("CLI entrypoint", True, cairn, None)
+    if "cairn.cli" in text or "from cairn import" in text:
+        return CheckResult(
+            "CLI entrypoint",
+            False,
+            f"legacy CLI shim at {cairn}",
+            "Reinstall: uv tool install --force cairn-workspace  (or use: uv run cairn …)",
+        )
+    return CheckResult("CLI entrypoint", True, cairn, None)
 
 
 def _check_port(port: int = 8787) -> CheckResult:
@@ -122,10 +140,14 @@ def _check_mcp_config() -> CheckResult:
             continue
         if "cairn" in text.lower():
             found.append(str(path))
-    ok = bool(found)
-    detail = ", ".join(found) if found else "no cairn MCP entry found"
-    fix = "Run: cairn mcp install" if not ok else None
-    return CheckResult("MCP config", ok, detail, fix)
+    if found:
+        return CheckResult("MCP config", True, ", ".join(found), None)
+    return CheckResult(
+        "MCP config",
+        True,
+        "not configured (optional; run: cairn mcp install)",
+        None,
+    )
 
 
 def run_doctor(*, workspace: Path | None = None, port: int = 8787) -> list[CheckResult]:
@@ -134,6 +156,7 @@ def run_doctor(*, workspace: Path | None = None, port: int = 8787) -> list[Check
     return [
         _check_python(),
         _check_cairn_on_path(),
+        _check_legacy_shim(),
         _check_version(),
         _detect_install_method(),
         _check_port(port),
@@ -161,9 +184,7 @@ def doctor_json(results: list[CheckResult]) -> dict[str, object]:
     return {
         "version": __version__,
         "ok": all(r.ok for r in results),
-        "checks": [
-            {"name": r.name, "ok": r.ok, "detail": r.detail, "fix": r.fix} for r in results
-        ],
+        "checks": [{"name": r.name, "ok": r.ok, "detail": r.detail, "fix": r.fix} for r in results],
     }
 
 

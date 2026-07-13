@@ -1,68 +1,85 @@
 # Ingest adapters
 
-Cairn v4 normalizes agent logs through **adapters** in `server/ingest/adapters/`. Each adapter implements discovery (find log files for the workspace) and parsing (emit a `ParsedSession` with events, tool calls, and usage). The pipeline in `server/ingest/pipeline.py` writes traces and spans to `.cairn/cairn.db`.
+Cairn normalizes agent logs through **adapters** in `server/ingest/adapters/`. Each adapter discovers log files for a workspace and parses them into a `ParsedSession` (events, tool calls, usage). The pipeline in `server/ingest/pipeline.py` writes traces and spans to `.cairn/cairn.db`.
 
-Adapter IDs are registered in `server/ingest/registry.py`. Filter sync to one adapter with:
+## Quick start: scaffold a new adapter
 
 ```bash
-cairn sync --source <adapter_id>
+cairn adapter new my_agent
 ```
 
-## Adapter reference
+This creates:
 
-| Adapter ID | Agent | Discovery roots | Log format |
-|------------|-------|-----------------|------------|
-| `claude_code` | Claude Code | `~/.claude/projects/` | `*.jsonl` per project slug |
-| `codex` | Codex CLI | `~/.codex/sessions/` | rollout `*.jsonl` |
-| `cursor` | Cursor | `~/.cursor/projects/` | agent transcripts; subagent lineage preserved |
-| `cline` | Cline | VS Code `globalStorage/saoudrizwan.claude-dev/` | `tasks/*/ui_messages.json` |
-| `roo` | Roo Code | VS Code `globalStorage/rooveterinaryinc.roo-cline/` | same Cline-family shape |
-| `kilo` | Kilo Code | VS Code `globalStorage/kilocode.kilo-code/` | same Cline-family shape |
-| `goose` | Goose | `~/.goose/sessions/` | `*.jsonl` |
-| `aider` | Aider | `~/.aider/sessions/` | `*.jsonl` |
-| `gemini_cli` | Gemini CLI | `~/.gemini/tmp/`, `~/.config/gemini/` | `*.jsonl`, `*.json` |
-| `opencode` | OpenCode | `~/.local/share/opencode/sessions/` (or `$XDG_DATA_HOME`) | `*.jsonl` |
-| `hermes` | Hermes | `~/.hermes/sessions/` | `*.json` |
-| `openclaw` | OpenClaw | `~/.openclaw/` | `*.jsonl` |
+| Path | Purpose |
+|------|---------|
+| `server/ingest/adapters/my_agent_adapter.py` | Parser stub extending `FileAdapterBase` |
+| `tests/fixtures/ingest/my_agent_mini.jsonl` | Minimal fixture |
+| `tests/test_ingest_my_agent.py` | Smoke test |
 
-## Generic JSONL parser
+Register the adapter via **entry point** in `pyproject.toml`:
 
-`server/ingest/adapters/agent_jsonl.py` handles the shared JSONL event shape used by Aider, Goose, and OpenCode. Each adapter sets its `legacy_source` label for trace metadata.
+```toml
+[project.entry-points."cairn.adapters"]
+my_agent = "server.ingest.adapters.my_agent_adapter:MyAgentAdapter"
+```
 
-## Claude Code specifics
+Or add the class to `build_adapters()` in `server/ingest/registry.py`.
 
-- Project slug derived from git root via `server/ingest/project_paths.py`
-- Subagent transcripts get distinct external IDs (`#subagent:…`)
-- Parser: `server/ingest/adapters/claude_code.py`
+## Conformance harness
 
-## Cursor specifics
+Every adapter must pass `tests/adapter_conformance.py`:
 
-- Discovers transcript files under workspace slugs matching the repo
-- Parses `state.vscdb` and transcript JSON via `server/ingest/adapters/cursor.py`
-- Subagent and best-of-N sessions appear as separate swimlanes in the waterfall
+```bash
+uv run pytest tests/adapter_conformance.py -q
+```
 
-## Cline family
+The harness checks, for each adapter + fixture pair:
 
-Cline, Roo, and Kilo share `server/ingest/adapters/cline_family.py`. Discovery walks VS Code / Cursor `globalStorage` extension folders on macOS, Linux, and Windows.
+- **Determinism** — parse twice → identical `span_id`s
+- **Monotonic seq** — strictly increasing, unique sequence numbers
+- **Parent refs** — every `parent_span_id` resolves to a span in the trace
+- **Valid kinds** — span kinds within the current schema
+- **Quality record** — `DataQuality` present with `trace_id` and `cost_source`
+
+An adapter PR is **one parser + one fixture + harness green**.
+
+## Built-in adapters
+
+| Adapter ID | Agent | Fixture |
+|------------|-------|---------|
+| `claude_code` | Claude Code | `claude_code_mini.jsonl` |
+| `codex` | Codex CLI | `codex_mini.jsonl` |
+| `cursor` | Cursor | `cursor_mini.jsonl` |
+| `cline` | Cline | `cline_mini/tasks/.../ui_messages.json` |
+| `roo` | Roo Code | same Cline-family fixture |
+| `kilo` | Kilo Code | same Cline-family fixture |
+| `goose` | Goose | `agent_jsonl_mini.jsonl` |
+| `aider` | Aider | `agent_jsonl_mini.jsonl` |
+| `gemini_cli` | Gemini CLI | `gemini_mini.jsonl` |
+| `opencode` | OpenCode | `agent_jsonl_mini.jsonl` |
+| `hermes` | Hermes | `hermes_mini.json` |
+| `openclaw` | OpenClaw | `openclaw_mini.jsonl` |
+
+Filter sync to one adapter:
+
+```bash
+cairn sync --source cursor
+```
 
 ## OTLP push ingest
 
-In addition to file adapters, Cairn accepts OpenTelemetry JSON traces at:
+Agents that emit OpenTelemetry can POST to:
 
 ```
 POST /v1/traces
 ```
 
-The `OtlpReceiver` in `server/ingest/otlp.py` inserts spans directly — useful for agents that can emit OTLP natively.
+JSON (`application/json`) and protobuf (`application/x-protobuf`) are supported. See [api.md](api.md).
 
 ## Workspace filtering
 
-Discovery functions filter sessions to the active git workspace where possible (Claude project slug, Codex cwd, Cursor slug, Hermes path matching). Adapters that store logs globally (Hermes, Gemini) use heuristics to associate sessions with the current repo.
+Discovery functions filter sessions to the active git workspace where possible (Claude project slug, Codex cwd, Cursor slug). Global log stores (Hermes, Gemini) use path heuristics.
 
-## Adding an adapter
+## Estimation accuracy
 
-1. Implement `FileAdapterBase` in `server/ingest/adapters/`
-2. Register the adapter ID in `server/ingest/registry.py` → `ADAPTER_IDS` and `build_adapters()`
-3. Add a fixture under `tests/fixtures/ingest/` and a smoke test in `tests/test_ingest_adapters.py`
-
-See [Agent capture guide](guides/agent-capture.md) for troubleshooting missing sessions.
+Per-adapter token estimation error is published in [ACCURACY.md](../ACCURACY.md), regenerated by `scripts/gen_accuracy.py` in CI.

@@ -8,6 +8,7 @@ import type { ActionManifestEntry } from "@/lib/types";
 const PAGE_LINKS = [
   { to: "/", label: "Overview" },
   { to: "/sessions", label: "Sessions" },
+  { to: "/sessions/diff", label: "Session diff" },
   { to: "/insights", label: "Insights" },
   { to: "/optimize", label: "Optimize" },
   { to: "/live", label: "Live" },

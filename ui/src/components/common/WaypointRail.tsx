@@ -16,6 +16,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Overview", icon: "⛰" },
   { to: "/sessions", label: "Sessions", icon: "◎" },
+  { to: "/sessions/diff", label: "Session diff", icon: "⇄" },
   { to: "/context", label: "Context", icon: "▤" },
   { to: "/agents", label: "Agents", icon: "⬡" },
   { to: "/behavior", label: "Behavior", icon: "〜" },

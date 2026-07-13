@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import queue
 import threading
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
 SSE_QUEUE_SIZE = 64
+SSE_HEARTBEAT_SECONDS = 15.0
 
 
 @dataclass(frozen=True)
@@ -64,7 +67,7 @@ class EventBus:
         with self._lock:
             client = self._clients.pop(client_id, None)
         if client is not None:
-            with contextlib_suppress_queue_full(client):
+            with suppress(queue.Full):
                 client.queue.put_nowait(None)
 
     def client_dropped(self, client_id: str) -> int:
@@ -72,6 +75,21 @@ class EventBus:
         with self._lock:
             client = self._clients.get(client_id)
             return client.dropped if client is not None else 0
+
+    def wait_for_event(self, client_id: str, timeout: float) -> SseEvent | None:
+        """Wait briefly for one client event, returning ``None`` on timeout/close."""
+        with self._lock:
+            client = self._clients.get(client_id)
+        if client is None:
+            return None
+        try:
+            return client.queue.get(timeout=timeout)
+        except queue.Empty:
+            return None
+
+    def is_subscribed(self, client_id: str) -> bool:
+        with self._lock:
+            return client_id in self._clients
 
     def _enqueue(self, client: _ClientQueue, message: SseEvent) -> None:
         try:
@@ -97,21 +115,6 @@ class EventBus:
             self._clients.pop(client_id, None)
 
 
-def contextlib_suppress_queue_full(client: _ClientQueue) -> _SuppressQueueFull:
-    return _SuppressQueueFull(client)
-
-
-class _SuppressQueueFull:
-    def __init__(self, client: _ClientQueue) -> None:
-        self._client = client
-
-    def __enter__(self) -> None:
-        return None
-
-    def __exit__(self, exc_type: object, exc: object, tb: object) -> bool:
-        return exc_type is queue.Full
-
-
 def format_sse(event: SseEvent, *, include_dropped: int = 0) -> str:
     """Serialize one SSE frame."""
     payload = dict(event.data)
@@ -127,11 +130,27 @@ def format_sse(event: SseEvent, *, include_dropped: int = 0) -> str:
     return "\n".join(lines)
 
 
-def sse_stream(bus: EventBus) -> Iterator[str]:
-    """Blocking generator for FastAPI StreamingResponse."""
-    client_id, iterator = bus.subscribe()
+async def sse_stream(bus: EventBus) -> AsyncIterator[str]:
+    """Yield SSE events without pinning a request worker indefinitely.
+
+    The timed wait gives the ASGI server a cancellation point when a client
+    disconnects or the application is shutting down.  Comment heartbeats keep
+    otherwise-idle connections alive through common reverse proxies.
+    """
+    client_id, _ = bus.subscribe()
     try:
-        for event in iterator:
+        while True:
+            try:
+                event = await asyncio.to_thread(
+                    bus.wait_for_event, client_id, SSE_HEARTBEAT_SECONDS
+                )
+            except asyncio.CancelledError:
+                raise
+            if event is None:
+                if not bus.is_subscribed(client_id):
+                    break
+                yield ": heartbeat\n\n"
+                continue
             dropped = bus.client_dropped(client_id)
             yield format_sse(event, include_dropped=dropped)
     finally:
