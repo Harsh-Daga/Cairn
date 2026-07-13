@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
 
@@ -101,7 +101,7 @@ jobs:
           uv pip install -e ".[dev]"
 
       - name: Set up Node and build UI
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
       - run: python scripts/build_ui.py
@@ -122,7 +122,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
 
