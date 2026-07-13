@@ -1,0 +1,80 @@
+"""Regression coverage for detector rules registered in the insight engine."""
+
+from __future__ import annotations
+
+import pytest
+
+from server.improve.detectors.behavioral_drift import rule_behavioral_drift
+from server.improve.detectors.cache_misuse import rule_cache_misuse
+from server.improve.detectors.high_file_churn import rule_high_file_churn
+from server.improve.detectors.multi_model_spread import rule_multi_model_cost_spread
+from server.improve.detectors.oversize_results import rule_oversize_tool_results
+from server.improve.detectors.quality_regression import rule_quality_regression
+from server.improve.detectors.rebilling_waste import rule_rebilling_waste
+from server.improve.detectors.retry_loops import rule_retry_loops_detected
+from server.improve.detectors.runaway_sessions import rule_runaway_sessions
+from server.improve.detectors.subagent_heavy import rule_subagent_heavy
+from server.improve.detectors.unused_tools import rule_unused_tools
+
+
+@pytest.mark.parametrize(
+    ("rule", "context", "expected_id"),
+    [
+        (
+            rule_behavioral_drift,
+            {"behavioral_drift": {"drift": True, "top_dims": [{"axis": "tools", "delta": 1.2}]}},
+            "behavioral-drift",
+        ),
+        (rule_cache_misuse, {"cache_stats_7d": {"cache_creation": 10}}, "cache-misuse"),
+        (rule_high_file_churn, {"file_churn": {"server/app.py": 6}}, "high-file-churn"),
+        (
+            rule_multi_model_cost_spread,
+            {"model_costs_30d": {"small": 1.0, "medium": 2.0, "large": 4.0}},
+            "multi-model-cost-spread",
+        ),
+        (
+            rule_oversize_tool_results,
+            {"oversize_result_tokens": 20_001, "has_cost_sessions": 0},
+            "oversize-tool-results",
+        ),
+        (
+            rule_quality_regression,
+            {
+                "quality_regression": {
+                    "regressed": True,
+                    "recent_mean": 70.0,
+                    "prior_mean": 90.0,
+                    "drop_pct": 22.0,
+                }
+            },
+            "quality-regression",
+        ),
+        (
+            rule_rebilling_waste,
+            {"rebilling_tokens_14d": 50_001, "days": 0, "has_cost_sessions": 0},
+            "rebilling-waste",
+        ),
+        (rule_retry_loops_detected, {"retry_loop_events": 6}, "retry-loops-detected"),
+        (
+            rule_runaway_sessions,
+            {"runaway_sessions": [{"ratio": 2.0, "run_id": "run-123456789"}]},
+            "runaway-sessions",
+        ),
+        (
+            rule_subagent_heavy,
+            {"subagent_heavy": {"share_pct": 70.0, "run_id": "run-123", "subagent_tokens": 10}},
+            "subagent-heavy",
+        ),
+        (
+            rule_unused_tools,
+            {"unused_tools": [{"tool": "browser", "total_turns": 10, "tokens_per_turn": 80}]},
+            "unused-tools",
+        ),
+    ],
+)
+def test_detector_emits_expected_insight(
+    rule: object, context: dict[str, object], expected_id: str
+) -> None:
+    result = rule(context)  # type: ignore[operator]
+    assert result is not None
+    assert result.id == expected_id
