@@ -1,0 +1,27 @@
+server/ingest/project_paths.py
+  s_7d77ecaccb5763::t_eb264fa1b908b9 99-101
+ui/src/components/common/WaypointRail.tsx
+  s_7d77ecaccb5763::t_4ea3d022183035 19
+server/ingest/otlp.py
+  s_7d77ecaccb5763::t_4ea3d022183035 227-228
+tests/test_otlp.py
+  s_7d77ecaccb5763::t_4ea3d022183035 115-116,133
+tests/test_project_paths.py
+  s_7d77ecaccb5763::t_eb264fa1b908b9 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "cd3ba8e759b4c03249e3d07142ceb51f9d0e46dd",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
