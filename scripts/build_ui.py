@@ -207,6 +207,9 @@ def build_ui() -> None:
     """Run vite build."""
     ensure_npm_deps()
     run(["npm", "run", "build"], UI_DIR)
+    # Vite clears its output directory before emitting assets. Keep the tracked
+    # placeholder so a local build does not leave the repository dirty.
+    (STATIC_DIR / ".gitkeep").write_text("\n", encoding="utf-8")
     if not (STATIC_DIR / "index.html").is_file():
         print("ERROR: build did not produce index.html", file=sys.stderr)
         sys.exit(1)
