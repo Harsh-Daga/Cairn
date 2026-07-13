@@ -1,10 +1,10 @@
 name: Demo Pages
 
 on:
+  # Pages must be enabled in repository settings before this is dispatched.
+  # Keep deployment opt-in so normal releases do not fail on repositories
+  # without a configured Pages site.
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: read
