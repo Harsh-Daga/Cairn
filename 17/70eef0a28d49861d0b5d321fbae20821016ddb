@@ -1,0 +1,25 @@
+tests/test_otlp.py
+  s_7d77ecaccb5763::t_b06c58b206d8b0 94-98
+pyproject.toml
+  s_7d77ecaccb5763::t_0ebd94092e63ff 24
+  s_7d77ecaccb5763::t_8b6429e5df69e8 81-85
+server/ingest/otlp_pb.py
+  s_7d77ecaccb5763::t_027843758e098a 1,7-9,12-13,15-21
+  s_7d77ecaccb5763::t_392b3820ef1006 5,22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "1770eef0a28d49861d0b5d321fbae20821016ddb",
+  "prompts": {},
+  "sessions": {
+    "s_7d77ecaccb5763": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f56a8-6d97-7d02-a909-2b9f1d8e93ca",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
