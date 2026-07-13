@@ -112,7 +112,8 @@ def test_otlp_http_endpoint(tmp_path: Path) -> None:
     assert body["results"][0]["span_count"] == 2
 
 
-def test_otlp_http_endpoint_protobuf(tmp_path: Path) -> None:
+@pytest.mark.parametrize("content_type", ["application/x-protobuf", "application/protobuf"])
+def test_otlp_http_endpoint_protobuf(tmp_path: Path, content_type: str) -> None:
     from server.api.bootstrap import bootstrap_runtime
     from server.config import Settings
 
@@ -129,7 +130,7 @@ def test_otlp_http_endpoint_protobuf(tmp_path: Path) -> None:
     response = client.post(
         "/v1/traces",
         content=SAMPLE_OTLP_PB,
-        headers={"content-type": "application/x-protobuf"},
+        headers={"content-type": content_type},
     )
     assert response.status_code == 200
     body = response.json()

@@ -96,6 +96,9 @@ def parse_since(value: str) -> datetime:
     except ValueError as exc:
         msg = f"invalid --since value: {value!r}"
         raise ValueError(msg) from exc
+    if amount < 0:
+        msg = f"invalid --since value: {value!r} (duration must be non-negative)"
+        raise ValueError(msg)
     now = datetime.now(UTC)
     if unit == "d":
         return now - timedelta(days=amount)

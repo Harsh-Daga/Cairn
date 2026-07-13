@@ -224,7 +224,8 @@ class OtlpReceiver:
         self._bus = event_bus
 
     def ingest_bytes(self, raw: bytes, content_type: str | None = None) -> list[OtlpIngestResult]:
-        if content_type and "application/x-protobuf" in content_type.lower():
+        media_type = (content_type or "").split(";", maxsplit=1)[0].strip().lower()
+        if media_type in {"application/x-protobuf", "application/protobuf"}:
             payload = decode_export_trace_service_request(raw)
         else:
             payload = json.loads(raw.decode("utf-8"))
