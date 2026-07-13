@@ -136,6 +136,9 @@ Adding an adapter is one parser, one fixture, and a conformance test — see `ca
 | `cairn upgrade` | Update the local CLI to the latest release |
 | `cairn setup-prompt` | Print agent bootstrap block |
 
+The running dashboard auto-syncs active agent logs, discovers new session files, and refreshes
+visible data as ingest events arrive. `cairn sync` remains available for one-shot and CI workflows.
+
 Full reference: [docs/cli.md](docs/cli.md) (auto-generated from the action registry).
 
 ---

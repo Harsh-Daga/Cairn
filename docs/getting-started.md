@@ -39,6 +39,10 @@ Screenshots: [README § What it looks like](../README.md#what-it-looks-like).
 
 ## Manual sync
 
+While `cairn ui` is running, Cairn automatically imports existing sessions at startup,
+watches active logs, and rescans for newly created session files. Dashboard queries refresh
+when live ingest events arrive. Use manual sync when the UI is not running or when scripting.
+
 ```bash
 cairn sync
 cairn sync --source claude_code

@@ -34,20 +34,11 @@ class IngestWriter:
         self._pricing_overrides = load_overrides(self.repo_root)
 
     def ingest(self, parsed: ParsedSession) -> IngestResult:
-        """Upsert a parsed session; skip if trace already exists."""
+        """Insert a session or refresh its latest parsed snapshot."""
         from server.ingest.map import normalize_source
 
         source = normalize_source(parsed.source)
         existing = TraceRepo.get_by_external(self._db.reader, source, parsed.external_id)
-        if existing is not None:
-            spans = SpanRepo.list_by_trace(self._db.reader, existing.trace_id)
-            return IngestResult(
-                trace_id=existing.trace_id,
-                external_id=parsed.external_id,
-                inserted=False,
-                span_count=len(spans),
-            )
-
         trace, spans, quality = session_to_trace_spans(
             parsed,
             workspace_id=self.workspace_id,
@@ -59,14 +50,14 @@ class IngestWriter:
             import sqlite3
 
             assert isinstance(conn, sqlite3.Connection)
-            TraceRepo.create(conn, trace)
+            TraceRepo.upsert(conn, trace)
             for span in spans:
-                SpanRepo.create(conn, span)
-            DataQualityRepo.create(conn, quality)
+                SpanRepo.upsert(conn, span)
+            DataQualityRepo.upsert(conn, quality)
             return IngestResult(
                 trace_id=trace.trace_id,
                 external_id=parsed.external_id,
-                inserted=True,
+                inserted=existing is None,
                 span_count=len(spans),
             )
 

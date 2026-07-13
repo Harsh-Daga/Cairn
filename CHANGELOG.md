@@ -9,6 +9,11 @@ All notable changes to **cairn-workspace** follow [Semantic Versioning](https://
 - Added interactive point inspection, responsive gradient and dither chart surfaces, inline values, token allocation, cost-per-session, waste-rate, priority, and tail-risk views.
 - Added `cairn upgrade` and Settings guidance for a one-command local update path.
 
+### Fixed
+- Active agent sessions now refresh their trace, spans, token totals, and end time as logs grow instead of retaining only the first ingested snapshot.
+- The dashboard imports missed sessions in the background at startup, discovers new log files, and refreshes visible queries after live ingest events.
+- Adapter-specific syncs such as `cairn sync --source codex` now honor the requested source and report updated sessions separately.
+
 ## [1.0.0] — 2026-07-13
 
 The first public beta release of Cairn. It is intended for real-world use, with

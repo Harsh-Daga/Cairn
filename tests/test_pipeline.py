@@ -13,7 +13,7 @@ import pytest
 
 from server.api.sse import EventBus
 from server.ingest.adapters.claude_code_adapter import ClaudeCodeAdapter
-from server.ingest.pipeline import IngestPipeline
+from server.ingest.pipeline import IngestPipeline, PipelineReport
 from server.models.workspace import Workspace
 from server.store.db import Database
 from server.store.repos.traces import TraceRepo
@@ -120,3 +120,52 @@ def test_watcher_detects_appended_log(workspace_bundle: tuple[Database, str, Pat
     pipeline.stop()
     assert result is not None
     assert TraceRepo.get(db.reader, result.trace_id) is not None
+
+
+def test_start_runs_initial_sync(
+    workspace_bundle: tuple[Database, str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, ws_id, root = workspace_bundle
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    calls = 0
+    synced = threading.Event()
+
+    def fake_sync(source: str | None = None) -> PipelineReport:
+        nonlocal calls
+        calls += 1
+        synced.set()
+        return PipelineReport()
+
+    monkeypatch.setattr(pipeline, "sync_all", fake_sync)
+    pipeline.start()
+    assert synced.wait(timeout=1)
+    pipeline.stop()
+
+    assert calls == 1
+
+
+def test_sync_all_honors_source_filter(
+    workspace_bundle: tuple[Database, str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, ws_id, root = workspace_bundle
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    adapter = ClaudeCodeAdapter(root, ws_id)
+    codex_path = root / "codex.jsonl"
+    claude_path = root / "claude.jsonl"
+    pipeline._path_adapter = {
+        codex_path: (adapter, "codex"),
+        claude_path: (adapter, "claude_code"),
+    }
+    seen: list[tuple[Path, str]] = []
+
+    monkeypatch.setattr(pipeline, "_refresh_path_index", lambda: None)
+
+    def fake_ingest(path: Path, _adapter: object, source: str) -> None:
+        seen.append((path, source))
+
+    monkeypatch.setattr(pipeline, "_ingest_path", fake_ingest)
+    report = pipeline.sync_all("codex")
+
+    assert report.scanned == 1
+    assert report.skipped == 1
+    assert seen == [(codex_path, "codex")]

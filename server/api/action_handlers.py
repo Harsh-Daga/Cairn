@@ -99,10 +99,11 @@ class DemoSeedParams(BaseModel):
 
 
 def _sync_action(params: SyncParams, ctx: ActionCtx) -> dict[str, Any]:
-    report = ctx.pipeline.sync_all()
+    report = ctx.pipeline.sync_all(params.source)
     return {
         "scanned": report.scanned,
         "inserted": report.inserted,
+        "updated": report.updated,
         "skipped": report.skipped,
         "source": params.source,
     }
@@ -110,7 +111,12 @@ def _sync_action(params: SyncParams, ctx: ActionCtx) -> dict[str, Any]:
 
 def _backfill_action(params: BackfillParams, ctx: ActionCtx) -> dict[str, Any]:
     report = ctx.pipeline.sync_all()
-    return {"days": params.days, "inserted": report.inserted, "scanned": report.scanned}
+    return {
+        "days": params.days,
+        "inserted": report.inserted,
+        "updated": report.updated,
+        "scanned": report.scanned,
+    }
 
 
 def _rebuild_view_action(params: RebuildViewParams, ctx: ActionCtx) -> dict[str, Any]:

@@ -32,11 +32,25 @@ export function PlaqueTopbar() {
       setSsePulse(false);
       return;
     }
-    return connectLiveEvents(() => {
+    let refreshTimer: number | undefined;
+    const refresh = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => {
+        void queryClient.invalidateQueries();
+      }, 250);
+    };
+    const disconnect = connectLiveEvents((event) => {
       setSsePulse(true);
       window.setTimeout(() => setSsePulse(false), 1200);
+      if (event === "trace-updated" || event === "views-updated" || event === "job-done") {
+        refresh();
+      }
     });
-  }, [watchEnabled, staticMode]);
+    return () => {
+      window.clearTimeout(refreshTimer);
+      disconnect();
+    };
+  }, [watchEnabled, staticMode, queryClient]);
 
   const syncMut = useMutation({
     mutationFn: () => runAction("sync"),

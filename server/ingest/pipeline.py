@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 import threading
 from dataclasses import dataclass, field
@@ -24,6 +25,7 @@ from server.store.repos.spans import SpanRepo
 from server.store.repos.traces import TraceRepo
 
 _PATH_REFRESH_SEC = 30.0
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -32,6 +34,7 @@ class PipelineReport:
 
     scanned: int = 0
     inserted: int = 0
+    updated: int = 0
     skipped: int = 0
     results: list[IngestResult] = field(default_factory=list)
 
@@ -53,12 +56,12 @@ class IngestPipeline:
         self._writer = IngestWriter(database, workspace_id, self.workspace_root)
         self._adapters = build_adapters(self.workspace_root, workspace_id)
         self._path_adapter: dict[Path, tuple[Adapter, str]] = {}
-        self._refresh_path_index()
         self._watcher = FileWatcher()
         self._watcher.set_on_change(self._on_path_changed)
         self._worker: threading.Thread | None = None
         self._refresh: threading.Thread | None = None
         self._stop = threading.Event()
+        self._ingest_lock = threading.Lock()
 
     def _refresh_path_index(self) -> None:
         self._path_adapter.clear()
@@ -75,7 +78,6 @@ class IngestPipeline:
 
     def start(self) -> None:
         """Start background watcher-driven ingest."""
-        self.watch_paths()
         self._stop.clear()
         self._watcher.start()
         if self._worker is None or not self._worker.is_alive():
@@ -101,17 +103,27 @@ class IngestPipeline:
             self._refresh = None
 
     def _refresh_loop(self) -> None:
-        """Rediscover adapter paths so new Cursor/Claude sessions are watched."""
-        while not self._stop.wait(_PATH_REFRESH_SEC):
-            self.watch_paths()
+        """Rediscover and ingest paths so newly created sessions are not missed."""
+        while not self._stop.is_set():
+            try:
+                self.sync_all()
+            except Exception:
+                # A malformed or temporarily unavailable adapter stream must not
+                # permanently stop auto-sync for every other adapter.
+                _LOGGER.exception("Background agent-log sync failed")
+            if self._stop.wait(_PATH_REFRESH_SEC):
+                break
 
-    def sync_all(self) -> PipelineReport:
+    def sync_all(self, source: str | None = None) -> PipelineReport:
         """Scan all adapter streams and ingest new/changed files."""
-        self._refresh_path_index()
+        self.watch_paths()
         report = PipelineReport()
-        for path, (adapter, _source) in self._path_adapter.items():
+        requested_source = source.replace("-", "_") if source else None
+        for path, (adapter, detected_source) in self._path_adapter.items():
+            if requested_source and detected_source.replace("-", "_") != requested_source:
+                continue
             report.scanned += 1
-            result = self._ingest_path(path, adapter, _source)
+            result = self._ingest_path(path, adapter, detected_source)
             if result is None:
                 report.skipped += 1
                 continue
@@ -119,7 +131,7 @@ class IngestPipeline:
             if result.inserted:
                 report.inserted += 1
             else:
-                report.skipped += 1
+                report.updated += 1
         return report
 
     def ingest_path(self, path: Path) -> IngestResult | None:
@@ -152,6 +164,12 @@ class IngestPipeline:
         self._ingest_path(path.resolve(), adapter, source)
 
     def _ingest_path(self, path: Path, adapter: Adapter, source: str) -> IngestResult | None:
+        with self._ingest_lock:
+            return self._ingest_path_locked(path, adapter, source)
+
+    def _ingest_path_locked(
+        self, path: Path, adapter: Adapter, source: str
+    ) -> IngestResult | None:
         if not path.is_file():
             return None
         stream = str(path)
