@@ -1,0 +1,36 @@
+server/analyze/fingerprint.py
+  s_89f082b63228d7::t_74d2f52408dbd4 17,22,34,258-262
+server/analyze/fingerprint_math.py
+  s_89f082b63228d7::t_dd39644739881c 11,62-88,90-91,100,116,118,128,144
+server/api/payloads.py
+  s_89f082b63228d7::t_dd39644739881c 16-20,488,490,492-494,542-545,550
+  s_89f082b63228d7::t_d67e2e3b655972 546-549
+server/api/schemas.py
+  s_89f082b63228d7::t_dd39644739881c 175
+ui/src/lib/types.ts
+  s_89f082b63228d7::t_8cb82835761a62 255-260
+ui/src/pages/Behavior.tsx
+  s_89f082b63228d7::t_8cb82835761a62 7-8,87,93-98,103-105,111-126
+tests/test_analyze_fingerprint.py
+  s_89f082b63228d7::t_0383c634a592ad 8,12,63-91
+ui/src/test/behavior.test.tsx
+  s_89f082b63228d7::t_c9c4179c38c716 1-50
+docs/ui-tour.md
+  s_89f082b63228d7::t_8cb82835761a62 60-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "19c51bdddbf1d589f51c386df96ca20853c98f9f",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
