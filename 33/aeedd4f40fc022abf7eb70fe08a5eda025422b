@@ -1,0 +1,77 @@
+ui/src/lib/api.ts
+  s_89f082b63228d7::t_196b6f401fafa2 130-141
+tests/test_analyze_outcomes.py
+  s_89f082b63228d7::t_8676cf0c7a7f23 11,67-82
+  s_89f082b63228d7::t_0b728dd167ecb9 137-139
+  s_89f082b63228d7::t_3f2ac7aa497060 5,10,12-14,65-66,83-136,140-151
+ui/src/pages/Quality.tsx
+  s_89f082b63228d7::t_e6d0fa1663a78b 11,153-162
+  s_89f082b63228d7::t_b2a9ba78edb454 112
+docs/ui-tour.md
+  s_89f082b63228d7::t_ee200c8279d92f 70-74
+docs/api.md
+  s_89f082b63228d7::t_ee200c8279d92f 41-42
+ui/src/components/quality/QualityScoreDetails.tsx
+  s_89f082b63228d7::t_196b6f401fafa2 1-36
+server/static/.gitkeep
+  s_89f082b63228d7::t_3d5fc4ceadfc89 1
+docs/optimize.md
+  s_89f082b63228d7::t_ee200c8279d92f 147-148,150,152,155-157
+ui/src/pages/SessionDetail.tsx
+  s_89f082b63228d7::t_e6d0fa1663a78b 1,4,13,32-34,54-63,168-174,177-221
+  s_89f082b63228d7::t_22d8805ea4852e 222
+ui/src/test/ui.test.tsx
+  s_89f082b63228d7::t_2313fafd0d40aa 9,100-111
+  s_89f082b63228d7::t_de7b35c60ba265 112-114
+server/api/payloads.py
+  s_89f082b63228d7::t_e1ffa3c9371501 289,298,1000-1015,1035-1039
+  s_89f082b63228d7::t_b2a9ba78edb454 591,593-594
+server/api/routers/traces.py
+  s_89f082b63228d7::t_20076226f3e20a 94
+  s_89f082b63228d7::t_e1ffa3c9371501 5,20-21,27-29,78-93,95-105
+  s_89f082b63228d7::t_75c8418f84db5f 106-107
+tests/test_api.py
+  s_89f082b63228d7::t_3f2ac7aa497060 61-80
+docs/configuration.md
+  s_89f082b63228d7::t_ee200c8279d92f 13
+server/models/outcome.py
+  s_89f082b63228d7::t_e3a4deedfeef18 12,46-47,49-50,53-55,68-69,71-72,75-77,85-88,102-103,106-108,123-124,126-127,130-132
+  s_89f082b63228d7::t_cc625eddd4789f 22-31,99-100
+ui/src/pages/Settings.tsx
+  s_89f082b63228d7::t_9296606018d337 41-43,82-97
+  s_89f082b63228d7::t_a6aeed82146102 98-99
+server/analyze/outcomes.py
+  s_89f082b63228d7::t_93656157935fae 17,46-53,64,68-69,82-86,88-89,91-99,172-225,227,347-352,361,365-366,384,386,400-401,403-404,407-409
+  s_89f082b63228d7::t_8676cf0c7a7f23 331,415-420
+  s_89f082b63228d7::t_4d5b0eb9393120 226
+  s_89f082b63228d7::t_acc84b38035db1 228-229
+ui/src/lib/types.ts
+  s_89f082b63228d7::t_196b6f401fafa2 132-142,277
+docs/concepts.md
+  s_89f082b63228d7::t_ee200c8279d92f 18,50-53
+ui/src/test/staticApi.test.ts
+  s_89f082b63228d7::t_2313fafd0d40aa 2,21-38
+  s_89f082b63228d7::t_94ed7ed4e01967 39
+server/api/schemas.py
+  s_89f082b63228d7::t_e1ffa3c9371501 115-127
+server/store/migrations/0002_outcome_feedback.sql
+  s_89f082b63228d7::t_e3a4deedfeef18 1-7
+server/config.py
+  s_89f082b63228d7::t_e3a4deedfeef18 28-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "33aeedd4f40fc022abf7eb70fe08a5eda025422b",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
