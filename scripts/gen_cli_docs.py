@@ -52,6 +52,10 @@ def _typer_rows() -> list[tuple[str, str]]:
         rows.append((f"`cairn {label}`", doc))
     for group in app.registered_groups:
         gname = group.name or ""
+        if group.typer_instance.registered_callback is not None:
+            callback = group.typer_instance.registered_callback
+            doc = (group.help or callback.callback.__doc__ or "").strip().split("\n")[0]
+            rows.append((f"`cairn {gname}`", doc))
         for sub in group.typer_instance.registered_commands:
             sublabel = _command_label(sub)
             if not sublabel:

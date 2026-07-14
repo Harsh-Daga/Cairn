@@ -135,6 +135,7 @@ Adding an adapter is one parser, one fixture, and a conformance test — see `ca
 | `cairn show ID` | Text waterfall for a trace |
 | `cairn insights` | List detector insights |
 | `cairn optimize` | Generate instruction proposals |
+| `cairn optimize revert ID` | Safely revert one applied instruction experiment |
 | `cairn experiments ls` | List improvement experiments |
 | `cairn check` | CI quality gate (non-zero on failure) |
 | `cairn export` | Export scrubbed trace bundle |

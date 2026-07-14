@@ -105,7 +105,13 @@ def apply_experiment(
         entry_id=experiment.block_key,
         content=experiment.content,
     )
-    apply_entries(target, [entry], backup_dir=backup_dir)
+    apply_entries(
+        target,
+        [entry],
+        backup_dir=backup_dir,
+        repo_root=repo_root,
+        backup_key=experiment.experiment_id,
+    )
     now = datetime.now(UTC).isoformat()
     updated = experiment.model_copy(update={"status": "applied", "applied_at": now})
     ExperimentRepo.update(conn, updated)
@@ -120,7 +126,7 @@ def revert_experiment(
     backup: Path,
 ) -> Experiment:
     target = repo_root / experiment.target_file
-    revert_from_backup(target, backup)
+    revert_from_backup(target, backup, repo_root=repo_root)
     now = datetime.now(UTC).isoformat()
     updated = experiment.model_copy(update={"status": "reverted", "measured_at": now})
     ExperimentRepo.update(conn, updated)

@@ -250,14 +250,34 @@ def insights(
         typer.echo(f"[{row.severity}/{row.state}] {row.title}")
 
 
-@app.command()
+optimize_app = typer.Typer(
+    help="Generate proposals and manage optimized instruction changes.",
+    invoke_without_command=True,
+)
+app.add_typer(optimize_app, name="optimize")
+
+
+@optimize_app.callback()
 def optimize(
+    ctx: typer.Context,
     llm: Annotated[bool, typer.Option("--llm")] = False,
     apply: Annotated[bool, typer.Option("--apply")] = False,
     workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
 ) -> None:
-    """Generate optimization proposals."""
+    """Generate optimization proposals when no subcommand is given."""
+    if ctx.invoked_subcommand is not None:
+        return
     result = _run_action("optimize_propose", {"llm": llm, "apply": apply}, workspace)
+    typer.echo(json.dumps(result, indent=2))
+
+
+@optimize_app.command("revert")
+def optimize_revert(
+    experiment_id: str,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Revert one applied optimization from its exact backup."""
+    result = _run_action("experiment_revert", {"experiment_id": experiment_id}, workspace)
     typer.echo(json.dumps(result, indent=2))
 
 

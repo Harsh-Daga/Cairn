@@ -6,7 +6,6 @@ import json
 import os
 import signal
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -257,14 +256,17 @@ def _experiment_revert_action(params: ExperimentRevertParams, ctx: ActionCtx) ->
     if exp is None:
         msg = "experiment not found"
         raise ValueError(msg)
+    from server.improve.apply import find_backup
+
     backup_dir = ctx.workspace_root / ".cairn" / "backups"
-    backups = sorted(backup_dir.glob(f"{Path(exp.target_file).name}.*.bak"))
-    if not backups:
+    target = ctx.workspace_root / exp.target_file
+    backup = find_backup(backup_dir, target, backup_key=exp.experiment_id)
+    if backup is None:
         msg = "no backup found"
         raise ValueError(msg)
     from server.improve.experiments import revert_experiment
 
-    revert_experiment(ctx.db.reader, exp, repo_root=ctx.workspace_root, backup=backups[-1])
+    revert_experiment(ctx.db.reader, exp, repo_root=ctx.workspace_root, backup=backup)
     ctx.db.reader.commit()
     return {"experiment_id": params.experiment_id, "status": "reverted"}
 

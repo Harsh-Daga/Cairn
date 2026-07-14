@@ -77,6 +77,8 @@ def _cli_command_names() -> set[str]:
             names.add(label)
     for group in app.registered_groups:
         gname = group.name or ""
+        if group.typer_instance.registered_callback is not None:
+            names.add(gname.replace("_", "-"))
         for sub in group.typer_instance.registered_commands:
             sublabel = _command_label(sub)
             if sublabel:

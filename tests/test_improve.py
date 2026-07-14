@@ -6,8 +6,17 @@ import sqlite3
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
-from server.improve.apply import ManagedEntry, apply_entries, revert_from_backup
+from server import cli as cli_module
+from server.improve.apply import (
+    BlockConflictError,
+    BlockError,
+    ManagedEntry,
+    apply_entries,
+    find_backup,
+    revert_from_backup,
+)
 from server.improve.bandit import Bandit
 from server.improve.experiments import create_experiment, measure_experiment, preview
 from server.improve.stats import (
@@ -52,18 +61,175 @@ def test_bandit_selects_arm() -> None:
     assert pick in {"a", "b"}
 
 
+def _entry(content: str = "Use pytest -q") -> ManagedEntry:
+    return ManagedEntry(kind="rule", entry_id="r1", content=content)
+
+
 def test_apply_and_revert_preserves_outside_block(tmp_path: Path) -> None:
     target = tmp_path / "AGENTS.md"
     target.write_text("# Human\n\nKeep this line.\n", encoding="utf-8")
     backup = apply_entries(
         target,
-        [ManagedEntry(kind="rule", entry_id="r1", content="Use pytest -q")],
+        [_entry()],
         backup_dir=tmp_path / ".cairn" / "backups",
+        repo_root=tmp_path,
+        backup_key="exp-1",
     )
-    assert "cairn:begin" in target.read_text(encoding="utf-8")
-    assert "Keep this line." in target.read_text(encoding="utf-8")
-    revert_from_backup(target, backup)
-    assert target.read_text(encoding="utf-8") == "# Human\n\nKeep this line.\n"
+    applied = target.read_text(encoding="utf-8")
+    assert "cairn:begin sha256=" in applied
+    assert backup.read_text(encoding="utf-8") == "# Human\n\nKeep this line.\n"
+
+    target.write_text(applied.replace("# Human", "# Human edited") + "Outside tail.\n")
+    apply_entries(
+        target,
+        [_entry("Use pytest -q tests/unit")],
+        backup_dir=tmp_path / ".cairn" / "backups",
+        repo_root=tmp_path,
+        backup_key="exp-2",
+    )
+    reapplied = target.read_text(encoding="utf-8")
+    assert "# Human edited" in reapplied
+    assert "Outside tail." in reapplied
+    assert "Use pytest -q tests/unit" in reapplied
+
+    revert_from_backup(target, backup, repo_root=tmp_path)
+    reverted = target.read_text(encoding="utf-8")
+    assert "cairn:begin" not in reverted
+    assert "# Human edited" in reverted
+    assert "Outside tail." in reverted
+
+
+def test_user_edit_inside_managed_block_surfaces_conflict(tmp_path: Path) -> None:
+    target = tmp_path / "CLAUDE.md"
+    backup_dir = tmp_path / ".cairn" / "backups"
+    apply_entries(
+        target,
+        [_entry()],
+        backup_dir=backup_dir,
+        repo_root=tmp_path,
+        backup_key="exp-1",
+    )
+    edited = target.read_text(encoding="utf-8").replace("Use pytest -q", "User override")
+    target.write_text(edited, encoding="utf-8")
+
+    with pytest.raises(BlockConflictError, match="edited after Cairn"):
+        apply_entries(
+            target,
+            [_entry("Replacement")],
+            backup_dir=backup_dir,
+            repo_root=tmp_path,
+            backup_key="exp-2",
+        )
+
+    assert target.read_text(encoding="utf-8") == edited
+    assert len(list(backup_dir.glob("*.bak"))) == 1
+
+
+def test_unbalanced_managed_marker_is_never_appended_over(tmp_path: Path) -> None:
+    target = tmp_path / "AGENTS.md"
+    original = "# Human\n\n<!-- cairn:begin sha256=broken -->\nKeep me.\n"
+    target.write_text(original, encoding="utf-8")
+    with pytest.raises(BlockError, match="unbalanced"):
+        apply_entries(
+            target,
+            [_entry()],
+            backup_dir=tmp_path / ".cairn" / "backups",
+            repo_root=tmp_path,
+        )
+    assert target.read_text(encoding="utf-8") == original
+
+
+@pytest.mark.parametrize("relative", ["notes.md", "nested/AGENTS.md", "../AGENTS.md"])
+def test_apply_refuses_targets_outside_allowlist(tmp_path: Path, relative: str) -> None:
+    target = tmp_path / relative
+    with pytest.raises(BlockError, match="only manage"):
+        apply_entries(
+            target,
+            [_entry()],
+            backup_dir=tmp_path / ".cairn" / "backups",
+            repo_root=tmp_path,
+        )
+    assert not target.exists()
+
+
+def test_apply_refuses_allowed_name_when_it_is_a_symlink(tmp_path: Path) -> None:
+    outside = tmp_path / "outside.md"
+    outside.write_text("Do not change.\n", encoding="utf-8")
+    target = tmp_path / "AGENTS.md"
+    target.symlink_to(outside)
+    with pytest.raises(BlockError, match="only manage"):
+        apply_entries(
+            target,
+            [_entry()],
+            backup_dir=tmp_path / ".cairn" / "backups",
+            repo_root=tmp_path,
+        )
+    assert outside.read_text(encoding="utf-8") == "Do not change.\n"
+
+
+def test_apply_refuses_backup_directory_outside_cairn(tmp_path: Path) -> None:
+    with pytest.raises(BlockError, match="backups must stay"):
+        apply_entries(
+            tmp_path / "AGENTS.md",
+            [_entry()],
+            backup_dir=tmp_path / "backups",
+            repo_root=tmp_path,
+        )
+
+
+def test_missing_target_has_backup_and_revert_removes_only_cairn_file(tmp_path: Path) -> None:
+    target = tmp_path / ".cursor" / "rules"
+    backup_dir = tmp_path / ".cairn" / "backups"
+    backup = apply_entries(
+        target,
+        [_entry()],
+        backup_dir=backup_dir,
+        repo_root=tmp_path,
+        backup_key="exp-missing",
+    )
+    assert backup.is_file() and ".missing.bak" in backup.name
+    assert find_backup(backup_dir, target, backup_key="exp-missing") == backup
+
+    revert_from_backup(target, backup, repo_root=tmp_path)
+    assert not target.exists()
+
+
+def test_revert_refuses_user_edit_inside_managed_block(tmp_path: Path) -> None:
+    target = tmp_path / "AGENTS.md"
+    backup = apply_entries(
+        target,
+        [_entry()],
+        backup_dir=tmp_path / ".cairn" / "backups",
+        repo_root=tmp_path,
+        backup_key="exp-1",
+    )
+    target.write_text(
+        target.read_text(encoding="utf-8").replace("Use pytest -q", "User override"),
+        encoding="utf-8",
+    )
+    with pytest.raises(BlockConflictError):
+        revert_from_backup(target, backup, repo_root=tmp_path)
+    assert target.is_file()
+
+
+def test_optimize_revert_cli_uses_experiment_revert_action(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls: list[tuple[str, dict[str, object], Path | None]] = []
+
+    def fake_run(name: str, params: dict[str, object], root: Path | None) -> dict[str, object]:
+        calls.append((name, params, root))
+        return {"experiment_id": params["experiment_id"], "status": "reverted"}
+
+    monkeypatch.setattr(cli_module, "_run_action", fake_run)
+    result = CliRunner().invoke(
+        cli_module.app,
+        ["optimize", "revert", "exp-1", "--workspace", str(tmp_path)],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [("experiment_revert", {"experiment_id": "exp-1"}, tmp_path)]
+    assert '"status": "reverted"' in result.output
 
 
 @pytest.fixture

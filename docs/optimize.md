@@ -52,12 +52,22 @@ Or on the **Optimize** page, review experiments in the **Proposed** column.
 Applying an experiment writes a managed block:
 
 ```html
-<!-- cairn:managed start block-key -->
-…instruction text…
-<!-- cairn:managed end -->
+<!-- cairn:begin sha256=<checksum-of-the-managed-body> -->
+## Cairn agent guide
+- …instruction text…  <!-- cairn:entry rule/<id> conf=0.8 -->
+<!-- cairn:end -->
 ```
 
-Backups land in `.cairn/backups/`. Apply via UI (**Apply** button) or:
+The writer accepts only repository-root `AGENTS.md`, `CLAUDE.md`, and `.cursor/rules`.
+It preserves every byte outside the fenced block. Before a successful apply it writes an
+experiment-specific backup under `.cairn/backups/`; a previously missing target gets a
+missing-file backup marker so revert can remove only the file Cairn created.
+
+The checksum covers the complete managed body. If a user or another tool changes anything
+inside that body, the next apply or revert reports a conflict and leaves the file untouched.
+Resolve the conflicting block manually instead of asking Cairn to clobber it.
+
+Apply via UI (**Apply** button) or:
 
 ```bash
 cairn action experiment_apply --params-json '{"experiment_id":"…"}'
@@ -85,10 +95,13 @@ Rules that repeatedly fail holdout are candidates for hard prune via Thompson sa
 ## Revert
 
 ```bash
+cairn optimize revert EXPERIMENT_ID
 cairn experiments revert EXPERIMENT_ID
 ```
 
-Or **Revert** on the Optimize page. Restores the target file from `.cairn/backups/`.
+Or **Revert** on the Optimize page. Revert selects the backup for that exact experiment and
+restores only Cairn's managed block, preserving user edits made elsewhere after apply. The
+`cairn experiments revert` spelling remains as a compatibility alias.
 
 ## Optional LLM reflector
 
