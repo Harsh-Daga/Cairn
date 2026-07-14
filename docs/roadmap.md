@@ -2,7 +2,7 @@
 
 ## Opt-in rule-effect registry (future)
 
-Cairn 1.1.0 does **not** contain a registry client, upload endpoint, telemetry, or background
+Cairn 1.1.1 does **not** contain a registry client, upload endpoint, telemetry, or background
 network call. It only defines and produces a local, scrubbed rule-effect artifact that a user may
 inspect and choose to share through their own explicit action.
 

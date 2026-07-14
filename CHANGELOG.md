@@ -2,6 +2,11 @@
 
 All notable changes to **cairn-workspace** follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-07-14
+
+### Fixed
+- Publish the 1.1 release under a fresh patch version because PyPI permanently reserves filenames from deleted releases and rejected the reused 1.1.0 artifacts.
+
 ## [1.1.0] — 2026-07-14
 
 ### Added

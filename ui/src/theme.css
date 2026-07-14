@@ -6,7 +6,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Cairn 1.1.0 — modern signal workspace. */
+/* Cairn 1.1.1 — modern signal workspace. */
 :root {
   color-scheme: dark;
   --anthracite: #090b10;
