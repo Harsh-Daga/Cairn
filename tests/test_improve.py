@@ -459,3 +459,73 @@ def test_confounded_on_model_mix_shift(tmp_path: Path) -> None:
     res = measure_causal_effect(conn, pre_trace_ids=["t1"], post_trace_ids=["t2"], metric_fn=metric)
     assert res.verdict == "confounded"
     conn.close()
+
+
+def test_confounded_on_task_complexity_shift(tmp_path: Path) -> None:
+    conn = sqlite3.connect(tmp_path / "task-mix.db")
+    from server.store.migrate import migrate
+
+    migrate(conn)
+    pre_ids = [f"pre-{i}" for i in range(6)]
+    post_ids = [f"post-{i}" for i in range(6)]
+    for trace_id in pre_ids:
+        conn.execute(
+            "INSERT INTO traces "
+            "(trace_id, workspace_id, source, project, model, span_count, status) "
+            "VALUES (?, 'ws', 'codex', 'repo', 'm1', 5, 'completed')",
+            (trace_id,),
+        )
+    for trace_id in post_ids:
+        conn.execute(
+            "INSERT INTO traces "
+            "(trace_id, workspace_id, source, project, model, span_count, status) "
+            "VALUES (?, 'ws', 'codex', 'repo', 'm1', 60, 'completed')",
+            (trace_id,),
+        )
+    conn.commit()
+
+    result = measure_causal_effect(
+        conn,
+        pre_trace_ids=pre_ids,
+        post_trace_ids=post_ids,
+        metric_fn=lambda trace_id: 1.0 if trace_id.startswith("pre") else 0.5,
+    )
+
+    assert result.verdict == "confounded"
+    assert "task mix shifted: spans-per-session distribution changed" in result.data_notes
+    conn.close()
+
+
+def test_confounded_on_agent_schema_version_change(tmp_path: Path) -> None:
+    conn = sqlite3.connect(tmp_path / "schema-mix.db")
+    from server.store.migrate import migrate
+
+    migrate(conn)
+    pre_ids = [f"pre-{i}" for i in range(6)]
+    post_ids = [f"post-{i}" for i in range(6)]
+    for trace_id, parser_version in [
+        *((trace_id, "codex@1") for trace_id in pre_ids),
+        *((trace_id, "codex@2") for trace_id in post_ids),
+    ]:
+        conn.execute(
+            "INSERT INTO traces "
+            "(trace_id, workspace_id, source, project, model, span_count, status) "
+            "VALUES (?, 'ws', 'codex', 'repo', 'm1', 12, 'completed')",
+            (trace_id,),
+        )
+        conn.execute(
+            "INSERT INTO data_quality (trace_id, parser_version) VALUES (?, ?)",
+            (trace_id, parser_version),
+        )
+    conn.commit()
+
+    result = measure_causal_effect(
+        conn,
+        pre_trace_ids=pre_ids,
+        post_trace_ids=post_ids,
+        metric_fn=lambda trace_id: 1.0 if trace_id.startswith("pre") else 0.5,
+    )
+
+    assert result.verdict == "confounded"
+    assert "agent/schema version changed: parser-version distribution shifted" in result.data_notes
+    conn.close()

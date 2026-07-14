@@ -94,6 +94,12 @@ clustered effective sample size before measurement, uses it for the holdout gate
 that same effective *n* into the confidence-sequence radius. The effective value is capped by
 the smaller raw window; raw session count is never substituted when producing a verdict.
 
+Before producing a verdict, Cairn compares model distribution, project/task distribution,
+spans-per-session buckets, tool-call mix, and ingest parser-version mix between windows. Any
+material shift returns `confounded` instead of attributing the change to the rule. The stored
+data notes name each triggered guard, including agent/schema-version changes inferred from
+parser metadata.
+
 ## 6. Verdict
 
 Experiments land in **Verdict** with:

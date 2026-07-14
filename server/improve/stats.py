@@ -38,11 +38,106 @@ def _model_mix(conn: sqlite3.Connection, run_ids: list[str]) -> dict[str, float]
     return {str(r[0]): int(r[1]) / total for r in rows}
 
 
+def _trace_field_mix(
+    conn: sqlite3.Connection, run_ids: list[str], *, field: str
+) -> dict[str, float]:
+    if not run_ids:
+        return {}
+    columns = {"project": "project", "source": "source"}
+    column = columns.get(field)
+    if column is None:
+        raise ValueError(f"unsupported trace mix field: {field}")
+    placeholders = ",".join("?" * len(run_ids))
+    rows = conn.execute(
+        f"SELECT COALESCE({column}, '(unknown)'), COUNT(*) "  # noqa: S608 - allowlisted column
+        f"FROM traces WHERE trace_id IN ({placeholders}) GROUP BY COALESCE({column}, '(unknown)')",
+        run_ids,
+    ).fetchall()
+    return _normalized_counts(rows)
+
+
+def _span_count_mix(conn: sqlite3.Connection, run_ids: list[str]) -> dict[str, float]:
+    if not run_ids:
+        return {}
+    placeholders = ",".join("?" * len(run_ids))
+    rows = conn.execute(
+        "SELECT CASE WHEN span_count < 10 THEN '0-9' "
+        "WHEN span_count < 25 THEN '10-24' WHEN span_count < 50 THEN '25-49' "
+        f"ELSE '50+' END AS bucket, COUNT(*) FROM traces WHERE trace_id IN ({placeholders}) "
+        "GROUP BY bucket",
+        run_ids,
+    ).fetchall()
+    return _normalized_counts(rows)
+
+
+def _tool_mix(conn: sqlite3.Connection, run_ids: list[str]) -> dict[str, float]:
+    if not run_ids:
+        return {}
+    placeholders = ",".join("?" * len(run_ids))
+    rows = conn.execute(
+        "SELECT COALESCE(name, '(unknown)'), COUNT(*) FROM spans "
+        f"WHERE kind = 'tool_call' AND trace_id IN ({placeholders}) "
+        "GROUP BY COALESCE(name, '(unknown)')",
+        run_ids,
+    ).fetchall()
+    return _normalized_counts(rows)
+
+
+def _parser_version_mix(conn: sqlite3.Connection, run_ids: list[str]) -> dict[str, float]:
+    if not run_ids:
+        return {}
+    placeholders = ",".join("?" * len(run_ids))
+    rows = conn.execute(
+        "SELECT COALESCE(parser_version, '(unknown)'), COUNT(*) FROM data_quality "
+        f"WHERE trace_id IN ({placeholders}) GROUP BY COALESCE(parser_version, '(unknown)')",
+        run_ids,
+    ).fetchall()
+    return _normalized_counts(rows)
+
+
+def _normalized_counts(rows: list[sqlite3.Row]) -> dict[str, float]:
+    total = sum(int(row[1]) for row in rows)
+    if total == 0:
+        return {}
+    return {str(row[0]): int(row[1]) / total for row in rows}
+
+
 def _mix_shift(
     before: dict[str, float], after: dict[str, float], *, threshold: float = 0.15
 ) -> bool:
     keys = set(before) | set(after)
     return any(abs(before.get(k, 0.0) - after.get(k, 0.0)) > threshold for k in keys)
+
+
+def _confound_notes(
+    conn: sqlite3.Connection, pre_trace_ids: list[str], post_trace_ids: list[str]
+) -> list[str]:
+    notes: list[str] = []
+    if _mix_shift(_model_mix(conn, pre_trace_ids), _model_mix(conn, post_trace_ids)):
+        notes.append("model mix shifted between windows")
+    if _mix_shift(
+        _trace_field_mix(conn, pre_trace_ids, field="project"),
+        _trace_field_mix(conn, post_trace_ids, field="project"),
+    ):
+        notes.append("task mix shifted: project distribution changed")
+    if _mix_shift(
+        _span_count_mix(conn, pre_trace_ids),
+        _span_count_mix(conn, post_trace_ids),
+        threshold=0.20,
+    ):
+        notes.append("task mix shifted: spans-per-session distribution changed")
+    if _mix_shift(
+        _tool_mix(conn, pre_trace_ids),
+        _tool_mix(conn, post_trace_ids),
+        threshold=0.20,
+    ):
+        notes.append("task mix shifted: tool-call distribution changed")
+    if _mix_shift(
+        _parser_version_mix(conn, pre_trace_ids),
+        _parser_version_mix(conn, post_trace_ids),
+    ):
+        notes.append("agent/schema version changed: parser-version distribution shifted")
+    return notes
 
 
 def cuped_adjust(
@@ -186,9 +281,8 @@ def measure_causal_effect(
     pre_out = [metric_fn(tid) for tid in pre_trace_ids]
     post_out = [metric_fn(tid) for tid in post_trace_ids]
 
-    before_mix = _model_mix(conn, pre_trace_ids)
-    after_mix = _model_mix(conn, post_trace_ids)
-    if _mix_shift(before_mix, after_mix):
+    confound_notes = _confound_notes(conn, pre_trace_ids, post_trace_ids)
+    if confound_notes:
         return CausalResult(
             effect_estimate=None,
             effect_ci_low=None,
@@ -196,7 +290,7 @@ def measure_causal_effect(
             verdict="confounded",
             test_method="difference_in_means+anytime_valid_cs",
             confound_flag=True,
-            data_notes=["model mix shifted between windows"],
+            data_notes=confound_notes,
         )
 
     if not pre_out or not post_out:
