@@ -12,6 +12,7 @@ _TRACE_VIEWS = (
     "regions",
     "waste",
     "fingerprint",
+    "file_summaries",
     "difficulty",
     "diagnose",
     "outcomes",

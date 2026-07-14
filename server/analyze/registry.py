@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from server.analyze.diagnose import DiagnoseView
 from server.analyze.difficulty import DifficultyView
+from server.analyze.file_summaries import FileSummaryView
 from server.analyze.fingerprint import FingerprintView
 from server.analyze.outcomes import OutcomesView
 from server.analyze.regions import RegionsView
@@ -19,6 +20,7 @@ def build_views(workspace_id: str) -> list[IncrementalView]:
         RegionsView(),
         WasteView(),
         FingerprintView(),
+        FileSummaryView(workspace_id),
         DifficultyView(),
         DiagnoseView(),
         OutcomesView(),

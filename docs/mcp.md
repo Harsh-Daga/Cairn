@@ -18,3 +18,16 @@ The response always contains `should_stop`, `trace_id`, `pattern`, `count`,
 `first_seen_seq`, and actionable `advice`. A clear tail returns `pattern=null` and explains
 which patterns were checked. Cairn reads at most the latest 50 spans, so the call remains
 bounded during long sessions.
+
+## Before you read
+
+`cairn_before_you_read {"path":"..."}` can avoid a repeat file read. During normal analysis,
+files read at least twice are cached with their SHA-256 identity, nanosecond mtime, read count,
+and a deterministic structural summary capped at 120 whitespace tokens. No LLM or network is
+used to generate it.
+
+At call time the read-only MCP process hashes the current local file. It returns
+`should_read=false` and the cached summary only when both hash and mtime still match. Changed,
+missing, outside-workspace, never-read, and not-yet-hot files return `should_read=true` with a
+specific reason. When content was unavailable at analysis time, Cairn falls back to read-count
+and last-read metadata instead of inventing a summary.

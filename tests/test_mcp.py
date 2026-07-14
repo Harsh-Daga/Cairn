@@ -53,7 +53,8 @@ def test_mcp_stdio_initialize_and_list_tools(tmp_path: Path) -> None:
     tool_names = {t["name"] for t in lines[1]["result"]["tools"]}
     assert "cairn_have_i_read" in tool_names
     assert "cairn_should_i_stop" in tool_names
-    assert len(tool_names) == 6
+    assert "cairn_before_you_read" in tool_names
+    assert len(tool_names) == 7
 
 
 def test_mcp_have_i_read_tool(tmp_path: Path) -> None:
