@@ -1,0 +1,34 @@
+server/ingest/adapter_doctor.py
+  s_89f082b63228d7::t_dcfd5c2c335eef 1-29,35-105
+  s_89f082b63228d7::t_f16d199f86503e 30-34
+docs/cli.md
+  s_89f082b63228d7::t_f90487c4a0d4a7 27
+server/ingest/parse_health.py
+  s_89f082b63228d7::t_6a0a6914b0d0f0 129-130
+  s_89f082b63228d7::t_dcfd5c2c335eef 131-134,138-143,146,149-155
+tests/test_adapter_doctor.py
+  s_89f082b63228d7::t_f16d199f86503e 1-61
+server/ingest/accuracy_data.json
+  s_89f082b63228d7::t_dcfd5c2c335eef 1-17
+server/cli.py
+  s_89f082b63228d7::t_dcfd5c2c335eef 550-553,557-567
+  s_89f082b63228d7::t_9ca23ddc7a0677 554-556
+docs/adapters.md
+  s_89f082b63228d7::t_f16d199f86503e 97-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "c83e206384eac0483634a93f5d19fe358103173d",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
