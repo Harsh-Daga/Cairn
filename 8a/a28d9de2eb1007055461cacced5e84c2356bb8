@@ -1,0 +1,48 @@
+server/cli.py
+  s_89f082b63228d7::t_cdc2141d177826 118-161
+ui/src/lib/api.ts
+  s_89f082b63228d7::t_febb3eba7e7604 10,105-108
+ui/src/pages/Overview.tsx
+  s_89f082b63228d7::t_febb3eba7e7604 2,16,24,38,65-70,141-149,281-314,316
+  s_89f082b63228d7::t_a6228d54e3ba69 315
+  s_89f082b63228d7::t_fc46ef9e6d543e 317
+server/api/routers/overview.py
+  s_89f082b63228d7::t_e4cff1d3b9fa87 11-12,24-31
+tests/test_api.py
+  s_89f082b63228d7::t_4e69baa076b6a8 62-63
+  s_89f082b63228d7::t_73660e48d3de84 6,55-61,64-103,285-286
+ui/src/lib/types.ts
+  s_89f082b63228d7::t_febb3eba7e7604 67-87
+ui/src/test/overview.test.tsx
+  s_89f082b63228d7::t_73660e48d3de84 4,38-76
+  s_89f082b63228d7::t_ab141d9cdd557d 1,3
+  s_89f082b63228d7::t_73bb100df141ba 77-78
+docs/ui-tour.md
+  s_89f082b63228d7::t_4e69baa076b6a8 24-29
+tests/test_cli_money.py
+  s_89f082b63228d7::t_73660e48d3de84 3-4,33-74
+docs/cli.md
+  s_89f082b63228d7::t_7f432eabf547ca 41
+server/api/payloads.py
+  s_89f082b63228d7::t_ab141d9cdd557d 373-377,379-381
+  s_89f082b63228d7::t_e4cff1d3b9fa87 41-43,346-372,378,382-425
+  s_89f082b63228d7::t_1576456fb08192 426-427
+server/api/schemas.py
+  s_89f082b63228d7::t_e4cff1d3b9fa87 61-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "8aa28d9de2eb1007055461cacced5e84c2356bb8",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
