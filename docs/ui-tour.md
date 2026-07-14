@@ -67,7 +67,11 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 
 **Question:** *Is the work actually good, and what does success cost?*
 
-- Outcome scores, lucky-pass flags, cost-per-success bars.
+- Expandable outcome scores show every component and weight; same-file revert/fixup signals
+  reduce the graded success component.
+- Session detail provides thumbs up/down plus an optional local note. Settings → Quality
+  diagnostics shows agreement between human labels and Cairn's ≥50 score classification.
+- Lucky-pass flags and cost-per-success bars.
 - Enable outcome capture from Settings or `config_set` when no outcomes exist.
 - Data from `/api/quality`.
 

@@ -127,6 +127,18 @@ export function fetchTraceDetail(traceId: string): Promise<TraceDetailResponse> 
   return fetchJson(`/traces/${encodeURIComponent(traceId)}`);
 }
 
+export function setHumanLabel(
+  traceId: string,
+  label: "up" | "down" | null,
+  note?: string,
+): Promise<{ trace_id: string; label: "up" | "down" | null; note: string | null }> {
+  return fetchJson(`/traces/${encodeURIComponent(traceId)}/human-label`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label, note: note || null }),
+  });
+}
+
 export function fetchReplayCheckpoints(traceId: string): Promise<ReplayResponse> {
   return fetchJson(`/traces/${encodeURIComponent(traceId)}/replay`);
 }

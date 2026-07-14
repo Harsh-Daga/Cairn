@@ -38,6 +38,9 @@ export function SettingsPage() {
 
   const traceCount = Number(data.health.trace_count ?? 0);
   const insightCount = Number(data.health.insight_count ?? 0);
+  const agreement = data.health.human_label_agreement as
+    | { labeled_sessions?: number; agreements?: number; rate?: number | null }
+    | undefined;
   const handleAction = async (
     name: string,
     success: string,
@@ -74,6 +77,24 @@ export function SettingsPage() {
               <dd className="text-bone">{insightCount || "—"}</dd>
             </div>
           </dl>
+        </section>
+
+        <section className="card p-4">
+          <h2 className="font-display text-sm text-bone">Quality diagnostics</h2>
+          <p className="mt-2 text-sm text-cinder">
+            Agreement compares Cairn scores of 50 or higher with human thumbs-up labels.
+          </p>
+          <div className="mt-3 flex items-end justify-between gap-4">
+            <div>
+              <p className="font-display text-2xl text-bone">
+                {agreement?.rate != null ? `${(agreement.rate * 100).toFixed(0)}%` : "—"}
+              </p>
+              <p className="font-mono text-[10px] text-cinder">score ↔ human agreement</p>
+            </div>
+            <p className="font-mono text-xs text-cinder">
+              {agreement?.labeled_sessions ?? 0} labeled sessions
+            </p>
+          </div>
         </section>
 
         <section className="card p-4">

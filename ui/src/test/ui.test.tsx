@@ -6,6 +6,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ContextTimeline } from "@/components/session/ReplayScrubber";
 import { Chip } from "@/components/common/Chip";
+import { QualityScoreDetails } from "@/components/quality/QualityScoreDetails";
 import type { Span } from "@/lib/types";
 
 const themeCss = readFileSync(
@@ -93,6 +94,21 @@ describe("estimated value grammar", () => {
   it("theme defines dashed estimated-chip border", () => {
     expect(themeCss).toContain(".estimated-chip");
     expect(themeCss).toContain("border-left: 2px dashed");
+  });
+});
+
+describe("quality score explanation", () => {
+  it("expands into component values and weights", () => {
+    render(
+      <QualityScoreDetails
+        score={82}
+        components={{ success: 0.75, efficiency: 0.9 }}
+        weights={{ success: 0.4, efficiency: 0.25 }}
+      />,
+    );
+    fireEvent.click(screen.getByText("82.0 quality"));
+    expect(screen.getByText("75% × 40%")).toBeTruthy();
+    expect(screen.getByText("90% × 25%")).toBeTruthy();
   });
 });
 

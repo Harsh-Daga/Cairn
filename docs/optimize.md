@@ -144,20 +144,18 @@ Without LLM config, Cairn uses templated rewrites from evidence.
 
 ## Appendix — statistics formulas
 
-Cairn uses **anytime-valid confidence sequences** (CS) on CUPED-adjusted holdout effects instead of fixed-*z* sequential tests.
+Cairn uses **anytime-valid confidence sequences** (CS) on plain holdout mean differences
+instead of fixed-*z* sequential tests. Sessions in different windows are not paired.
 
-### CUPED adjustment
+### Difference in means
 
-Given post-period outcomes \(Y_i\) and pre-period covariates \(X_i\):
+Given pre-period outcomes \(X_i\) and post-period outcomes \(Y_i\):
 
 \[
-\theta = \frac{\mathrm{Cov}(Y, X)}{\mathrm{Var}(X)}, \quad
-\tilde{Y}_i = Y_i - \theta (X_i - \bar{X}), \quad
-\hat{\mu} = \bar{\tilde{Y}}, \quad
-\mathrm{SE} = \sqrt{\mathrm{Var}(\tilde{Y}) / n}
+\hat{\delta} = \bar{Y} - \bar{X}, \quad
+\sigma = \sqrt{s_X^2 + s_Y^2}, \quad
+n = \min(n_{\mathrm{pre}}, n_{\mathrm{post}}, n_{\mathrm{clustered}})
 \]
-
-Effect estimate: \(\hat{\delta} = \hat{\mu}_{\text{post}} - \bar{Y}_{\text{pre}}\).
 
 ### Anytime-valid CS radius
 

@@ -58,6 +58,26 @@ def test_trace_detail_shape(api_client: TestClient, api_workspace: tuple) -> Non
     assert "tree" in body
     assert "links" in body
     assert len(body["spans"]) > 0
+    assert "outcome" in body
+
+
+def test_human_label_persists_and_updates_agreement(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute("UPDATE outcomes SET quality_score = 80 WHERE trace_id = ?", (trace_id,))
+    response = api_client.put(
+        f"/api/traces/{trace_id}/human-label",
+        json={"label": "up", "note": "The change shipped cleanly."},
+    )
+    assert response.status_code == 200
+    assert response.json()["label"] == "up"
+    detail = api_client.get(f"/api/traces/{trace_id}").json()
+    assert detail["outcome"]["human_label"] == "up"
+    assert detail["outcome"]["human_note"] == "The change shipped cleanly."
+    agreement = api_client.get("/api/workspace").json()["health"]["human_label_agreement"]
+    assert agreement == {"labeled_sessions": 1, "agreements": 1, "rate": 1.0}
 
 
 def test_trace_replay_shape(api_client: TestClient, api_workspace: tuple) -> None:

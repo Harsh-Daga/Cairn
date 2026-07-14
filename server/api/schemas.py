@@ -112,6 +112,19 @@ class TraceDetailResponse(BaseModel):
     regions: list[dict[str, Any]]
     diagnostics: dict[str, Any] | None
     quality: dict[str, Any] | None
+    outcome: dict[str, Any] | None
+
+
+class HumanLabelRequest(BaseModel):
+    label: Literal["up", "down"] | None
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class HumanLabelResponse(BaseModel):
+    trace_id: str
+    label: Literal["up", "down"] | None
+    note: str | None
+    labeled_at: str | None
 
 
 class ReplayCheckpoint(BaseModel):

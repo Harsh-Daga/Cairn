@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { fetchReplayCheckpoints, fetchTraceDetail } from "@/lib/api";
+import { fetchReplayCheckpoints, fetchTraceDetail, setHumanLabel } from "@/lib/api";
 import { interpolateReplayAtSeq } from "@/lib/replay";
 import { formatCost } from "@/lib/format";
 import { PageShell } from "@/components/common/PageShell";
@@ -10,6 +10,7 @@ import { flattenTree, Waterfall } from "@/components/waterfall/Waterfall";
 import { LinkLegend } from "@/components/waterfall/LinkConnectors";
 import { ContextTimeline, ReplayScrubber } from "@/components/session/ReplayScrubber";
 import { SpanInspector } from "@/components/session/SpanInspector";
+import { QualityScoreDetails } from "@/components/quality/QualityScoreDetails";
 import type { Span } from "@/lib/types";
 import {
   formatZoomParam,
@@ -28,6 +29,9 @@ export function SessionDetailPage() {
   const [blameMode, setBlameMode] = useState(false);
   const [foldSubagents, setFoldSubagents] = useState(false);
   const [highlightedLinkId, setHighlightedLinkId] = useState<string | null>(null);
+  const [humanLabel, setHumanLabelValue] = useState<"up" | "down" | null>(null);
+  const [humanNote, setHumanNote] = useState("");
+  const queryClient = useQueryClient();
   const modeParam = searchParams.get("mode");
   const waterfallMode: WaterfallMode = modeParam === "time" ? "time" : "tokens";
   const timeZoom = parseZoomParam(searchParams.get("zoom"));
@@ -45,6 +49,16 @@ export function SessionDetailPage() {
     queryKey: ["replay-checkpoints", id],
     queryFn: () => fetchReplayCheckpoints(id!),
     enabled: Boolean(id),
+  });
+
+  useEffect(() => {
+    setHumanLabelValue(detail?.outcome?.human_label ?? null);
+    setHumanNote(detail?.outcome?.human_note ?? "");
+  }, [detail?.outcome?.human_label, detail?.outcome?.human_note]);
+
+  const labelMutation = useMutation({
+    mutationFn: () => setHumanLabel(id!, humanLabel, humanNote),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trace", id] }),
   });
 
   const activeSpans: Span[] = useMemo(() => {
@@ -151,7 +165,60 @@ export function SessionDetailPage() {
         <Chip label={formatCost(trace.cost)} tone="copper" />
         <Chip label={`${trace.span_count} spans`} />
         {trace.cost_source === "absent" ? <Chip label="est." tone="estimated" /> : null}
+        {detail.outcome?.quality_score != null ? (
+          <QualityScoreDetails
+            score={Number(detail.outcome.quality_score)}
+            components={detail.outcome.quality_components}
+            weights={detail.outcome.quality_weights}
+          />
+        ) : null}
       </div>
+
+      <section className="mb-4 card p-4" aria-label="Human session label">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-display text-sm text-bone">Was this session successful?</span>
+          <button
+            type="button"
+            aria-pressed={humanLabel === "up"}
+            className={`rounded-chip border px-3 py-1 text-sm ${
+              humanLabel === "up"
+                ? "border-malachite bg-malachite/10 text-malachite"
+                : "border-quartz-vein text-cinder"
+            }`}
+            onClick={() => setHumanLabelValue("up")}
+          >
+            👍
+          </button>
+          <button
+            type="button"
+            aria-pressed={humanLabel === "down"}
+            className={`rounded-chip border px-3 py-1 text-sm ${
+              humanLabel === "down"
+                ? "border-cinnabar bg-cinnabar/10 text-cinnabar"
+                : "border-quartz-vein text-cinder"
+            }`}
+            onClick={() => setHumanLabelValue("down")}
+          >
+            👎
+          </button>
+          <input
+            value={humanNote}
+            onChange={(event) => setHumanNote(event.target.value)}
+            maxLength={1000}
+            placeholder="Optional note"
+            aria-label="Human label note"
+            className="min-w-52 flex-1 rounded-sm border border-quartz-vein bg-shale px-3 py-1.5 text-sm text-bone"
+          />
+          <button
+            type="button"
+            disabled={humanLabel === null || labelMutation.isPending}
+            onClick={() => labelMutation.mutate()}
+            className="rounded-sm bg-copper px-3 py-1.5 font-mono text-xs text-anthracite disabled:opacity-50"
+          >
+            {labelMutation.isPending ? "Saving…" : "Save feedback"}
+          </button>
+        </div>
+      </section>
 
       <ReplayScrubber
         maxSeq={maxSeq}

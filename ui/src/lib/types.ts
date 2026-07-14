@@ -129,6 +129,17 @@ export interface TraceDetailResponse {
   regions: Record<string, unknown>[];
   diagnostics: Record<string, unknown> | null;
   quality: Record<string, unknown> | null;
+  outcome: OutcomeRecord | null;
+}
+
+export interface OutcomeRecord extends Record<string, unknown> {
+  trace_id: string;
+  quality_score: number | null;
+  quality_components: Record<string, number> | null;
+  quality_weights: Record<string, number> | null;
+  human_label: "up" | "down" | null;
+  human_note: string | null;
+  human_labeled_at: string | null;
 }
 
 export interface ReplayCheckpoint {
@@ -263,7 +274,7 @@ export interface BehaviorResponse {
 
 export interface QualityResponse {
   days: number;
-  outcomes: Record<string, unknown>[];
+  outcomes: OutcomeRecord[];
   histogram: { bucket: string; count: number }[];
   cost_per_success: Record<string, unknown>[];
   data_notes: DataNote[];

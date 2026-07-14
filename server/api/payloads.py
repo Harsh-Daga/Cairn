@@ -286,6 +286,7 @@ def build_trace_detail(conn: sqlite3.Connection, trace_id: str) -> TraceDetailRe
     regions = [dict(r) for r in region_rows]
     diag = DiagnosticRepo.get(conn, trace_id)
     quality = DataQualityRepo.get(conn, trace_id)
+    outcome = OutcomeRepo.get(conn, trace_id)
     return TraceDetailResponse(
         trace=trace,
         spans=spans,
@@ -294,6 +295,7 @@ def build_trace_detail(conn: sqlite3.Connection, trace_id: str) -> TraceDetailRe
         regions=regions,
         diagnostics=diag.model_dump() if diag else None,
         quality=quality.model_dump() if quality else None,
+        outcome=outcome.model_dump() if outcome else None,
     )
 
 
@@ -586,10 +588,10 @@ def build_quality(
             )
     histogram: list[dict[str, Any]] = []
     if scores:
-        buckets = [0, 0.25, 0.5, 0.75, 1.0]
+        buckets = [0, 25, 50, 75, 100]
         for lo, hi in zip(buckets, buckets[1:], strict=False):
-            count = sum(1 for s in scores if lo <= s < hi or (hi == 1.0 and s == 1.0))
-            histogram.append({"bucket": f"{lo:.2f}-{hi:.2f}", "count": count})
+            count = sum(1 for score in scores if lo <= score < hi or (hi == 100 and score == 100))
+            histogram.append({"bucket": f"{lo}-{hi}", "count": count})
     return QualityResponse(
         days=days,
         outcomes=outcomes,
@@ -995,6 +997,22 @@ def build_workspace(
         (workspace_id,),
     ).fetchone()
     insight_count = conn.execute("SELECT COUNT(*) AS n FROM insights").fetchone()
+    agreement_rows = conn.execute(
+        """
+        SELECT o.quality_score, o.human_label
+        FROM outcomes o
+        JOIN traces t ON t.trace_id = o.trace_id
+        WHERE t.workspace_id = ? AND o.human_label IS NOT NULL
+          AND o.quality_score IS NOT NULL
+        """,
+        (workspace_id,),
+    ).fetchall()
+    agreement_count = sum(
+        1
+        for row in agreement_rows
+        if (float(row["quality_score"]) >= 50.0) == (str(row["human_label"]) == "up")
+    )
+    agreement_rate = agreement_count / len(agreement_rows) if agreement_rows else None
     raw_gauge = compute_gauge(Path(root_path)).as_dict()
     gauge: PlanWindowGauge | None = None
     if raw_gauge.get("total_tokens") or raw_gauge.get("limit") is not None:
@@ -1014,6 +1032,11 @@ def build_workspace(
             "trace_count": int(trace_count["n"] or 0) if trace_count else 0,
             "insight_count": int(insight_count["n"] or 0) if insight_count else 0,
             "fts_available": FTS_AVAILABLE,
+            "human_label_agreement": {
+                "labeled_sessions": len(agreement_rows),
+                "agreements": agreement_count,
+                "rate": agreement_rate,
+            },
         },
         gauge=gauge,
     )

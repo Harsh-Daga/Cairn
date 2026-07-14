@@ -8,6 +8,7 @@ import { PageShell } from "@/components/common/PageShell";
 import { ChartFrame } from "@/components/common/Chip";
 import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
 import { HorizontalBars, Sparkline } from "@/components/charts";
+import { QualityScoreDetails } from "@/components/quality/QualityScoreDetails";
 
 export function QualityPage() {
   const timeRange = useUiStore((s) => s.timeRange);
@@ -108,7 +109,7 @@ export function QualityPage() {
         </ChartFrame>
 
         {data.histogram.length > 0 ? (
-          <ChartFrame title="Quality histogram" subtitle="Score distribution 0–1">
+          <ChartFrame title="Quality histogram" subtitle="Score distribution 0–100">
             <HorizontalBars
               items={data.histogram.map((bucket) => ({
                 label: bucket.bucket,
@@ -149,8 +150,16 @@ export function QualityPage() {
                       {String(o.trace_id).slice(0, 10)}…
                     </Link>
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-bone">
-                    {o.quality_score != null ? Number(o.quality_score).toFixed(2) : "—"}
+                  <td className="px-4 py-2 text-xs text-bone">
+                    {o.quality_score != null ? (
+                      <QualityScoreDetails
+                        score={Number(o.quality_score)}
+                        components={o.quality_components}
+                        weights={o.quality_weights}
+                      />
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-2 font-mono text-xs text-cinder">
                     {String(o.tests_passed ?? 0)}/{String(o.tests_run ?? 0)}
