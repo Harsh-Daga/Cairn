@@ -1,0 +1,24 @@
+docs/getting-started.md
+  s_89f082b63228d7::t_e5adf20dd55306 10,12-16
+README.md
+  s_89f082b63228d7::t_e5adf20dd55306 53-58
+tests/test_docs.py
+  s_89f082b63228d7::t_e5adf20dd55306 10,22-29,272-306
+  s_89f082b63228d7::t_2b6f20816f22f9 307-308
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "8db53f22541f71587fcae8ca75e7aa9ebbf7c88c",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
