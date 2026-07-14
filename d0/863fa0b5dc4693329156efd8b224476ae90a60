@@ -1,0 +1,42 @@
+server/improve/detectors/identical_calls.py
+  s_89f082b63228d7::t_9d57b35745878b 5,11,18-42
+  s_89f082b63228d7::t_6365656fef2bd7 43-44
+server/improve/detectors/retry_loops.py
+  s_89f082b63228d7::t_9d57b35745878b 7-37
+server/improve/detectors/registry.py
+  s_89f082b63228d7::t_ac0dcb78cdf074 8,13,37,50
+  s_89f082b63228d7::t_9d57b35745878b 14-17,19-22,28,36,38-49
+  s_89f082b63228d7::t_dc933f07402b1c 51
+docs/mcp.md
+  s_89f082b63228d7::t_ac0dcb78cdf074 1-20
+server/improve/detectors/error_streak.py
+  s_89f082b63228d7::t_9d57b35745878b 7-37
+tests/test_detector_rules.py
+  s_89f082b63228d7::t_4a947d719f26b9 20
+  s_89f082b63228d7::t_13b80fc7e59773 124-176
+server/mcp/tools.py
+  s_89f082b63228d7::t_ac0dcb78cdf074 227-228,240-241,244-252,256,258,260-263
+  s_89f082b63228d7::t_c064fb86069495 253-255
+server/improve/detectors/failing_command.py
+  s_89f082b63228d7::t_9d57b35745878b 5,8-31
+tests/test_mcp.py
+  s_89f082b63228d7::t_13b80fc7e59773 10,86-114
+server/improve/detectors/_types.py
+  s_89f082b63228d7::t_9d57b35745878b 29-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "d0863fa0b5dc4693329156efd8b224476ae90a60",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
