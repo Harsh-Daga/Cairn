@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 import { fetchBehavior, timeRangeDays } from "@/lib/api";
 import { useUiStore } from "@/state/ui";
 import { PageShell } from "@/components/common/PageShell";
-import { ChartFrame } from "@/components/common/Chip";
-import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
+import { ChartFrame, Chip } from "@/components/common/Chip";
+import { ErrorCard } from "@/components/common/DataViews";
 import { ControlChart, Radar, Sparkline, type RadarPoint } from "@/components/charts";
 
 const FINGERPRINT_AXES = ["read_write", "explore", "retry", "entropy", "turns"] as const;
@@ -84,38 +84,46 @@ export function BehaviorPage() {
 
   const sessionCount = data.series.length;
   const drifting = data.drift.length > 0;
-
-  if (sessionCount < 10) {
-    return (
-      <PageShell title="Behavior" question="Detect drift, compare behavioral fingerprints, and identify what moved.">
-        <EmptyCard
-          title="Fingerprinting needs ~10 sessions"
-          detail={`Have ${sessionCount} fingerprinted sessions in this window.`}
-          action={
-            <Link to="/sessions" className="font-mono text-sm text-copper hover:underline">
-              View sessions →
-            </Link>
-          }
-        />
-      </PageShell>
-    );
-  }
-
+  const baseline = data.baseline_progress;
   const radarPoints = data.radar ? radarFromBaseline(data.radar) : [];
 
   return (
     <PageShell title="Behavior" question="Detect drift, compare behavioral fingerprints, and identify what moved.">
       <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Chip label="Experimental" tone="estimated" />
+          <span className="font-mono text-[10px] text-cinder">
+            Joint-shock detection uses a shrinkage covariance baseline.
+          </span>
+        </div>
         <div className={`card p-4 ${drifting ? "border-l-2 border-cinnabar" : ""}`}>
           <p className="display text-lg text-bone">
             {drifting
               ? `Drift detected: ${data.drift.length} ${data.drift.length === 1 ? "event" : "events"} in the last ${days} days.`
-              : `No drift — behavior within baseline for ${days} days.`}
+              : baseline.ready
+                ? `No joint shock detected for ${days} days.`
+                : "Joint-shock baseline is still collecting."}
           </p>
           <p className="mt-1 text-sm text-cinder">
             Cairn compares each project/model pair with its recent behavioral baseline across tool
             mix, retries, context growth, duration, and token flow.
           </p>
+          {!baseline.ready ? (
+            <div className="mt-4" aria-label="Joint-shock baseline progress">
+              <div className="flex items-center justify-between font-mono text-[10px] text-cinder">
+                <span>{baseline.note}</span>
+                <span>EWMA trend remains active</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-chip bg-granite">
+                <div
+                  className="h-full rounded-chip bg-copper transition-[width]"
+                  style={{
+                    width: `${Math.min(100, (baseline.collected / baseline.required) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
           {data.drift.length > 0 ? (
             <ul className="mt-3 space-y-2">
               {data.drift.map((event, index) => (

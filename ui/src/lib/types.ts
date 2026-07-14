@@ -252,6 +252,12 @@ export interface BehaviorResponse {
     axes?: { axis_label: string; weeks_outside: number }[];
   }[];
   radar: Record<string, unknown> | null;
+  baseline_progress: {
+    collected: number;
+    required: number;
+    ready: boolean;
+    note: string;
+  };
   data_notes: DataNote[];
 }
 

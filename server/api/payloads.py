@@ -13,7 +13,11 @@ import numpy as np
 
 from server.analyze.diff import build_trace_diff_payload
 from server.analyze.fingerprint import FINGERPRINT_AXIS_LABELS
-from server.analyze.fingerprint_math import detect_drift, detect_gradual_drift
+from server.analyze.fingerprint_math import (
+    MIN_JOINT_BASELINE,
+    detect_drift,
+    detect_gradual_drift,
+)
 from server.analyze.gauge import compute_gauge
 from server.analyze.tail import expected_worst
 from server.api.schemas import (
@@ -481,10 +485,13 @@ def build_behavior(
     grouped: dict[tuple[str | None, str | None], list[Fingerprint]] = defaultdict(list)
     for fp in chronological:
         grouped[(fp.project, fp.model)].append(fp)
+    strongest_baseline = 0
     for (project_name, model_name), group in grouped.items():
-        if len(group) < 5:
+        if len(group) < 2:
             continue
-        result = detect_drift(group[-1].vector, [fp.vector for fp in group[:-1]])
+        baseline = [fp.vector for fp in group[:-1]]
+        strongest_baseline = max(strongest_baseline, len(baseline))
+        result = detect_drift(group[-1].vector, baseline)
         if result.drift:
             drift.append(
                 DriftEvent(
@@ -532,6 +539,15 @@ def build_behavior(
         series=series,
         drift=drift,
         radar=radar,
+        baseline_progress={
+            "collected": min(strongest_baseline, MIN_JOINT_BASELINE),
+            "required": MIN_JOINT_BASELINE,
+            "ready": strongest_baseline >= MIN_JOINT_BASELINE,
+            "note": (
+                f"{min(strongest_baseline, MIN_JOINT_BASELINE)}/{MIN_JOINT_BASELINE} "
+                "sessions collected"
+            ),
+        },
         data_notes=_data_notes(conn, workspace_id=workspace_id, since=since),
     )
 

@@ -14,10 +14,12 @@ import numpy as np
 
 from server.analyze.events import spans_to_events
 from server.analyze.fingerprint_math import (
+    MIN_JOINT_BASELINE,
     DriftResult,
     detect_drift,
     detect_gradual_drift,
     fingerprint_distance,
+    ledoit_wolf_covariance,
     pca_reduce,
 )
 from server.analyze.views import IncrementalView, trace_input_hash
@@ -29,7 +31,7 @@ from server.store.repos.traces import TraceRepo
 
 VECTOR_DIM = 24
 _DEFAULT_WINDOW = 200_000
-_BASELINE_MIN_SAMPLES = 4
+_BASELINE_MIN_SAMPLES = MIN_JOINT_BASELINE
 
 FINGERPRINT_AXIS_LABELS = [
     "read",
@@ -253,8 +255,11 @@ def _update_weekly_baseline(
         return
     mean_vector, components, d_eff = pca_reduce(vectors)
     reduced = (np.array(vectors, dtype=float) - mean_vector) @ components.T
-    cov = np.cov(reduced, rowvar=False)
-    cov_inv = np.linalg.pinv(cov)
+    cov, _shrinkage = ledoit_wolf_covariance(reduced)
+    try:
+        cov_inv = np.linalg.inv(cov)
+    except np.linalg.LinAlgError:
+        return
     FingerprintRepo.upsert_baseline(
         conn,
         FingerprintBaseline(

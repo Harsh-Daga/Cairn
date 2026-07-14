@@ -57,8 +57,11 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 **Question:** *Has my agent changed?*
 
 - Fingerprint radar and control chart over the selected window.
-- Drift alerts when AMDM detects behavioral change.
-- Needs ~10 fingerprinted sessions; empty state explains the threshold.
+- Drift alerts when the experimental joint-shock or gradual EWMA path detects change.
+- Joint-shock detection requires 20 baseline sessions for the same project/model pair and
+  shows `n/20` progress until ready. It uses Ledoit-Wolf shrinkage after PCA.
+- Gradual per-axis EWMA remains available at lower sample sizes; an incomplete joint baseline
+  is never presented as “no drift.”
 
 ## 8. Quality (`/quality`)
 

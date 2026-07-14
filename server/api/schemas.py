@@ -172,6 +172,7 @@ class BehaviorResponse(BaseModel):
     series: list[BehaviorSeriesPoint]
     drift: list[DriftEvent]
     radar: dict[str, Any] | None
+    baseline_progress: dict[str, Any]
     data_notes: list[DataNote]
 
 
