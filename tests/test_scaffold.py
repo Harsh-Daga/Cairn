@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
+import tomllib
+from pathlib import Path
 
 import server
 
 
 def test_server_package_importable() -> None:
-    assert server.__version__ == "1.0.1"
+    root = Path(__file__).resolve().parent.parent
+    pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    assert server.__version__ == pyproject["project"]["version"]
 
 
 def test_all_server_submodules_importable() -> None:

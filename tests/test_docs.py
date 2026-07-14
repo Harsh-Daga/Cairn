@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import typer
@@ -20,6 +21,7 @@ GEN_CLI = ROOT / "scripts" / "gen_cli_docs.py"
 
 FENCED_CMD = re.compile(r"```(?:bash|sh|shell)?\n(.*?)```", re.DOTALL)
 README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]+)`\s*\|", re.MULTILINE)
+README_VERSION_BADGE = re.compile(r"img\.shields\.io/badge/version-([0-9]+\.[0-9]+\.[0-9]+)-")
 
 DOCS_INDEX = [
     "docs/README.md",
@@ -134,6 +136,36 @@ def _command_exists(cmd: str, cli: set[str], actions: set[str]) -> bool:
 def test_readme_line_count() -> None:
     lines = README.read_text(encoding="utf-8").splitlines()
     assert len(lines) <= 250, f"README has {len(lines)} lines (max 250)"
+
+
+def _project_version() -> str:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    return str(project["version"])
+
+
+def test_readme_version_badge_matches_pyproject() -> None:
+    match = README_VERSION_BADGE.search(README.read_text(encoding="utf-8"))
+    assert match is not None, "README must have an explicit version badge"
+    assert match.group(1) == _project_version()
+
+
+def test_release_version_sources_match_pyproject() -> None:
+    version = _project_version()
+    expected = {
+        "server/__init__.py": f'__version__ = "{version}"',
+        "CHANGELOG.md": f"## [{version}]",
+        "docs/README.md": f"current {version} public beta",
+        "docs/api.md": f'\"version\": \"{version}\"',
+        "examples/e2e-demo/cairn.toml": f'version = "{version}"',
+        "ui/package.json": f'\"version\": \"{version}\"',
+        "ui/package-lock.json": f'\"version\": \"{version}\"',
+    }
+    mismatches = [
+        path
+        for path, marker in expected.items()
+        if marker not in (ROOT / path).read_text(encoding="utf-8")
+    ]
+    assert not mismatches, f"Release version differs from pyproject.toml: {mismatches}"
 
 
 def test_docs_index_links_resolve() -> None:
