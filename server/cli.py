@@ -150,11 +150,39 @@ def _render_recap(recap: Any) -> str:
 @app.command()
 def recap(
     workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    share: Annotated[bool, typer.Option("--share", help="Write a private PNG recap card")] = False,
+    show_repo: Annotated[
+        bool,
+        typer.Option("--show-repo", help="Include the workspace name on a shared card"),
+    ] = False,
+    output: Annotated[Path | None, typer.Option("--output", help="PNG output path")] = None,
 ) -> None:
     """Show a one-screen weekly spend, waste, quality, and experiment recap."""
     from server.api.payloads import build_recap
 
     action_ctx = _make_ctx(workspace)
+    if share:
+        from datetime import UTC, datetime
+
+        from server.recap_share import build_share_card_data, render_share_card
+        from server.store.repos.workspaces import WorkspaceRepo
+
+        workspace_row = WorkspaceRepo.get(action_ctx.db.reader, action_ctx.workspace_id)
+        repo_name = workspace_row.name if show_repo and workspace_row is not None else None
+        card = build_share_card_data(
+            action_ctx.db.reader,
+            workspace_id=action_ctx.workspace_id,
+            repo_name=repo_name,
+        )
+        target = output or (
+            action_ctx.workspace_root
+            / ".cairn"
+            / "recaps"
+            / f"agent-wrapped-{datetime.now(UTC).date().isoformat()}.png"
+        )
+        png_path, _svg_path = render_share_card(card, target)
+        typer.echo(str(png_path.resolve()))
+        return
     payload = build_recap(action_ctx.db.reader, workspace_id=action_ctx.workspace_id)
     typer.echo(_render_recap(payload))
 

@@ -27,6 +27,13 @@ verdict count. The last-view timestamp lives only in browser storage. The same o
 summary is available at any time with `cairn recap`; it reads the local ledger and makes no
 network call.
 
+`cairn recap --share` writes a 1200×630 “Agent Wrapped” SVG and PNG under
+`.cairn/recaps/` (or `--output`). The default card includes aggregate spend, estimated waste,
+a privacy-safe file-type label for the most re-read file, a generalized repeat-failure joke,
+and an archetype derived from fingerprint ratios. Raw paths, commands, code, and repository
+names never enter the default render payload. `--show-repo` opts in only the workspace display
+name; rendering and file writes remain entirely local.
+
 ## 2. Sessions (`/sessions`)
 
 **Question:** *Find the session that matters.*
