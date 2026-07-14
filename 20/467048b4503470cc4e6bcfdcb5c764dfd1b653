@@ -1,0 +1,49 @@
+docs/README.md
+  s_89f082b63228d7::t_0b240b158ce629 18
+docs/cli.md
+  s_89f082b63228d7::t_8da26fcdb60a3a 39
+docs/optimize.md
+  s_89f082b63228d7::t_0b240b158ce629 225-240
+server/export/scrub.py
+  s_89f082b63228d7::t_c77c4ced5ba772 1-71
+server/api/action_handlers.py
+  s_89f082b63228d7::t_c77c4ced5ba772 180-181,197-198
+server/export/rule_effects.py
+  s_89f082b63228d7::t_c77c4ced5ba772 1-74
+server/cli.py
+  s_89f082b63228d7::t_c77c4ced5ba772 391-403
+tests/test_docs.py
+  s_89f082b63228d7::t_0b240b158ce629 45
+server/models/rule_effect.py
+  s_89f082b63228d7::t_ab311ca681f830 1-6,8-16,18-25,32-42
+  s_89f082b63228d7::t_c77c4ced5ba772 7,17,26-31
+server/store/migrations/0006_experiment_export_fields.sql
+  s_89f082b63228d7::t_ab311ca681f830 1-3
+server/models/experiment.py
+  s_89f082b63228d7::t_ab311ca681f830 39,42,50,65,68,76,94,97,105,122,125,133
+tests/test_rule_effect_export.py
+  s_89f082b63228d7::t_0b240b158ce629 1-157
+docs/roadmap.md
+  s_89f082b63228d7::t_0b240b158ce629 1-29
+server/improve/experiments.py
+  s_89f082b63228d7::t_aa663172dc501b 149-155
+  s_89f082b63228d7::t_ab311ca681f830 156-157,161-167,189-190,198
+tests/test_improve.py
+  s_89f082b63228d7::t_2423aadabacf75 335-337
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "20467048b4503470cc4e6bcfdcb5c764dfd1b653",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
