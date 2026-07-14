@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.1-blue.svg" alt="Version 1.0.1">
+  <img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version 1.1.0">
   <a href="https://pypi.org/project/cairn-workspace/"><img src="https://img.shields.io/pypi/v/cairn-workspace.svg?cacheSeconds=300" alt="PyPI"></a>
   <a href="https://github.com/Harsh-Daga/Cairn/actions/workflows/ci.yml"><img src="https://github.com/Harsh-Daga/Cairn/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"></a>
