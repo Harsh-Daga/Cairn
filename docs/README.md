@@ -25,4 +25,4 @@ Cairn is a local-first observability workspace for AI coding agents. It ingests 
 - [Security](../SECURITY.md) — security reporting and deployment boundaries.
 - [Support](../SUPPORT.md) — where to get help or report a problem.
 
-The documentation describes the current 1.1.0 public beta: a FastAPI backend and React dashboard backed by the local SQLite ledger. It intentionally does not document retired package layouts or obsolete CLI commands; README and generated CLI command rows are checked against the registered Typer surface in CI.
+The documentation describes the current 1.1.1 public beta: a FastAPI backend and React dashboard backed by the local SQLite ledger. It intentionally does not document retired package layouts or obsolete CLI commands; README and generated CLI command rows are checked against the registered Typer surface in CI.
