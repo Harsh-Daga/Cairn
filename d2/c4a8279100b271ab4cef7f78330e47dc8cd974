@@ -1,0 +1,56 @@
+ui/src/lib/mcpConsultations.ts
+  s_89f082b63228d7::t_5b68679b859a5f 1-14,18-57,59-63
+  s_89f082b63228d7::t_36e0640a0797b8 58
+  s_89f082b63228d7::t_6f892dfd8ab66d 15-17
+server/mcp/tools.py
+  s_89f082b63228d7::t_f90a86ff8d4141 102-103,117,119-121
+server/mcp/consultations.py
+  s_89f082b63228d7::t_f90a86ff8d4141 1-110
+ui/src/pages/SessionDetail.tsx
+  s_89f082b63228d7::t_5b68679b859a5f 7,78-85,87
+tests/test_mcp.py
+  s_89f082b63228d7::t_88de85e62887f8 87-98
+server/ingest/pipeline.py
+  s_89f082b63228d7::t_f90a86ff8d4141 21,40,137-144
+server/api/schemas.py
+  s_89f082b63228d7::t_f90a86ff8d4141 152-159,165
+server/api/action_handlers.py
+  s_89f082b63228d7::t_6f892dfd8ab66d 107,119
+server/store/migrations/0004_mcp_consultations.sql
+  s_89f082b63228d7::t_f90a86ff8d4141 1-12
+server/api/payloads.py
+  s_89f082b63228d7::t_5b68679b859a5f 36,508-515,524
+docs/ui-tour.md
+  s_89f082b63228d7::t_88de85e62887f8 57-58
+ui/src/lib/types.ts
+  s_89f082b63228d7::t_5b68679b859a5f 170,177-182
+  s_89f082b63228d7::t_78eb1b961a7ee7 183-184
+tests/test_pipeline.py
+  s_89f082b63228d7::t_88de85e62887f8 172-216
+ui/src/components/waterfall/Waterfall.tsx
+  s_89f082b63228d7::t_5b68679b859a5f 183,206
+  s_89f082b63228d7::t_6f892dfd8ab66d 194-196
+tests/test_api.py
+  s_89f082b63228d7::t_88de85e62887f8 143-167
+docs/mcp.md
+  s_89f082b63228d7::t_88de85e62887f8 34-45
+ui/src/test/mcpConsultations.test.ts
+  s_89f082b63228d7::t_88de85e62887f8 1-52,55-73
+  s_89f082b63228d7::t_36e0640a0797b8 53-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "d2c4a8279100b271ab4cef7f78330e47dc8cd974",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
