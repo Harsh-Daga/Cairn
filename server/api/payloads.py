@@ -64,6 +64,7 @@ from server.api.schemas import (
     WorkspaceResponse,
 )
 from server.improve.experiments import preview as experiment_preview
+from server.ingest.parse_health import adapter_issue_url, health_payload
 from server.models.fingerprint import Fingerprint
 from server.models.span import Span
 from server.store.migrate import FTS_AVAILABLE
@@ -1239,14 +1240,37 @@ def build_workspace(
     cursors = IngestCursorRepo.list_all(conn)
     by_source: dict[str, list[Any]] = defaultdict(list)
     for cursor in cursors:
-        by_source[cursor.source].append(cursor)
+        adapter_id = "gemini_cli" if cursor.source == "gemini" else cursor.source
+        by_source[adapter_id].append(cursor)
+    health_rows = conn.execute(
+        "SELECT * FROM adapter_parse_health WHERE workspace_id = ? ORDER BY adapter_id",
+        (workspace_id,),
+    ).fetchall()
+    health_by_adapter = {str(row["adapter_id"]): health_payload(row) for row in health_rows}
+    adapter_ids = sorted(set(by_source) | set(health_by_adapter))
     adapters = [
         WorkspaceAdapter(
             source=source,
-            streams=len(items),
-            cursor_updated_at=max((c.updated_at for c in items), default=None),
+            streams=len(by_source.get(source, [])),
+            cursor_updated_at=max(
+                (c.updated_at for c in by_source.get(source, [])), default=None
+            ),
+            attempts=int(health_by_adapter.get(source, {}).get("attempts", 0)),
+            fully_parsed=int(health_by_adapter.get(source, {}).get("fully_parsed", 0)),
+            degraded=int(health_by_adapter.get(source, {}).get("degraded", 0)),
+            skipped=int(health_by_adapter.get(source, {}).get("skipped", 0)),
+            parse_coverage=health_by_adapter.get(source, {}).get("parse_coverage"),
+            unknown_fields={
+                str(key): int(value)
+                for key, value in health_by_adapter.get(source, {}).get(
+                    "unknown_fields", {}
+                ).items()
+            },
+            last_success_at=health_by_adapter.get(source, {}).get("last_success_at"),
+            warning=bool(health_by_adapter.get(source, {}).get("warning", False)),
+            issue_url=adapter_issue_url(source),
         )
-        for source, items in sorted(by_source.items())
+        for source in adapter_ids
     ]
     trace_count = conn.execute(
         "SELECT COUNT(*) AS n FROM traces WHERE workspace_id = ?",
@@ -1288,6 +1312,17 @@ def build_workspace(
             "trace_count": int(trace_count["n"] or 0) if trace_count else 0,
             "insight_count": int(insight_count["n"] or 0) if insight_count else 0,
             "fts_available": FTS_AVAILABLE,
+            "adapter_warnings": [
+                {
+                    "adapter_id": adapter.source,
+                    "message": (
+                        f"{adapter.source} log format may have changed; numbers may be incomplete."
+                    ),
+                    "issue_url": adapter.issue_url,
+                }
+                for adapter in adapters
+                if adapter.warning
+            ],
             "human_label_agreement": {
                 "labeled_sessions": len(agreement_rows),
                 "agreements": agreement_count,

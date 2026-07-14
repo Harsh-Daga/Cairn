@@ -15,6 +15,7 @@ from server.analyze.views import ViewScheduler
 from server.api.sse import EventBus
 from server.ingest.contract import Adapter, cursor_for_file
 from server.ingest.contract import IngestCursor as ContractCursor
+from server.ingest.parse_health import inspect_unknown_fields, record_parse_attempt
 from server.ingest.registry import build_adapters
 from server.ingest.watcher import FileWatcher
 from server.ingest.writer import IngestResult, IngestWriter
@@ -189,11 +190,21 @@ class IngestPipeline:
         if stored is not None and self._cursor_unchanged(contract_cursor, file_cursor):
             return None
 
-        parsed = adapter.parse_path(path)
+        try:
+            parsed = adapter.parse_path(path)
+        except Exception:
+            self._record_parse_health(adapter.adapter_id, "skipped")
+            _LOGGER.exception("%s adapter failed to parse %s", adapter.adapter_id, path)
+            return None
         new_contract = file_cursor
         if parsed is None:
+            self._record_parse_health(adapter.adapter_id, "skipped")
             self._persist_cursor(source, stream, new_contract)
             return None
+
+        unknown_fields = inspect_unknown_fields(adapter.adapter_id, path)
+        outcome = "degraded" if parsed.dropped_events or unknown_fields else "fully_parsed"
+        self._record_parse_health(adapter.adapter_id, outcome, unknown_fields)
 
         result = self._writer.ingest(parsed)
         self._persist_cursor(source, stream, new_contract)
@@ -225,6 +236,22 @@ class IngestPipeline:
                 payload["computed"] = computed
             self._bus.publish("views-updated", payload)
         return result
+
+    def _record_parse_health(
+        self,
+        adapter_id: str,
+        outcome: str,
+        unknown_fields: dict[str, int] | None = None,
+    ) -> None:
+        self._db.write(
+            lambda conn: record_parse_attempt(
+                conn,
+                workspace_id=self.workspace_id,
+                adapter_id=adapter_id,
+                outcome=outcome,
+                unknown_fields=unknown_fields,
+            )
+        )
 
     def _run_scheduler(self, dirty_keys: list[str]) -> list[str]:
         if not dirty_keys:

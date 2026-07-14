@@ -78,6 +78,10 @@ def test_pipeline_ingest_trace_and_sse(workspace_bundle: tuple[Database, str, Pa
     trace = TraceRepo.get(db.reader, result.trace_id)
     assert trace is not None
     assert trace.input_tokens > 0
+    health = db.reader.execute(
+        "SELECT attempts, fully_parsed, degraded, skipped FROM adapter_parse_health"
+    ).fetchone()
+    assert dict(health) == {"attempts": 1, "fully_parsed": 1, "degraded": 0, "skipped": 0}
 
     event = received.get(timeout=2)
     assert event.event == "trace-updated"
@@ -214,3 +218,22 @@ def test_sync_imports_mcp_consultations_idempotently(
         "after_seq": 7,
         "tool_name": "cairn_should_i_stop",
     }
+
+
+def test_pipeline_marks_unknown_field_spike_as_degraded(
+    workspace_bundle: tuple[Database, str, Path]
+) -> None:
+    db, ws_id, root = workspace_bundle
+    source = FIXTURES / "claude_code_mini.jsonl"
+    changed = root / "future-claude.jsonl"
+    records = [json.loads(line) for line in source.read_text(encoding="utf-8").splitlines()]
+    for record in records:
+        record["future_schema_field"] = True
+    changed.write_text("\n".join(json.dumps(record) for record in records) + "\n", encoding="utf-8")
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    pipeline._path_adapter[changed.resolve()] = (ClaudeCodeAdapter(root, ws_id), "claude_code")
+
+    assert pipeline.ingest_path(changed) is not None
+    row = db.reader.execute("SELECT * FROM adapter_parse_health").fetchone()
+    assert row["degraded"] == 1
+    assert json.loads(row["recent_unknown_fields_json"])["future_schema_field"] >= 3

@@ -121,6 +121,7 @@ export function SettingsPage() {
                 <tr>
                   <th className="px-4 py-2">Source</th>
                   <th className="px-4 py-2">Streams</th>
+                  <th className="px-4 py-2">Parse coverage</th>
                   <th className="px-4 py-2">Last ingest</th>
                 </tr>
               </thead>
@@ -131,8 +132,16 @@ export function SettingsPage() {
                       <Chip label={a.source} />
                     </td>
                     <td className="px-4 py-2 font-mono text-xs text-bone">{a.streams}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-bone">
+                      {a.parse_coverage != null ? `${(a.parse_coverage * 100).toFixed(0)}%` : "—"}
+                      {a.warning ? <Chip label="format warning" tone="cinnabar" /> : null}
+                    </td>
                     <td className="px-4 py-2 font-mono text-xs text-cinder">
-                      {a.cursor_updated_at ? formatRelative(a.cursor_updated_at) : "never"}
+                      {a.last_success_at
+                        ? formatRelative(a.last_success_at)
+                        : a.cursor_updated_at
+                          ? formatRelative(a.cursor_updated_at)
+                          : "never"}
                     </td>
                   </tr>
                 ))}

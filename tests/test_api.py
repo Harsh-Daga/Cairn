@@ -388,6 +388,27 @@ def test_workspace_shape(api_client: TestClient, api_workspace: tuple) -> None:
     assert body["root_path"] == str(root)
     assert "adapters" in body
     assert body["health"]["trace_count"] >= 1
+    assert body["adapters"][0]["parse_coverage"] == 1.0
+    assert body["health"]["adapter_warnings"] == []
+
+
+def test_workspace_warns_when_adapter_format_may_have_changed(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, ws_id, _trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """UPDATE adapter_parse_health
+               SET fully_parsed = 0, degraded = 1,
+                   recent_unknown_fields_json = '{"future_field": 8}'
+               WHERE workspace_id = ? AND adapter_id = 'claude_code'""",
+            (ws_id,),
+        )
+    body = api_client.get("/api/workspace").json()
+    warning = body["health"]["adapter_warnings"][0]
+    assert warning["adapter_id"] == "claude_code"
+    assert "numbers may be incomplete" in warning["message"]
+    assert "github.com/Harsh-Daga/Cairn/issues/new" in warning["issue_url"]
 
 
 def test_actions_manifest_shape(api_client: TestClient) -> None:

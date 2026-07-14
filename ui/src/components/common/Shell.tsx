@@ -6,6 +6,7 @@ import { KeyboardOverlay } from "./KeyboardOverlay";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 import { isStaticMode } from "@/lib/api";
 import { MobileDock } from "./MobileDock";
+import { AdapterHealthBanner } from "./AdapterHealthBanner";
 
 interface ShellProps {
   children: ReactNode;
@@ -20,6 +21,7 @@ export function Shell({ children }: ShellProps) {
       <WaypointRail />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <PlaqueTopbar />
+        <AdapterHealthBanner />
         {staticMode ? (
           <div className="border-b border-ochre/40 bg-ochre/10 px-6 py-2 font-mono text-[11px] text-ochre">
             Read-only static snapshot: actions and live ingest are disabled.

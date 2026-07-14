@@ -363,6 +363,15 @@ class WorkspaceAdapter(BaseModel):
     source: str
     streams: int
     cursor_updated_at: str | None
+    attempts: int
+    fully_parsed: int
+    degraded: int
+    skipped: int
+    parse_coverage: float | None
+    unknown_fields: dict[str, int]
+    last_success_at: str | None
+    warning: bool
+    issue_url: str
 
 
 class PlanWindowGauge(BaseModel):

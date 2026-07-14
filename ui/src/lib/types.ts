@@ -414,6 +414,15 @@ export interface WorkspaceAdapter {
   source: string;
   streams: number;
   cursor_updated_at: string | null;
+  attempts: number;
+  fully_parsed: number;
+  degraded: number;
+  skipped: number;
+  parse_coverage: number | null;
+  unknown_fields: Record<string, number>;
+  last_success_at: string | null;
+  warning: boolean;
+  issue_url: string;
 }
 
 export interface PlanWindowGauge {

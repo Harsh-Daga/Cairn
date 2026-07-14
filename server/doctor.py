@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import socket
+import sqlite3
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,7 @@ from pathlib import Path
 from server import __version__
 from server.app import static_exists
 from server.config import Settings
+from server.ingest.parse_health import adapter_issue_url, health_payload
 from server.ingest.registry import build_adapters
 
 
@@ -124,6 +126,36 @@ def _check_adapters(workspace: Path | None) -> CheckResult:
     return CheckResult("Adapters detected", ok, detail, None)
 
 
+def _check_adapter_health(workspace: Path | None) -> CheckResult:
+    root = (workspace or Path.cwd()).resolve()
+    db_path = root / ".cairn" / "cairn.db"
+    if not db_path.is_file():
+        return CheckResult("Adapter parse health", True, "no parse history yet", None)
+    try:
+        conn = sqlite3.connect(f"file:{db_path.as_posix()}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT * FROM adapter_parse_health ORDER BY adapter_id").fetchall()
+        conn.close()
+    except sqlite3.Error:
+        return CheckResult("Adapter parse health", True, "no parse history yet", None)
+    unhealthy = [(str(row["adapter_id"]), health_payload(row)) for row in rows]
+    unhealthy = [(adapter_id, health) for adapter_id, health in unhealthy if health["warning"]]
+    if not unhealthy:
+        return CheckResult("Adapter parse health", True, f"{len(rows)} adapter(s) healthy", None)
+    adapter_id, health = unhealthy[0]
+    coverage = float(health["parse_coverage"] or 0.0)
+    detail = (
+        f"{adapter_id} log format may have changed; numbers may be incomplete "
+        f"({coverage:.0%} fully parsed)"
+    )
+    return CheckResult(
+        "Adapter parse health",
+        False,
+        detail,
+        f"Open an adapter issue: {adapter_issue_url(adapter_id)}",
+    )
+
+
 def _check_mcp_config() -> CheckResult:
     candidates = [
         Path.home() / ".cursor" / "mcp.json",
@@ -162,6 +194,7 @@ def run_doctor(*, workspace: Path | None = None, port: int = 8787) -> list[Check
         _check_port(port),
         _check_db_writable(workspace),
         _check_adapters(workspace),
+        _check_adapter_health(workspace),
         _check_static_assets(),
         _check_mcp_config(),
     ]
