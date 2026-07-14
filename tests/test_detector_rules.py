@@ -17,6 +17,7 @@ from server.improve.detectors.multi_model_spread import rule_multi_model_cost_sp
 from server.improve.detectors.oversize_results import rule_oversize_tool_results
 from server.improve.detectors.quality_regression import rule_quality_regression
 from server.improve.detectors.rebilling_waste import rule_rebilling_waste
+from server.improve.detectors.registry import detect_live_stop_pattern
 from server.improve.detectors.reread_hotspot import rule_reread_hotspot
 from server.improve.detectors.retry_loops import rule_retry_loops_detected
 from server.improve.detectors.runaway_sessions import rule_runaway_sessions
@@ -120,3 +121,56 @@ def test_detector_emits_expected_insight(
     validate_insight_contract(result)
     assert result.fix is not None
     assert result.savings_estimate is not None or result.savings_unavailable_reason
+
+
+@pytest.mark.parametrize(
+    ("spans", "pattern", "count", "first_seq"),
+    [
+        (
+            [
+                {"seq": 1, "kind": "tool_call", "name": "read", "status": "ok", "args_hash": "x"},
+                {"seq": 2, "kind": "tool_call", "name": "read", "status": "ok", "args_hash": "x"},
+            ],
+            "identical_calls",
+            2,
+            1,
+        ),
+        (
+            [
+                {"seq": 1, "kind": "tool_call", "name": "npm test", "status": "ok"},
+                {"seq": 2, "kind": "tool_result", "name": "npm test", "status": "error"},
+                {"seq": 3, "kind": "tool_call", "name": "npm test", "status": "ok"},
+                {"seq": 4, "kind": "tool_result", "name": "npm test", "status": "error"},
+                {"seq": 5, "kind": "tool_call", "name": "npm test", "status": "ok"},
+            ],
+            "retry_loops",
+            3,
+            1,
+        ),
+        (
+            [
+                {"seq": seq, "kind": "tool_result", "name": f"tool-{seq}", "status": "error"}
+                for seq in range(4, 8)
+            ],
+            "error_streak",
+            4,
+            4,
+        ),
+        (
+            [
+                {"seq": seq, "kind": "tool_call", "name": "pytest", "status": "error"}
+                for seq in range(10, 13)
+            ],
+            "failing_command",
+            3,
+            10,
+        ),
+    ],
+)
+def test_live_stop_registry_reuses_all_four_loop_detectors(
+    spans: list[dict[str, object]], pattern: str, count: int, first_seq: int
+) -> None:
+    result = detect_live_stop_pattern(spans)
+    assert result is not None
+    assert (result.pattern, result.count, result.first_seen_seq) == (pattern, count, first_seq)
+    assert result.advice

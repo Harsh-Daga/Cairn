@@ -26,6 +26,15 @@ class FixPayload:
         return {"kind": self.kind, "label": self.label, "value": self.value}
 
 
+@dataclass(frozen=True)
+class LiveDetection:
+    pattern: str
+    count: int
+    first_seen_seq: int
+    advice: str
+    priority: int
+
+
 @dataclass
 class Insight:
     id: str

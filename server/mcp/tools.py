@@ -224,6 +224,8 @@ def _session_so_far(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _should_i_stop(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    from server.improve.detectors.registry import detect_live_stop_pattern
+
     del args
     ws = "WHERE workspace_id = ?" if ctx.workspace_id else ""
     params: list[Any] = [ctx.workspace_id] if ctx.workspace_id else []
@@ -235,19 +237,30 @@ def _should_i_stop(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
         return {"should_stop": False, "reason": "insufficient signal"}
     trace_id = str(trace["trace_id"])
     rows = ctx.conn.execute(
-        "SELECT kind, name, status FROM spans WHERE trace_id = ? ORDER BY seq DESC LIMIT 12",
+        """SELECT seq, kind, name, status, args_hash, text_hash
+           FROM spans WHERE trace_id = ? ORDER BY seq DESC LIMIT 50""",
         (trace_id,),
     ).fetchall()
-    errors = sum(1 for r in rows if r["status"] == "error")
-    names = [str(r["name"] or r["kind"]) for r in rows if r["kind"] == "tool_call"]
-    repeated = len(names) - len(set(names)) if names else 0
-    should_stop = errors >= 3 or repeated >= 4
+    ordered = [dict(row) for row in reversed(rows)]
+    detection = detect_live_stop_pattern(ordered)
+    if detection is None:
+        return {
+            "should_stop": False,
+            "trace_id": trace_id,
+            "pattern": None,
+            "count": 0,
+            "first_seen_seq": None,
+            "advice": (
+                "No retry loop, identical-call pattern, error streak, or failing command detected."
+            ),
+        }
     return {
-        "should_stop": should_stop,
+        "should_stop": True,
         "trace_id": trace_id,
-        "recent_errors": errors,
-        "repeated_tool_calls": repeated,
-        "suggestion": "Pause and inspect the failing tool pattern" if should_stop else None,
+        "pattern": detection.pattern,
+        "count": detection.count,
+        "first_seen_seq": detection.first_seen_seq,
+        "advice": detection.advice,
     }
 
 

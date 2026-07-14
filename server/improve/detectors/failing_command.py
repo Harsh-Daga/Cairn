@@ -2,9 +2,33 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any
 
-from server.improve.detectors._types import FixPayload, Insight
+from server.improve.detectors._types import FixPayload, Insight, LiveDetection
+
+
+def detect_live_failing_command(spans: list[dict[str, Any]]) -> LiveDetection | None:
+    """Detect the same command/tool failing at least three times in the live tail."""
+    failures: dict[str, list[int]] = defaultdict(list)
+    for span in spans:
+        if span.get("kind") == "tool_call" and span.get("status") == "error":
+            failures[str(span.get("name") or "command")].append(int(span.get("seq") or 0))
+    if not failures:
+        return None
+    name, seqs = max(failures.items(), key=lambda item: len(item[1]))
+    if len(seqs) < 3:
+        return None
+    return LiveDetection(
+        pattern="failing_command",
+        count=len(seqs),
+        first_seen_seq=min(seqs),
+        advice=(
+            f"You've run {name} {len(seqs)}× with failures — read the error output before "
+            "retrying and change one input or configuration."
+        ),
+        priority=50,
+    )
 
 
 def rule_failing_command(ctx: dict[str, Any]) -> Insight | None:

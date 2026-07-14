@@ -2,15 +2,44 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any
 
 from server.improve.detectors._types import (
     FixPayload,
     Insight,
+    LiveDetection,
     _cap_savings,
     _data_note,
     _weekly_spend,
 )
+
+
+def detect_live_identical_calls(spans: list[dict[str, Any]]) -> LiveDetection | None:
+    """Detect repeated tool calls with the exact same recorded argument hash."""
+    signatures: dict[tuple[str, str], list[int]] = defaultdict(list)
+    for span in spans:
+        if span.get("kind") != "tool_call":
+            continue
+        name = str(span.get("name") or "tool")
+        args_hash = span.get("args_hash") or span.get("text_hash")
+        if args_hash:
+            signatures[(name, str(args_hash))].append(int(span.get("seq") or 0))
+    if not signatures:
+        return None
+    (name, _args_hash), seqs = max(signatures.items(), key=lambda item: len(item[1]))
+    if len(seqs) < 2:
+        return None
+    return LiveDetection(
+        pattern="identical_calls",
+        count=len(seqs),
+        first_seen_seq=min(seqs),
+        advice=(
+            f"You've called {name} {len(seqs)}× with identical arguments — reuse the earlier "
+            "result unless the underlying input changed."
+        ),
+        priority=30,
+    )
 
 
 def rule_identical_tool_calls(ctx: dict[str, Any]) -> Insight | None:

@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from server.mcp.server import serve
+from server.mcp.tools import call_tool, open_context
 from server.store.db import connect
 from server.store.migrate import migrate
 
@@ -82,3 +83,32 @@ def test_mcp_have_i_read_tool(tmp_path: Path) -> None:
     payload = json.loads(lines[1]["result"]["content"][0]["text"])
     assert payload["read"] is True
     assert payload["path"] == "src/app.py"
+
+
+def test_should_i_stop_uses_live_failing_command_detector(tmp_path: Path) -> None:
+    db_dir = tmp_path / ".cairn"
+    db_dir.mkdir()
+    db_path = db_dir / "cairn.db"
+    _seed_db(db_path)
+    conn = connect(db_path)
+    for seq in range(2, 8):
+        conn.execute(
+            """INSERT INTO spans (
+                 span_id, trace_id, seq, kind, name, status, args_hash
+               ) VALUES (?, 'tr1', ?, 'tool_call', 'npm test', 'error', 'same')""",
+            (f"failure-{seq}", seq),
+        )
+    conn.commit()
+    conn.close()
+
+    context = open_context(tmp_path)
+    try:
+        result = call_tool(context, "cairn_should_i_stop", {})
+    finally:
+        context.close()
+    assert result["should_stop"] is True
+    assert result["pattern"] == "failing_command"
+    assert result["count"] == 6
+    assert result["first_seen_seq"] == 2
+    assert "npm test 6×" in result["advice"]
+    assert "read the error output" in result["advice"]
