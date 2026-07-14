@@ -21,6 +21,12 @@ Running bare `cairn` performs a sync, prints this same 30-day money summary in t
 then opens the local UI. Sessions without reliable cost data remain excluded from dollar
 allocation and are called out in the existing data notes.
 
+Once seven days have passed since the recap was last dismissed, Overview shows a local weekly
+recap banner with spend, estimated waste, the top cause, quality movement, and experiment
+verdict count. The last-view timestamp lives only in browser storage. The same one-screen
+summary is available at any time with `cairn recap`; it reads the local ledger and makes no
+network call.
+
 ## 2. Sessions (`/sessions`)
 
 **Question:** *Find the session that matters.*

@@ -7,6 +7,7 @@ import type {
   ExperimentsResponse,
   InsightsResponse,
   OverviewResponse,
+  RecapResponse,
   QualityResponse,
   RegionsAnalyticsResponse,
   ReplayResponse,
@@ -101,6 +102,10 @@ export function timeRangeDays(range: string): number {
 
 export function fetchOverview(days: number): Promise<OverviewResponse> {
   return fetchJson(`/overview?days=${days}`);
+}
+
+export function fetchRecap(): Promise<RecapResponse> {
+  return fetchJson("/recap");
 }
 
 export function fetchTraces(params: {

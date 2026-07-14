@@ -115,6 +115,50 @@ def _print_money_slide(workspace: Path | None = None) -> None:
     typer.echo(_render_money_slide(overview.money))
 
 
+def _render_recap(recap: Any) -> str:
+    lines = [
+        "CAIRN WEEKLY RECAP",
+        f"Spend  ${recap.money.total_spend_usd:,.2f}",
+        (
+            f"Waste  ${recap.money.wasted_spend_usd:,.2f} ± est. "
+            f"({recap.money.wasted_spend_pct:.1f}%)"
+        ),
+    ]
+    if recap.money.top_causes:
+        lines.append("Top causes")
+        for cause in recap.money.top_causes:
+            lines.append(
+                f"  ${cause.estimated_savings_usd:,.2f} · {cause.category.replace('_', ' ')}"
+            )
+            lines.append(f"  Fix: {cause.fix}")
+    trend = recap.quality_trend
+    if trend.current_mean is None:
+        lines.append("Quality  waiting for scored sessions")
+    elif trend.delta is None:
+        lines.append(f"Quality  {trend.current_mean:.1f} · no prior-week baseline")
+    else:
+        lines.append(f"Quality  {trend.current_mean:.1f} · {trend.delta:+.1f} vs prior week")
+    if recap.experiment_verdicts:
+        lines.append("Verdicts reached")
+        for verdict in recap.experiment_verdicts:
+            lines.append(f"  {verdict.verdict} · {verdict.experiment_id[:12]}")
+    else:
+        lines.append("Verdicts  none reached this week")
+    return "\n".join(lines)
+
+
+@app.command()
+def recap(
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Show a one-screen weekly spend, waste, quality, and experiment recap."""
+    from server.api.payloads import build_recap
+
+    action_ctx = _make_ctx(workspace)
+    payload = build_recap(action_ctx.db.reader, workspace_id=action_ctx.workspace_id)
+    typer.echo(_render_recap(payload))
+
+
 @app.command()
 def ui(
     host: Annotated[str, typer.Option("--host", help="Bind address")] = "127.0.0.1",

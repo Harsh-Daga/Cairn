@@ -38,6 +38,7 @@ Cairn CLI entry point: `server.cli:app`. Mutations are also available as `cairn 
 | `cairn optimize revert` | Revert one applied optimization from its exact backup. |
 | `cairn optimize` | Generate optimization proposals when no subcommand is given. |
 | `cairn rebuild` | Rebuild an incremental analyzer view. |
+| `cairn recap` | Show a one-screen weekly spend, waste, quality, and experiment recap. |
 | `cairn setup-prompt` | Print the short agent bootstrap prompt for README copy-paste. |
 | `cairn show` | Print a text waterfall for a trace. |
 | `cairn stop` | Stop a running Cairn UI server (by port). |

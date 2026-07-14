@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -49,6 +50,55 @@ def test_overview_money_allocates_waste_cost_and_ranks_causes(
     assert money["top_causes"][0]["category"] == "retry_loop"
     assert money["top_causes"][0]["estimated_savings_usd"] == 2
     assert money["top_causes"][0]["fix"]
+
+
+def test_weekly_recap_includes_quality_trend_and_reached_verdicts(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, ws_id, trace_id = api_workspace
+    now = datetime.now(UTC)
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """UPDATE traces SET started_at = ?, cost = 4, cost_source = 'observed'
+               WHERE trace_id = ?""",
+            (now.isoformat(), trace_id),
+        )
+        conn.execute("UPDATE outcomes SET quality_score = 80 WHERE trace_id = ?", (trace_id,))
+        conn.execute(
+            """INSERT INTO traces (
+                 trace_id, workspace_id, source, external_id, started_at, status
+               ) VALUES ('recap-previous', ?, 'codex', 'recap-previous', ?, 'completed')""",
+            (ws_id, (now - timedelta(days=10)).isoformat()),
+        )
+        conn.execute(
+            "INSERT INTO outcomes (trace_id, quality_score) VALUES ('recap-previous', 60)"
+        )
+        conn.execute(
+            """INSERT INTO evidence (
+                 evidence_id, producer, produced_at, trace_ids_json, metrics_json
+               ) VALUES ('recap-evidence', 'test', ?, '[]', '{}')""",
+            (now.isoformat(),),
+        )
+        conn.execute(
+            """INSERT INTO experiments (
+                 experiment_id, created_at, target_file, block_key, kind, content,
+                 evidence_id, status, verdict, effect_estimate, effect_ci_low,
+                 effect_ci_high, measured_at
+               ) VALUES (
+                 'recap-experiment', ?, 'AGENTS.md', 'rule/test', 'instruction', 'test',
+                 'recap-evidence', 'verdict', 'improved', 0.2, 0.1, 0.3, ?
+               )""",
+            (now.isoformat(), now.isoformat()),
+        )
+    recap = api_client.get("/api/recap")
+    assert recap.status_code == 200
+    body = recap.json()
+    assert body["period_days"] == 7
+    assert body["money"]["total_spend_usd"] == 4
+    assert body["quality_trend"]["current_mean"] == 80
+    assert body["quality_trend"]["previous_mean"] == 60
+    assert body["quality_trend"]["delta"] == 20
+    assert body["experiment_verdicts"][0]["verdict"] == "improved"
 
 
 def test_traces_list_shape(api_client: TestClient) -> None:
@@ -232,9 +282,8 @@ def test_insights_expose_savings_reason_fix_and_diagnostic_classification(
     root, _ws, trace_id = api_workspace
     with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
         conn.execute(
-            """UPDATE traces SET peak_context_pct = 90, started_at = datetime('now')
-               WHERE trace_id = ?""",
-            (trace_id,),
+            "UPDATE traces SET peak_context_pct = 90, started_at = ? WHERE trace_id = ?",
+            (datetime.now(UTC).isoformat(), trace_id),
         )
     response = api_client.post("/api/actions/optimize_propose", json={})
     assert response.status_code == 200

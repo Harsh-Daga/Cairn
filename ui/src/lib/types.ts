@@ -64,6 +64,27 @@ export interface OverviewResponse {
   data_notes: DataNote[];
 }
 
+export interface RecapResponse {
+  generated_at: string;
+  period_days: number;
+  money: MoneySummary;
+  quality_trend: {
+    current_mean: number | null;
+    previous_mean: number | null;
+    delta: number | null;
+    current_sessions: number;
+    previous_sessions: number;
+  };
+  experiment_verdicts: Array<{
+    experiment_id: string;
+    verdict: string;
+    effect_estimate: number | null;
+    effect_ci_low: number | null;
+    effect_ci_high: number | null;
+    measured_at: string;
+  }>;
+}
+
 export interface TraceRow {
   trace_id: string;
   source: string;

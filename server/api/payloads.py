@@ -38,6 +38,9 @@ from server.api.schemas import (
     OverviewResponse,
     PlanWindowGauge,
     QualityResponse,
+    QualityTrend,
+    RecapResponse,
+    RecapVerdict,
     RegionsAnalyticsResponse,
     ReplayCheckpoint,
     ReplayResponse,
@@ -337,6 +340,88 @@ def build_overview(
         narrative=narrative,
         tail_risk=tail,
         data_notes=_data_notes(conn, workspace_id=workspace_id, since=since),
+    )
+
+
+def build_recap(conn: sqlite3.Connection, *, workspace_id: str) -> RecapResponse:
+    """Build a bounded seven-day return summary from local ledger data."""
+    now = datetime.now(UTC)
+    since = (now - timedelta(days=7)).isoformat()
+    previous_since = (now - timedelta(days=14)).isoformat()
+    quality_rows = conn.execute(
+        """
+        SELECT
+          AVG(CASE WHEN t.started_at >= ? THEN o.quality_score END) AS current_mean,
+          COUNT(CASE WHEN t.started_at >= ? THEN 1 END) AS current_n,
+          AVG(CASE WHEN t.started_at >= ? AND t.started_at < ? THEN o.quality_score END)
+            AS previous_mean,
+          COUNT(CASE WHEN t.started_at >= ? AND t.started_at < ? THEN 1 END) AS previous_n
+        FROM outcomes o JOIN traces t ON t.trace_id = o.trace_id
+        WHERE t.workspace_id = ? AND o.quality_score IS NOT NULL AND t.started_at >= ?
+        """,
+        (
+            since,
+            since,
+            previous_since,
+            since,
+            previous_since,
+            since,
+            workspace_id,
+            previous_since,
+        ),
+    ).fetchone()
+    current_mean = (
+        float(quality_rows["current_mean"])
+        if quality_rows["current_mean"] is not None
+        else None
+    )
+    previous_mean = (
+        float(quality_rows["previous_mean"])
+        if quality_rows["previous_mean"] is not None
+        else None
+    )
+    delta = (
+        round(current_mean - previous_mean, 2)
+        if current_mean is not None and previous_mean is not None
+        else None
+    )
+    verdict_rows = conn.execute(
+        """
+        SELECT experiment_id, verdict, effect_estimate, effect_ci_low, effect_ci_high, measured_at
+        FROM experiments
+        WHERE status = 'verdict' AND verdict IS NOT NULL AND measured_at >= ?
+        ORDER BY measured_at DESC
+        """,
+        (since,),
+    ).fetchall()
+    return RecapResponse(
+        generated_at=now.isoformat(),
+        period_days=7,
+        money=_money_summary(conn, workspace_id=workspace_id, since=since, days=7),
+        quality_trend=QualityTrend(
+            current_mean=round(current_mean, 2) if current_mean is not None else None,
+            previous_mean=round(previous_mean, 2) if previous_mean is not None else None,
+            delta=delta,
+            current_sessions=int(quality_rows["current_n"] or 0),
+            previous_sessions=int(quality_rows["previous_n"] or 0),
+        ),
+        experiment_verdicts=[
+            RecapVerdict(
+                experiment_id=str(row["experiment_id"]),
+                verdict=str(row["verdict"]),
+                effect_estimate=(
+                    float(row["effect_estimate"]) if row["effect_estimate"] is not None else None
+                ),
+                effect_ci_low=(
+                    float(row["effect_ci_low"]) if row["effect_ci_low"] is not None else None
+                ),
+                effect_ci_high=(
+                    float(row["effect_ci_high"]) if row["effect_ci_high"] is not None else None
+                ),
+                measured_at=str(row["measured_at"]),
+            )
+            for row in verdict_rows
+        ],
     )
 
 

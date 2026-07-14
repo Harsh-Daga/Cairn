@@ -58,6 +58,31 @@ class OverviewResponse(BaseModel):
     data_notes: list[DataNote]
 
 
+class QualityTrend(BaseModel):
+    current_mean: float | None
+    previous_mean: float | None
+    delta: float | None
+    current_sessions: int
+    previous_sessions: int
+
+
+class RecapVerdict(BaseModel):
+    experiment_id: str
+    verdict: str
+    effect_estimate: float | None
+    effect_ci_low: float | None
+    effect_ci_high: float | None
+    measured_at: str
+
+
+class RecapResponse(BaseModel):
+    generated_at: str
+    period_days: int
+    money: MoneySummary
+    quality_trend: QualityTrend
+    experiment_verdicts: list[RecapVerdict]
+
+
 class TraceRow(BaseModel):
     trace_id: str
     source: str

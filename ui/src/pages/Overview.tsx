@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -13,6 +13,7 @@ import {
 import {
   fetchInsights,
   fetchOverview,
+  fetchRecap,
   fetchTail,
   fetchUsage,
   fetchWaste,
@@ -20,7 +21,7 @@ import {
 } from "@/lib/api";
 import { formatCost, formatTokens } from "@/lib/format";
 import { useUiStore } from "@/state/ui";
-import type { MoneySummary, UsageSeriesRow } from "@/lib/types";
+import type { MoneySummary, RecapResponse, UsageSeriesRow } from "@/lib/types";
 import { PageShell } from "@/components/common/PageShell";
 import { ChartFrame, Chip } from "@/components/common/Chip";
 import {
@@ -34,6 +35,7 @@ export function OverviewPage() {
   const timeRange = useUiStore((s) => s.timeRange);
   const days = timeRangeDays(timeRange);
   const navigate = useNavigate();
+  const [showRecap, setShowRecap] = useState(() => shouldShowRecap(localStorage.getItem(RECAP_VIEWED_KEY)));
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["overview", days],
@@ -58,6 +60,12 @@ export function OverviewPage() {
   const insightsQ = useQuery({
     queryKey: ["insights", "overview"],
     queryFn: () => fetchInsights(),
+  });
+
+  const recapQ = useQuery({
+    queryKey: ["recap"],
+    queryFn: fetchRecap,
+    enabled: showRecap,
   });
 
   if (isLoading) {
@@ -130,6 +138,15 @@ export function OverviewPage() {
   return (
     <PageShell title="Overview" question="Health, cost, and improvement signals across your agent workspace.">
       <div className="space-y-4">
+        {showRecap && recapQ.data ? (
+          <RecapBanner
+            recap={recapQ.data}
+            onDismiss={() => {
+              localStorage.setItem(RECAP_VIEWED_KEY, new Date().toISOString());
+              setShowRecap(false);
+            }}
+          />
+        ) : null}
         <MoneySlide money={data.money} />
 
         <section className="signal-panel relative grid overflow-hidden p-6 lg:grid-cols-[1fr_280px] lg:p-7">
@@ -258,6 +275,43 @@ export function OverviewPage() {
         ) : null}
       </div>
     </PageShell>
+  );
+}
+
+export const RECAP_VIEWED_KEY = "cairn.recap.lastViewed";
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function shouldShowRecap(lastViewed: string | null, now = Date.now()): boolean {
+  if (!lastViewed) return true;
+  const timestamp = Date.parse(lastViewed);
+  return !Number.isFinite(timestamp) || now - timestamp >= WEEK_MS;
+}
+
+export function RecapBanner({ recap, onDismiss }: { recap: RecapResponse; onDismiss: () => void }) {
+  const top = recap.money.top_causes[0];
+  const trend = recap.quality_trend;
+  return (
+    <section className="rounded-sm border border-patina/40 bg-patina/10 p-4" aria-label="Weekly recap">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="page-kicker text-patina">Your weekly Cairn recap</p>
+          <p className="mt-2 text-sm text-bone">
+            {formatCost(recap.money.total_spend_usd)} spent · {formatCost(recap.money.wasted_spend_usd)} ± estimated waste
+            {top ? ` · top cause: ${top.category.replace(/_/g, " ")}` : ""}
+          </p>
+          <p className="mt-1 text-xs text-cinder">
+            Quality {trend.current_mean == null ? "awaiting scored sessions" : `${trend.current_mean.toFixed(1)}${trend.delta == null ? "" : ` (${trend.delta >= 0 ? "+" : ""}${trend.delta.toFixed(1)})`}`}
+            {` · ${recap.experiment_verdicts.length} experiment verdict${recap.experiment_verdicts.length === 1 ? "" : "s"} reached`}
+          </p>
+        </div>
+        <Link to="/optimize" className="rounded-sm bg-patina px-3 py-2 text-xs font-semibold text-anthracite">
+          Review recap
+        </Link>
+        <button type="button" className="px-2 py-1 text-sm text-cinder hover:text-bone" onClick={onDismiss} aria-label="Dismiss weekly recap">
+          ×
+        </button>
+      </div>
+    </section>
   );
 }
 
