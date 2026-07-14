@@ -361,8 +361,14 @@ export interface ExperimentRow {
   status: string;
   target_file: string | null;
   created_at: string;
+  applied_at: string | null;
+  min_holdout: number;
+  outcome_n_effective: number | null;
   verdict: string | null;
   lift_pct: number | null;
+  effect_ci_low: number | null;
+  effect_ci_high: number | null;
+  measured_at: string | null;
 }
 
 export interface ExperimentsResponse {

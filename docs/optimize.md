@@ -89,6 +89,11 @@ cairn action experiment_apply --params-json '{"experiment_id":"…"}'
 
 New sessions ingested after apply form the **holdout** set. When enough holdout sessions exist (`min_holdout`, default 8), Cairn runs causal measurement:
 
+Every generated proposal is registered idempotently as an experiment card. Each card keeps the
+complete visible sequence **Proposed → Applied (date) → Measuring (effective n/target) →
+Verdict**, including the confidence interval. A measurement attempt below the holdout target
+persists `status=measuring` and `outcome_n_effective`; refreshing the page never loses progress.
+
 - `server/improve/stats.py` — clustered effective *n*, plain difference-in-means estimates,
   and an anytime-valid confidence-sequence boundary
 - `server/improve/experiments.py` — transitions experiment to `measuring` then `verdict`

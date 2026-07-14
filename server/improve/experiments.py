@@ -148,6 +148,10 @@ def measure_experiment(
     n_eff = clustered_effective_n(post_values, cluster_keys)
     gated = n_eff < float(experiment.min_holdout)
     if gated:
+        updated = experiment.model_copy(
+            update={"status": "measuring", "outcome_n_effective": n_eff}
+        )
+        ExperimentRepo.update(conn, updated)
         return MeasureResult(
             experiment_id=experiment.experiment_id,
             verdict="inconclusive",

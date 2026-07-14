@@ -30,6 +30,7 @@ from server.models.evidence import Evidence
 from server.models.workspace import Workspace
 from server.store.db import Database
 from server.store.repos.evidence import EvidenceRepo
+from server.store.repos.experiments import ExperimentRepo
 from server.store.repos.workspaces import WorkspaceRepo
 from server.util.ids import new_ulid
 
@@ -327,6 +328,10 @@ def test_measure_gated_until_holdout(db: Database) -> None:
     )
     assert result.gated is True
     assert result.verdict == "inconclusive"
+    stored = ExperimentRepo.get(db.reader, exp.experiment_id)
+    assert stored is not None
+    assert stored.status == "measuring"
+    assert stored.outcome_n_effective == pytest.approx(2.0)
 
 
 def test_clustered_ess_changes_improved_verdict_to_inconclusive(db: Database) -> None:

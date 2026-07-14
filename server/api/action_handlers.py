@@ -220,9 +220,26 @@ def _demo_seed_action(params: DemoSeedParams, _ctx: ActionCtx) -> dict[str, Any]
 
 
 def _optimize_propose_action(params: OptimizeProposeParams, ctx: ActionCtx) -> dict[str, Any]:
+    from server.improve.experiments import create_experiment
+
     evaluate_insights(ctx.db.reader, workspace_id=ctx.workspace_id)
-    ctx.db.reader.commit()
     proposals = generate_proposals(ctx.db.reader, limit=params.limit)
+    experiments = []
+    for proposal in proposals:
+        experiment = ExperimentRepo.get_active_for_block(
+            ctx.db.reader, proposal.target_file, proposal.block_key
+        )
+        if experiment is None:
+            experiment = create_experiment(
+                ctx.db.reader,
+                target_file=proposal.target_file,
+                block_key=proposal.block_key,
+                kind=proposal.kind,
+                content=proposal.content,
+                evidence_id=proposal.evidence_id,
+            )
+        experiments.append(experiment)
+    ctx.db.reader.commit()
     return {
         "proposals": [
             {
@@ -231,8 +248,9 @@ def _optimize_propose_action(params: OptimizeProposeParams, ctx: ActionCtx) -> d
                 "kind": p.kind,
                 "content": p.content,
                 "evidence_id": p.evidence_id,
+                "experiment_id": experiments[index].experiment_id,
             }
-            for p in proposals
+            for index, p in enumerate(proposals)
         ],
         "llm": params.llm,
         "apply": params.apply,

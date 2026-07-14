@@ -1073,8 +1073,14 @@ def build_experiments(conn: sqlite3.Connection) -> ExperimentsResponse:
             status=e.status,
             target_file=e.target_file,
             created_at=e.created_at,
+            applied_at=e.applied_at,
+            min_holdout=e.min_holdout,
+            outcome_n_effective=e.outcome_n_effective,
             verdict=e.verdict,
             lift_pct=e.effect_estimate,
+            effect_ci_low=e.effect_ci_low,
+            effect_ci_high=e.effect_ci_high,
+            measured_at=e.measured_at,
         )
         for e in rows
     ]

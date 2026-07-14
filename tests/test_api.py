@@ -302,6 +302,38 @@ def test_experiments_shape(api_client: TestClient) -> None:
     assert "experiments" in resp.json()
 
 
+def test_optimize_proposals_create_idempotent_experiment_cards(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            "UPDATE traces SET peak_context_pct = 90, started_at = ? WHERE trace_id = ?",
+            (datetime.now(UTC).isoformat(), trace_id),
+        )
+    first = api_client.post("/api/actions/optimize_propose", json={})
+    second = api_client.post("/api/actions/optimize_propose", json={})
+    assert first.status_code == second.status_code == 200
+    first_id = first.json()["result"]["proposals"][0]["experiment_id"]
+    assert second.json()["result"]["proposals"][0]["experiment_id"] == first_id
+    experiments = api_client.get("/api/experiments").json()["experiments"]
+    assert len(experiments) == 1
+    assert experiments[0] == {
+        "experiment_id": first_id,
+        "status": "proposed",
+        "target_file": "AGENTS.md",
+        "created_at": experiments[0]["created_at"],
+        "applied_at": None,
+        "min_holdout": 8,
+        "outcome_n_effective": None,
+        "verdict": None,
+        "lift_pct": None,
+        "effect_ci_low": None,
+        "effect_ci_high": None,
+        "measured_at": None,
+    }
+
+
 def test_search_shape(api_client: TestClient) -> None:
     resp = api_client.get("/api/search?q=user")
     assert resp.status_code == 200

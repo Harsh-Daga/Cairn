@@ -317,8 +317,14 @@ class ExperimentRow(BaseModel):
     status: str
     target_file: str | None
     created_at: str
+    applied_at: str | None
+    min_holdout: int
+    outcome_n_effective: float | None
     verdict: str | None
     lift_pct: float | None
+    effect_ci_low: float | None
+    effect_ci_high: float | None
+    measured_at: str | None
 
 
 class ExperimentsResponse(BaseModel):
