@@ -36,9 +36,29 @@ export interface TailRisk {
   threshold?: number | null;
 }
 
+export interface WasteCause {
+  category: string;
+  waste_tokens: number;
+  estimated_savings_usd: number;
+  cause: string;
+  fix: string;
+}
+
+export interface MoneySummary {
+  period_days: number;
+  total_spend_usd: number;
+  spend_estimated: boolean;
+  wasted_spend_usd: number;
+  wasted_spend_pct: number;
+  waste_estimated: boolean;
+  top_causes: WasteCause[];
+  primary_action: string;
+}
+
 export interface OverviewResponse {
   days: number;
   kpis: Record<string, number | null>;
+  money: MoneySummary;
   narrative: NarrativeSentence[];
   tail_risk: TailRisk;
   data_notes: DataNote[];

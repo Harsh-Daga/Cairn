@@ -6,10 +6,20 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 
 **Question:** *What happened, and what should I look at?*
 
+- The first card is a fixed 30-day money summary: total spend, estimated wasted spend in
+  dollars and percent, and the three largest waste causes. Waste dollars are estimated by
+  allocating each session's cost in proportion to its flagged waste tokens; the UI keeps the
+  `± estimated` marker on those values.
+- Every ranked cause pairs its dollar estimate with a plain-language cause and concrete fix.
+  **Review proposed fix** opens Optimize as the single primary action.
 - Narrative sentences summarize recent activity; click a sentence to jump to filtered Sessions.
 - KPI cards: sessions, spend, input tokens, waste tokens.
 - Quick links to Insights, Optimize, and high-waste sessions.
 - Empty state prompts `cairn sync`.
+
+Running bare `cairn` performs a sync, prints this same 30-day money summary in the terminal,
+then opens the local UI. Sessions without reliable cost data remain excluded from dollar
+allocation and are called out in the existing data notes.
 
 ## 2. Sessions (`/sessions`)
 

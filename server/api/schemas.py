@@ -30,9 +30,29 @@ class TailRisk(BaseModel):
     threshold: float | None = None
 
 
+class WasteCause(BaseModel):
+    category: str
+    waste_tokens: int
+    estimated_savings_usd: float
+    cause: str
+    fix: str
+
+
+class MoneySummary(BaseModel):
+    period_days: int
+    total_spend_usd: float
+    spend_estimated: bool
+    wasted_spend_usd: float
+    wasted_spend_pct: float
+    waste_estimated: bool
+    top_causes: list[WasteCause]
+    primary_action: str
+
+
 class OverviewResponse(BaseModel):
     days: int
     kpis: dict[str, float | int | None]
+    money: MoneySummary
     narrative: list[NarrativeSentence]
     tail_risk: TailRisk
     data_notes: list[DataNote]

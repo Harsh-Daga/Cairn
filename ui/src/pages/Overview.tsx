@@ -20,7 +20,7 @@ import {
 } from "@/lib/api";
 import { formatCost, formatTokens } from "@/lib/format";
 import { useUiStore } from "@/state/ui";
-import type { UsageSeriesRow } from "@/lib/types";
+import type { MoneySummary, UsageSeriesRow } from "@/lib/types";
 import { PageShell } from "@/components/common/PageShell";
 import { ChartFrame, Chip } from "@/components/common/Chip";
 import {
@@ -130,6 +130,8 @@ export function OverviewPage() {
   return (
     <PageShell title="Overview" question="Health, cost, and improvement signals across your agent workspace.">
       <div className="space-y-4">
+        <MoneySlide money={data.money} />
+
         <section className="signal-panel relative grid overflow-hidden p-6 lg:grid-cols-[1fr_280px] lg:p-7">
           <div className="relative z-10 max-w-3xl">
             <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-patina">
@@ -256,6 +258,68 @@ export function OverviewPage() {
         ) : null}
       </div>
     </PageShell>
+  );
+}
+
+export function MoneySlide({ money }: { money: MoneySummary }) {
+  return (
+    <section className="card overflow-hidden border-copper/35">
+      <div className="grid gap-5 p-6 lg:grid-cols-[260px_1fr] lg:p-7">
+        <div>
+          <p className="page-kicker">Last {money.period_days} days · money slide</p>
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-1">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-mono text-[9px] uppercase tracking-wide text-cinder">Total spend</p>
+                {money.spend_estimated ? <Chip label="± estimated" tone="estimated" /> : null}
+              </div>
+              <p className="mt-1 font-display text-3xl font-bold tracking-[-0.05em] text-bone">
+                {formatCost(money.total_spend_usd)}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-mono text-[9px] uppercase tracking-wide text-cinder">Wasted spend</p>
+                {money.waste_estimated ? <Chip label="± estimated" tone="estimated" /> : null}
+              </div>
+              <p className="mt-1 font-display text-3xl font-bold tracking-[-0.05em] text-ochre">
+                {formatCost(money.wasted_spend_usd)}
+                <span className="ml-2 text-base text-cinder">{money.wasted_spend_pct.toFixed(1)}%</span>
+              </p>
+            </div>
+          </div>
+          <Link
+            to={money.primary_action}
+            className="mt-5 inline-flex items-center gap-2 rounded-sm bg-copper px-4 py-2.5 text-sm font-semibold text-anthracite hover:bg-copper/90"
+          >
+            Review proposed fix <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div>
+          <p className="font-mono text-[9px] uppercase tracking-wide text-cinder">Top waste causes</p>
+          {money.top_causes.length > 0 ? (
+            <ol className="mt-3 divide-y divide-quartz-vein/60 rounded-sm border border-quartz-vein/70">
+              {money.top_causes.map((item, index) => (
+                <li key={item.category} className="grid gap-2 px-4 py-3 sm:grid-cols-[32px_92px_1fr]">
+                  <span className="font-mono text-xs text-ash">0{index + 1}</span>
+                  <span className="font-mono text-sm font-semibold text-ochre">
+                    {formatCost(item.estimated_savings_usd)}
+                  </span>
+                  <div>
+                    <p className="text-sm text-bone">{item.cause}</p>
+                    <p className="mt-1 text-xs text-patina">Fix: {item.fix}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className="mt-3 rounded-sm border border-dashed border-quartz-vein p-5 text-sm text-cinder">
+              No priced waste cause yet. Sync a session with token and cost data to populate this list.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 

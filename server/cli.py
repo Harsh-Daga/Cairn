@@ -50,6 +50,7 @@ def main_callback(
     if ctx.invoked_subcommand is not None or version:
         return
     _run_action("sync", {}, None)
+    _print_money_slide()
     ui()
 
 
@@ -78,6 +79,40 @@ def _run_action(name: str, params: dict[str, Any], root: Path | None = None) -> 
     ctx = _make_ctx(root)
     validated = action_def.params_model.model_validate(params)
     return action_def.handler(validated, ctx)
+
+
+def _render_money_slide(money: Any) -> str:
+    estimate = " ± est." if money.waste_estimated else ""
+    lines = [
+        f"Cairn · last {money.period_days} days",
+        f"Spend      ${money.total_spend_usd:,.2f}",
+        (
+            f"Waste      ${money.wasted_spend_usd:,.2f}{estimate} "
+            f"({money.wasted_spend_pct:.1f}%)"
+        ),
+    ]
+    if money.top_causes:
+        lines.append("Top causes")
+        for index, cause in enumerate(money.top_causes, 1):
+            label = cause.category.replace("_", " ")
+            lines.append(f"  {index}. ${cause.estimated_savings_usd:,.2f} · {label}")
+            lines.append(f"     Fix: {cause.fix}")
+    else:
+        lines.append("Top causes  waiting for priced waste data")
+    lines.append("Action      Review proposed fix → http://127.0.0.1:8787/optimize")
+    return "\n".join(lines)
+
+
+def _print_money_slide(workspace: Path | None = None) -> None:
+    from server.api.payloads import build_overview
+
+    action_ctx = _make_ctx(workspace)
+    overview = build_overview(
+        action_ctx.db.reader,
+        workspace_id=action_ctx.workspace_id,
+        days=30,
+    )
+    typer.echo(_render_money_slide(overview.money))
 
 
 @app.command()

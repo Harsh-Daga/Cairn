@@ -33,6 +33,7 @@ from server.api.schemas import (
     ExperimentsResponse,
     InsightRow,
     InsightsResponse,
+    MoneySummary,
     NarrativeSentence,
     OverviewResponse,
     PlanWindowGauge,
@@ -54,6 +55,7 @@ from server.api.schemas import (
     UsageSeriesPoint,
     WasteAnalyticsResponse,
     WasteCategory,
+    WasteCause,
     WorkspaceAdapter,
     WorkspaceResponse,
 )
@@ -123,6 +125,138 @@ def _data_notes(conn: sqlite3.Connection, *, workspace_id: str, since: str) -> l
             )
         )
     return notes
+
+
+_WASTE_GUIDANCE: dict[str, tuple[str, str]] = {
+    "identical_call": (
+        "The agent repeated an identical tool call after other work without new inputs.",
+        "Add an instruction to reuse the previous result unless the underlying input changed.",
+    ),
+    "blind_retry": (
+        "The agent retried the same operation before using the failure output.",
+        "Require the agent to explain the error and change one input before retrying.",
+    ),
+    "retry_loop": (
+        "A failing tool was rerun repeatedly with no effective correction.",
+        "Add a retry limit and require a different diagnostic step after the first failure.",
+    ),
+    "oversize_result": (
+        "Large tool output consumed context beyond the useful working set.",
+        "Ask for bounded output with a line, result, or file limit.",
+    ),
+    "stale_context": (
+        "An unchanged file was read again after it was already in context.",
+        "Tell the agent to reuse its prior summary until the file changes.",
+    ),
+    "orientation_waste": (
+        "Early exploration read broadly without moving toward an edit.",
+        "Start with the named files and stop exploring once the change surface is known.",
+    ),
+    "uncleared_tool_result": (
+        "Re-fetchable tool output stayed in context after it stopped being useful.",
+        "Summarize large results and discard the raw output before continuing.",
+    ),
+    "context_rot": (
+        "Work continued after the context window entered its high-degradation tail.",
+        "Checkpoint the plan and start a fresh session before context saturation.",
+    ),
+    "rebilling_waste": (
+        "Previously supplied context was billed again in later model calls.",
+        "Keep stable instructions concise and move large references behind targeted reads.",
+    ),
+}
+
+
+def _money_summary(
+    conn: sqlite3.Connection,
+    *,
+    workspace_id: str,
+    since: str,
+    days: int,
+) -> MoneySummary:
+    traces = conn.execute(
+        """
+        SELECT trace_id, input_tokens, output_tokens, cost, cost_source, waste_tokens
+        FROM traces
+        WHERE workspace_id = ? AND (started_at IS NULL OR started_at >= ?)
+        """,
+        (workspace_id, since),
+    ).fetchall()
+    category_rows = conn.execute(
+        """
+        SELECT s.trace_id, s.waste_category, SUM(s.waste_tokens) AS waste_tokens
+        FROM spans s JOIN traces t ON t.trace_id = s.trace_id
+        WHERE t.workspace_id = ? AND (t.started_at IS NULL OR t.started_at >= ?)
+          AND s.waste_category IS NOT NULL AND s.waste_tokens > 0
+        GROUP BY s.trace_id, s.waste_category
+        """,
+        (workspace_id, since),
+    ).fetchall()
+    by_trace: dict[str, dict[str, int]] = defaultdict(dict)
+    for category_row in category_rows:
+        by_trace[str(category_row["trace_id"])][str(category_row["waste_category"])] = int(
+            category_row["waste_tokens"] or 0
+        )
+
+    category_tokens: dict[str, int] = defaultdict(int)
+    category_cost: dict[str, float] = defaultdict(float)
+    total_spend = 0.0
+    wasted_spend = 0.0
+    spend_estimated = False
+    for trace in traces:
+        cost = float(trace["cost"] or 0.0)
+        total_spend += cost
+        spend_estimated = spend_estimated or trace["cost_source"] == "priced"
+        tokens = int(trace["input_tokens"] or 0) + int(trace["output_tokens"] or 0)
+        waste_tokens = int(trace["waste_tokens"] or 0)
+        if tokens <= 0 or waste_tokens <= 0 or cost <= 0:
+            continue
+        priced_waste_tokens = min(tokens, waste_tokens)
+        trace_waste_cost = cost * priced_waste_tokens / tokens
+        wasted_spend += trace_waste_cost
+        categories = dict(by_trace.get(str(trace["trace_id"]), {}))
+        attributed = sum(categories.values())
+        if waste_tokens > attributed:
+            categories["rebilling_waste"] = categories.get("rebilling_waste", 0) + (
+                waste_tokens - attributed
+            )
+        scale = priced_waste_tokens / max(1, sum(categories.values()))
+        for category, raw_tokens in categories.items():
+            allocated_tokens = int(round(raw_tokens * scale))
+            category_tokens[category] += allocated_tokens
+            category_cost[category] += trace_waste_cost * raw_tokens / max(
+                1, sum(categories.values())
+            )
+
+    causes: list[WasteCause] = []
+    ranked_categories = sorted(category_cost.items(), key=lambda item: item[1], reverse=True)[:3]
+    for category, amount in ranked_categories:
+        cause, fix = _WASTE_GUIDANCE.get(
+            category,
+            (
+                "Cairn detected avoidable context use in this category.",
+                "Review the supporting sessions and add a targeted instruction for this pattern.",
+            ),
+        )
+        causes.append(
+            WasteCause(
+                category=category,
+                waste_tokens=category_tokens[category],
+                estimated_savings_usd=round(amount, 4),
+                cause=cause,
+                fix=fix,
+            )
+        )
+    return MoneySummary(
+        period_days=days,
+        total_spend_usd=round(total_spend, 4),
+        spend_estimated=spend_estimated,
+        wasted_spend_usd=round(wasted_spend, 4),
+        wasted_spend_pct=round((wasted_spend / total_spend * 100) if total_spend else 0.0, 2),
+        waste_estimated=wasted_spend > 0,
+        top_causes=causes,
+        primary_action="/optimize",
+    )
 
 
 def build_overview(
@@ -199,6 +333,7 @@ def build_overview(
     return OverviewResponse(
         days=days,
         kpis=kpis,
+        money=_money_summary(conn, workspace_id=workspace_id, since=since, days=days),
         narrative=narrative,
         tail_risk=tail,
         data_notes=_data_notes(conn, workspace_id=workspace_id, since=since),

@@ -15,7 +15,40 @@ def test_overview_shape(api_client: TestClient) -> None:
     assert "narrative" in body
     assert "tail_risk" in body
     assert "data_notes" in body
+    assert body["money"]["period_days"] == 90
+    assert body["money"]["primary_action"] == "/optimize"
     assert body["kpis"]["traces"] >= 1
+
+
+def test_overview_money_allocates_waste_cost_and_ranks_causes(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """UPDATE traces SET input_tokens = 800, output_tokens = 200,
+               cost = 10, cost_source = 'priced', waste_tokens = 250
+               WHERE trace_id = ?""",
+            (trace_id,),
+        )
+        conn.execute(
+            "UPDATE spans SET waste_category = NULL, waste_tokens = 0 WHERE trace_id = ?",
+            (trace_id,),
+        )
+        conn.execute(
+            """UPDATE spans SET waste_category = 'retry_loop', waste_tokens = 200
+               WHERE trace_id = ? AND seq = 1""",
+            (trace_id,),
+        )
+    money = api_client.get("/api/overview?days=90").json()["money"]
+    assert money["total_spend_usd"] == 10
+    assert money["spend_estimated"] is True
+    assert money["wasted_spend_usd"] == 2.5
+    assert money["wasted_spend_pct"] == 25
+    assert money["waste_estimated"] is True
+    assert money["top_causes"][0]["category"] == "retry_loop"
+    assert money["top_causes"][0]["estimated_savings_usd"] == 2
+    assert money["top_causes"][0]["fix"]
 
 
 def test_traces_list_shape(api_client: TestClient) -> None:
