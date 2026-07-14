@@ -1,0 +1,43 @@
+tests/test_api.py
+  s_89f082b63228d7::t_b48cbfc7bfbdc6 305-316,319-336
+  s_89f082b63228d7::t_8bedcdc2614a4c 317-318
+server/api/payloads.py
+  s_89f082b63228d7::t_83aa5c381d37d3 1076-1078,1081-1083
+ui/src/test/optimize.test.tsx
+  s_89f082b63228d7::t_b48cbfc7bfbdc6 4,36-68
+  s_89f082b63228d7::t_5ffc19621785e2 69
+docs/optimize.md
+  s_89f082b63228d7::t_b48cbfc7bfbdc6 92-96
+ui/src/lib/types.ts
+  s_89f082b63228d7::t_83aa5c381d37d3 364-366,369-371
+ui/src/pages/Optimize.tsx
+  s_89f082b63228d7::t_13c08c5c453a92 15-57,65-69,81-85,102-103,116-124,327-331
+server/store/repos/experiments.py
+  s_89f082b63228d7::t_83aa5c381d37d3 30-40
+  s_89f082b63228d7::t_89da0f478710a5 29
+tests/test_improve.py
+  s_89f082b63228d7::t_8bedcdc2614a4c 33
+  s_89f082b63228d7::t_b48cbfc7bfbdc6 331-334
+server/api/action_handlers.py
+  s_89f082b63228d7::t_83aa5c381d37d3 223-224,227-242,251,253
+server/api/schemas.py
+  s_89f082b63228d7::t_83aa5c381d37d3 320-322,325-327
+server/improve/experiments.py
+  s_89f082b63228d7::t_83aa5c381d37d3 151-154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "3cdbdc02d7c25b52606b5005db7124c1663a2080",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
