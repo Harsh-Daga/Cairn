@@ -84,7 +84,7 @@ def _sample_std(xs: list[float]) -> float:
 
 
 def anytime_valid_radius(
-    n: int,
+    n: float,
     sigma: float,
     *,
     alpha: float = DEFAULT_ALPHA,
@@ -104,7 +104,7 @@ def anytime_valid_verdict(
     effect: float,
     se: float,
     *,
-    n: int,
+    n: float,
     baseline: float,
     min_n: int = 5,
     alpha: float = DEFAULT_ALPHA,
@@ -121,7 +121,7 @@ def anytime_valid_verdict(
             verdict="inconclusive",
             test_method="anytime_valid_cs",
             confound_flag=False,
-            data_notes=[f"n={n} < {min_n}: inconclusive"],
+            data_notes=[f"n_effective={n:.2f} < {min_n}: inconclusive"],
         )
     if se <= 0:
         se = abs(effect) * 0.1 or 1.0
@@ -174,6 +174,7 @@ def measure_causal_effect(
     pre_trace_ids: list[str],
     post_trace_ids: list[str],
     metric_fn: Callable[[str], float],
+    effective_n: float | None = None,
 ) -> CausalResult:
     """Compare independent pre/post means with an anytime-valid confidence sequence.
 
@@ -213,11 +214,15 @@ def measure_causal_effect(
     post_mean = sum(post_out) / len(post_out)
     effect = post_mean - pre_mean
     uncertainty_scale = math.hypot(_sample_std(pre_out), _sample_std(post_out))
+    raw_n = min(len(pre_out), len(post_out))
+    analysis_n = min(float(raw_n), effective_n) if effective_n is not None else float(raw_n)
     result = anytime_valid_verdict(
         effect,
         uncertainty_scale,
-        n=min(len(pre_out), len(post_out)),
+        n=analysis_n,
         baseline=pre_mean,
     )
     result.test_method = "difference_in_means+anytime_valid_cs"
+    if effective_n is not None:
+        result.data_notes.append(f"clustered effective n={analysis_n:.2f} (raw n={raw_n})")
     return result

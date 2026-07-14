@@ -89,6 +89,11 @@ The confidence-sequence scale is the root-sum-square of the two windows' sample 
 deviations and uses the smaller window size. This is deliberately conservative when window
 sizes differ. The stored `test_method` is `difference_in_means+anytime_valid_cs`.
 
+Repeated sessions from the same cluster do not count as independent evidence. Cairn computes
+clustered effective sample size before measurement, uses it for the holdout gate, and passes
+that same effective *n* into the confidence-sequence radius. The effective value is capped by
+the smaller raw window; raw session count is never substituted when producing a verdict.
+
 ## 6. Verdict
 
 Experiments land in **Verdict** with:

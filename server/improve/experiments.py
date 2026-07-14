@@ -160,6 +160,7 @@ def measure_experiment(
         pre_trace_ids=pre_trace_ids,
         post_trace_ids=post_trace_ids,
         metric_fn=metric_fn,  # type: ignore[arg-type]
+        effective_n=n_eff,
     )
     now = datetime.now(UTC).isoformat()
     updated = experiment.model_copy(

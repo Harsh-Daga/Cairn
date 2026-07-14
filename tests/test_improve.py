@@ -329,6 +329,53 @@ def test_measure_gated_until_holdout(db: Database) -> None:
     assert result.verdict == "inconclusive"
 
 
+def test_clustered_ess_changes_improved_verdict_to_inconclusive(db: Database) -> None:
+    ev = Evidence(
+        evidence_id=new_ulid(),
+        producer="test",
+        produced_at="2026-01-01",
+        trace_ids=["pre-0"],
+        metrics={},
+    )
+    EvidenceRepo.create(db.reader, ev)
+    exp = create_experiment(
+        db.reader,
+        target_file="AGENTS.md",
+        block_key="clustered-verdict",
+        kind="rule",
+        content="rule",
+        evidence_id=ev.evidence_id,
+        min_holdout=5,
+    )
+    db.reader.commit()
+    pre_ids = [f"pre-{i}" for i in range(20)]
+    post_ids = [f"post-{i}" for i in range(20)]
+    values = {
+        **{trace_id: 10.0 + (0.69 if i % 2 else -0.69) for i, trace_id in enumerate(pre_ids)},
+        **{trace_id: 9.0 + (0.69 if i % 2 else -0.69) for i, trace_id in enumerate(post_ids)},
+    }
+    raw = measure_causal_effect(
+        db.reader,
+        pre_trace_ids=pre_ids,
+        post_trace_ids=post_ids,
+        metric_fn=values.__getitem__,
+    )
+    assert raw.verdict == "improved"
+
+    clustered = measure_experiment(
+        db.reader,
+        exp,
+        pre_trace_ids=pre_ids,
+        post_trace_ids=post_ids,
+        metric_fn=values.__getitem__,
+        clusters=["task-a"] * 10 + ["task-b"] * 10,
+    )
+
+    assert clustered.gated is False
+    assert clustered.n_effective == pytest.approx(20 / 3.7)
+    assert clustered.verdict == "inconclusive"
+
+
 def test_preview_estimates_days_from_traffic(db: Database) -> None:
     ws_row = db.reader.execute("SELECT workspace_id FROM workspaces LIMIT 1").fetchone()
     assert ws_row is not None
