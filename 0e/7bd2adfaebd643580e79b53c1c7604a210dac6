@@ -1,0 +1,110 @@
+server/improve/detectors/error_streak.py
+  s_89f082b63228d7::t_29aee6ddc8aaeb 28-31
+  s_89f082b63228d7::t_ed18921659ac99 7,24-27,32
+server/improve/engine.py
+  s_89f082b63228d7::t_ebe645de9cf23e 8,27
+server/improve/detectors/reread_hotspot.py
+  s_89f082b63228d7::t_023aa47920bbe4 33-36
+  s_89f082b63228d7::t_26a80c956274a8 7,29-32,37
+tests/test_api.py
+  s_89f082b63228d7::t_7d8965edf11642 234,237-238
+  s_89f082b63228d7::t_74e13801b5a37b 69,134
+  s_89f082b63228d7::t_023aa47920bbe4 235-236
+  s_89f082b63228d7::t_2e3c7cd0f307da 229-233,239-249
+ui/src/test/insights.test.tsx
+  s_89f082b63228d7::t_2e3c7cd0f307da 1-44
+ui/src/pages/Insights.tsx
+  s_89f082b63228d7::t_bb6cc160bb4640 16-22,72
+  s_89f082b63228d7::t_0e6df0a6bc298d 132,155-175
+server/improve/detectors/high_file_churn.py
+  s_89f082b63228d7::t_29aee6ddc8aaeb 27-29,33-36
+  s_89f082b63228d7::t_ed18921659ac99 7,30-32,37
+ui/src/lib/types.ts
+  s_89f082b63228d7::t_0e6df0a6bc298d 219-221
+server/improve/detectors/multi_model_spread.py
+  s_89f082b63228d7::t_29aee6ddc8aaeb 33-36,40-43
+  s_89f082b63228d7::t_ed18921659ac99 7,37-39,44
+server/improve/detectors/oversize_results.py
+  s_89f082b63228d7::t_74e13801b5a37b 7-13
+  s_89f082b63228d7::t_023aa47920bbe4 46-49
+  s_89f082b63228d7::t_ed18921659ac99 42-45,50
+docs/optimize.md
+  s_89f082b63228d7::t_b824f367c9192e 32-44
+server/improve/detectors/stale_tool_results.py
+  s_89f082b63228d7::t_26a80c956274a8 42-45,50
+  s_89f082b63228d7::t_74e13801b5a37b 7-13
+  s_89f082b63228d7::t_023aa47920bbe4 46-49
+server/improve/detectors/unused_tools.py
+  s_89f082b63228d7::t_26a80c956274a8 7,32-36
+  s_89f082b63228d7::t_023aa47920bbe4 29-31
+server/improve/detectors/behavioral_drift.py
+  s_89f082b63228d7::t_ed18921659ac99 7,37-39,44-45
+  s_89f082b63228d7::t_29aee6ddc8aaeb 34-36,40-43
+server/improve/detectors/rebilling_waste.py
+  s_89f082b63228d7::t_74e13801b5a37b 7-13
+  s_89f082b63228d7::t_023aa47920bbe4 47-49,53-56
+  s_89f082b63228d7::t_26a80c956274a8 50-52,57
+server/api/schemas.py
+  s_89f082b63228d7::t_0e6df0a6bc298d 267-269
+server/improve/detectors/subagent_heavy.py
+  s_89f082b63228d7::t_023aa47920bbe4 34-36,40-43
+  s_89f082b63228d7::t_26a80c956274a8 7,37-39,44
+server/api/payloads.py
+  s_89f082b63228d7::t_d5645f649899e2 946-948,950
+  s_89f082b63228d7::t_0e6df0a6bc298d 920-926,936-937,953
+  s_89f082b63228d7::t_eedc71d8cf377d 927-935
+  s_89f082b63228d7::t_74e13801b5a37b 227-228,938-945,949,951-952,1068,1109
+ui/src/components/insights/InsightCard.tsx
+  s_89f082b63228d7::t_bb6cc160bb4640 66-68,86-87
+  s_89f082b63228d7::t_0e6df0a6bc298d 6,23,47-51,69-85
+server/improve/detectors/quality_regression.py
+  s_89f082b63228d7::t_26a80c956274a8 7,32-35,40-41
+  s_89f082b63228d7::t_023aa47920bbe4 36-39
+server/improve/detectors/identical_calls.py
+  s_89f082b63228d7::t_29aee6ddc8aaeb 49-52
+  s_89f082b63228d7::t_74e13801b5a37b 7-13
+  s_89f082b63228d7::t_ed18921659ac99 45-48,53
+tests/test_detector_rules.py
+  s_89f082b63228d7::t_74e13801b5a37b 7
+  s_89f082b63228d7::t_6173b73bdee2d5 10-13,15,20,23,37-52,54-58,87-91,102-106,120-122
+server/improve/detectors/cache_misuse.py
+  s_89f082b63228d7::t_29aee6ddc8aaeb 70-72,76-79
+  s_89f082b63228d7::t_ed18921659ac99 7,73-75,80
+server/improve/evidence.py
+  s_89f082b63228d7::t_ebe645de9cf23e 55-56,58-59,71
+  s_89f082b63228d7::t_a4182a4a4932e1 54,57
+server/improve/detectors/_types.py
+  s_89f082b63228d7::t_ebe645de9cf23e 6,19-28,37-39,51-53,60-66
+  s_89f082b63228d7::t_d91cb5d5635a2b 67-68
+server/improve/detectors/context_pressure.py
+  s_89f082b63228d7::t_29aee6ddc8aaeb 37-39,43-46
+  s_89f082b63228d7::t_ed18921659ac99 8,40-42,47
+server/improve/detectors/runaway_sessions.py
+  s_89f082b63228d7::t_26a80c956274a8 7,30-32,37
+  s_89f082b63228d7::t_023aa47920bbe4 27-29,33-36
+server/improve/detectors/failing_command.py
+  s_89f082b63228d7::t_29aee6ddc8aaeb 29-31,35-38
+  s_89f082b63228d7::t_ed18921659ac99 7,32-34,39
+server/improve/detectors/cost_anomaly.py
+  s_89f082b63228d7::t_ed18921659ac99 7,31-33,38-39
+  s_89f082b63228d7::t_29aee6ddc8aaeb 28-30,34-37
+server/improve/detectors/retry_loops.py
+  s_89f082b63228d7::t_26a80c956274a8 7,27-29,34
+  s_89f082b63228d7::t_023aa47920bbe4 24-26,30-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "0e7bd2adfaebd643580e79b53c1c7604a210dac6",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
