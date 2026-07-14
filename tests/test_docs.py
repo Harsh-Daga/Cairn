@@ -20,7 +20,7 @@ CLI_DOC = ROOT / "docs" / "cli.md"
 GEN_CLI = ROOT / "scripts" / "gen_cli_docs.py"
 
 FENCED_CMD = re.compile(r"```(?:bash|sh|shell)?\n(.*?)```", re.DOTALL)
-README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]+)`\s*\|", re.MULTILINE)
+README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]*)`\s*\|", re.MULTILINE)
 README_VERSION_BADGE = re.compile(r"img\.shields\.io/badge/version-([0-9]+\.[0-9]+\.[0-9]+)-")
 
 DOCS_INDEX = [
@@ -49,21 +49,6 @@ FORBIDDEN_DOC_PATTERNS = [
     re.compile(r"docs/guides/"),
     re.compile(r"docs/spec/"),
 ]
-
-README_CLI_COMMANDS = [
-    "cairn",
-    "cairn sync",
-    "cairn show ID",
-    "cairn insights",
-    "cairn optimize",
-    "cairn experiments ls",
-    "cairn check",
-    "cairn export",
-    "cairn mcp install",
-    "cairn doctor",
-    "cairn setup-prompt",
-]
-
 
 def _command_label(cmd: object) -> str | None:
     name = getattr(cmd, "name", None)
@@ -207,17 +192,32 @@ def test_documentation_internal_links_resolve() -> None:
 def test_readme_cli_table_commands_exist() -> None:
     cli = _cli_command_names()
     actions = _action_names()
-    missing = [c for c in README_CLI_COMMANDS if not _command_exists(c, cli, actions)]
+    commands = README_CLI_ROW.findall(README.read_text(encoding="utf-8"))
+    assert commands, "README CLI command table not found"
+    missing = [c for c in commands if not _command_exists(c, cli, actions)]
     assert not missing, f"README CLI commands missing from surface: {missing}"
 
 
-def test_readme_cli_table_matches_list() -> None:
-    text = README.read_text(encoding="utf-8")
-    found = README_CLI_ROW.findall(text)
-    assert found, "README CLI table not found"
-    for cmd in found:
-        base = cmd.replace(" ID", "").strip()
-        assert base in README_CLI_COMMANDS or base.startswith("cairn ")
+def test_all_readme_commands_exist() -> None:
+    cli = _cli_command_names()
+    actions = _action_names()
+    table_commands = README_CLI_ROW.findall(README.read_text(encoding="utf-8"))
+    fenced_commands = _commands_in_markdown(README)
+    missing = [
+        c
+        for c in [*table_commands, *fenced_commands]
+        if not _command_exists(c, cli, actions)
+    ]
+    assert not missing, f"Unknown README commands: {missing}"
+
+
+def test_readme_comparison_examples_link_to_projects() -> None:
+    after_heading = README.read_text(encoding="utf-8").split("## Why Cairn", 1)[1]
+    section = after_heading.split("## Privacy", 1)[0]
+    rows = [line for line in section.splitlines() if line.startswith("|")][2:]
+    assert rows, "README comparison table not found"
+    unlinked = [row.split("|")[2].strip() for row in rows if "](https://" not in row.split("|")[2]]
+    assert not unlinked, f"Comparison examples must link to verifiable projects: {unlinked}"
 
 
 def test_cli_doc_is_current() -> None:

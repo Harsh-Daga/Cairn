@@ -9,8 +9,8 @@
 
 <p align="center">
   <strong>Cairn watches what your AI coding agents actually do — profiles every token,<br>
-  fingerprints behavior, ties it to real outcomes, and rewrites your instruction files<br>
-  to fix the waste, then statistically proves the fix worked.</strong>
+  fingerprints behavior, ties it to real outcomes, and proposes instruction-file fixes<br>
+  whose measured results stay visible.</strong>
 </p>
 
 <p align="center">
@@ -76,7 +76,7 @@ Full prompt: [AGENT_SETUP.md](AGENT_SETUP.md) · `cairn setup-prompt`
 
 **Outcome-anchored quality** — Capture git and test signals after sessions. Score process quality, not just pass/fail. Flag brittle "lucky pass" sessions.
 
-**Measured self-improvement** — Propose instruction edits to `AGENTS.md`, `CLAUDE.md`, `.cursor/rules`. Apply with human approval. Measure before/after on a holdout window with anytime-valid verdicts.
+**Measured self-improvement** — Propose instruction edits to `AGENTS.md`, `CLAUDE.md`, `.cursor/rules`. Apply with human approval, then track the before/after result and confidence interval.
 
 **Agent self-awareness (MCP)** — MCP tools mid-session: recurring waste, project primer, session-so-far, should-I-stop. Auto-install via Settings or `cairn mcp install`.
 
@@ -84,7 +84,7 @@ Full prompt: [AGENT_SETUP.md](AGENT_SETUP.md) · `cairn setup-prompt`
 
 ---
 
-## What it looks like
+## What the React dashboard looks like
 
 | Overview | Session waterfall + strata | Optimize verdict |
 |----------|---------------------------|------------------|
@@ -115,7 +115,7 @@ Adding an adapter is one parser, one fixture, and a conformance test — see `ca
 ## How it's honest
 
 - **Estimated tokens** are always marked with ± error chips in the UI — never presented as ground truth.
-- **Verdicts** use anytime-valid confidence sequences and clustered effective sample sizes (not peeking fixed-z CIs).
+- **Experiment results** show their method, confidence interval, and effective sample size; [the optimize docs](docs/optimize.md) describe the current calculation and limits.
 - Per-adapter estimation error is published in [ACCURACY.md](ACCURACY.md) and refreshed by CI.
 
 ---
@@ -160,12 +160,12 @@ adapters / OTLP ──► spans ledger (SQLite) ──► incremental views
 
 | Category | Examples | What Cairn adds |
 |----------|----------|-----------------|
-| Spend dashboards | ccusage, Tokscale | Causal traces + waste taxonomy, not just totals |
-| Proxy profilers | ContextLens | Local-first, multi-agent, no proxy required |
-| Eval platforms | bespoke harnesses | Measured self-improvement on your real repo |
-| Observability | generic APM | Agent-native spans, fingerprint drift, optimize loop |
+| Spend dashboards | [ccusage](https://github.com/ryoppippi/ccusage), [Tokscale](https://github.com/junhoyeo/tokscale) | Causal traces + waste taxonomy, not just totals |
+| Context profilers | [ContextLens](https://pypi.org/project/contextlens-profiler/) | Multi-agent ledger + outcome and experiment views |
+| Eval platforms | [OpenAI Evals](https://github.com/openai/evals) | Measurements from local coding-agent sessions instead of a standalone eval dataset |
+| Observability standards | [OpenTelemetry](https://opentelemetry.io/) | Agent-specific analysis over local logs and OTLP spans |
 
-Nobody else combines local-first causal traces with measured instruction self-improvement.
+Cairn combines those concerns in one local workspace; the linked projects have different scopes and trade-offs.
 
 ---
 
