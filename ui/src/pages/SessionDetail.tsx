@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchReplayCheckpoints, fetchTraceDetail, setHumanLabel } from "@/lib/api";
 import { interpolateReplayAtSeq } from "@/lib/replay";
 import { formatCost } from "@/lib/format";
+import { mergeConsultationRows } from "@/lib/mcpConsultations";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 import { flattenTree, Waterfall } from "@/components/waterfall/Waterfall";
@@ -74,12 +75,16 @@ export function SessionDetailPage() {
     [detail, foldSubagents],
   );
 
-  const rows = useMemo(
-    () => allRows.filter((r) => activeSpans.some((s) => s.span_id === r.span.span_id)),
-    [allRows, activeSpans],
-  );
+  const rows = useMemo(() => {
+    const spanRows = allRows.filter((r) => activeSpans.some((s) => s.span_id === r.span.span_id));
+    return mergeConsultationRows(
+      spanRows,
+      detail?.mcp_consultations ?? [],
+      seq > 0 ? seq : Number.POSITIVE_INFINITY,
+    );
+  }, [allRows, activeSpans, detail?.mcp_consultations, seq]);
 
-  const selectedSpan = activeSpans.find((s) => s.span_id === selectedId) ?? null;
+  const selectedSpan = rows.find((row) => row.span.span_id === selectedId)?.span ?? null;
 
   const setSeq = (next: number) => {
     const p = new URLSearchParams(searchParams);

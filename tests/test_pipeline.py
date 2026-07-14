@@ -169,3 +169,48 @@ def test_sync_all_honors_source_filter(
     assert report.scanned == 1
     assert report.skipped == 1
     assert seen == [(codex_path, "codex")]
+
+
+def test_sync_imports_mcp_consultations_idempotently(
+    workspace_bundle: tuple[Database, str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, ws_id, root = workspace_bundle
+    trace_id = new_ulid()
+    db.reader.execute(
+        """INSERT INTO traces (trace_id, workspace_id, source, started_at, status)
+           VALUES (?, ?, 'codex', '2026-01-02T00:00:00Z', 'completed')""",
+        (trace_id, ws_id),
+    )
+    db.reader.commit()
+    sidecar = root / ".cairn" / "mcp-events.jsonl"
+    sidecar.parent.mkdir()
+    sidecar.write_text(
+        json.dumps(
+            {
+                "event_id": new_ulid(),
+                "trace_id": trace_id,
+                "after_seq": 7,
+                "tool_name": "cairn_should_i_stop",
+                "called_at": "2026-01-02T00:01:00Z",
+            }
+        )
+        + "\n"
+        + "not-json\n",
+        encoding="utf-8",
+    )
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    monkeypatch.setattr(pipeline, "_refresh_path_index", lambda: None)
+
+    first = pipeline.sync_all()
+    second = pipeline.sync_all()
+
+    assert first.mcp_consultations == 1
+    assert second.mcp_consultations == 0
+    row = db.reader.execute(
+        "SELECT trace_id, after_seq, tool_name FROM mcp_consultations"
+    ).fetchone()
+    assert dict(row) == {
+        "trace_id": trace_id,
+        "after_seq": 7,
+        "tool_name": "cairn_should_i_stop",
+    }

@@ -149,11 +149,20 @@ class SpanLink(BaseModel):
     link_type: str
 
 
+class McpConsultation(BaseModel):
+    event_id: str
+    trace_id: str
+    after_seq: int
+    tool_name: str
+    called_at: str
+
+
 class TraceDetailResponse(BaseModel):
     trace: Trace
     spans: list[Span]
     tree: list[SpanNode]
     links: list[SpanLink]
+    mcp_consultations: list[McpConsultation]
     regions: list[dict[str, Any]]
     diagnostics: dict[str, Any] | None
     quality: dict[str, Any] | None

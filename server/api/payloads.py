@@ -33,6 +33,7 @@ from server.api.schemas import (
     ExperimentsResponse,
     InsightRow,
     InsightsResponse,
+    McpConsultation,
     MoneySummary,
     NarrativeSentence,
     OverviewResponse,
@@ -504,6 +505,14 @@ def build_trace_detail(conn: sqlite3.Connection, trace_id: str) -> TraceDetailRe
         (trace_id,),
     ).fetchall()
     regions = [dict(r) for r in region_rows]
+    consultation_rows = conn.execute(
+        """SELECT event_id, trace_id, after_seq, tool_name, called_at
+           FROM mcp_consultations
+           WHERE trace_id = ?
+           ORDER BY after_seq, called_at""",
+        (trace_id,),
+    ).fetchall()
+    consultations = [McpConsultation.model_validate(dict(row)) for row in consultation_rows]
     diag = DiagnosticRepo.get(conn, trace_id)
     quality = DataQualityRepo.get(conn, trace_id)
     outcome = OutcomeRepo.get(conn, trace_id)
@@ -512,6 +521,7 @@ def build_trace_detail(conn: sqlite3.Connection, trace_id: str) -> TraceDetailRe
         spans=spans,
         tree=_build_span_tree(spans),
         links=links,
+        mcp_consultations=consultations,
         regions=regions,
         diagnostics=diag.model_dump() if diag else None,
         quality=quality.model_dump() if quality else None,

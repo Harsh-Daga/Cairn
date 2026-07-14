@@ -167,10 +167,19 @@ export interface TraceDetailResponse {
   spans: Span[];
   tree: SpanNode[];
   links: { from_span_id: string; to_span_id: string; link_type: string }[];
+  mcp_consultations: McpConsultation[];
   regions: Record<string, unknown>[];
   diagnostics: Record<string, unknown> | null;
   quality: Record<string, unknown> | null;
   outcome: OutcomeRecord | null;
+}
+
+export interface McpConsultation {
+  event_id: string;
+  trace_id: string;
+  after_seq: number;
+  tool_name: string;
+  called_at: string;
 }
 
 export interface OutcomeRecord extends Record<string, unknown> {

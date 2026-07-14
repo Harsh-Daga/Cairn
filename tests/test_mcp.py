@@ -84,6 +84,18 @@ def test_mcp_have_i_read_tool(tmp_path: Path) -> None:
     payload = json.loads(lines[1]["result"]["content"][0]["text"])
     assert payload["read"] is True
     assert payload["path"] == "src/app.py"
+    event_text = (db_dir / "mcp-events.jsonl").read_text(encoding="utf-8")
+    event = json.loads(event_text)
+    assert event["tool_name"] == "cairn_have_i_read"
+    assert event["trace_id"] == "tr1"
+    assert event["after_seq"] == 1
+    assert "src/app.py" not in event_text
+    assert "arguments" not in event_text
+
+    # The MCP process records only to the sidecar; its SQLite connection stays read-only.
+    conn = connect(db_dir / "cairn.db")
+    assert conn.execute("SELECT COUNT(*) FROM mcp_consultations").fetchone()[0] == 0
+    conn.close()
 
 
 def test_should_i_stop_uses_live_failing_command_detector(tmp_path: Path) -> None:

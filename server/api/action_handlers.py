@@ -104,6 +104,7 @@ def _sync_action(params: SyncParams, ctx: ActionCtx) -> dict[str, Any]:
         "inserted": report.inserted,
         "updated": report.updated,
         "skipped": report.skipped,
+        "mcp_consultations": report.mcp_consultations,
         "source": params.source,
     }
 
@@ -115,6 +116,7 @@ def _backfill_action(params: BackfillParams, ctx: ActionCtx) -> dict[str, Any]:
         "inserted": report.inserted,
         "updated": report.updated,
         "scanned": report.scanned,
+        "mcp_consultations": report.mcp_consultations,
     }
 
 

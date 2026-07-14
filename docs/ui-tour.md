@@ -54,6 +54,8 @@ name; rendering and file writes remain entirely local.
 **Question:** *What happened turn by turn?*
 
 - **Waterfall** — span tree with subagent swimlanes (dagre layout).
+- **MCP consultations** — privacy-safe “agent consulted Cairn here” markers show where a live
+  agent used Cairn; no MCP arguments, paths, prompts, code, or results are stored.
 - **Replay scrubber** — step through turns via `?seq=`; fetches `/api/traces/{id}/replay`.
 - **Span inspector** — select a span for payload, regions, and waste tags.
 - **Context timeline** — region fill over the session.

@@ -140,6 +140,31 @@ def test_trace_detail_shape(api_client: TestClient, api_workspace: tuple) -> Non
     assert "links" in body
     assert len(body["spans"]) > 0
     assert "outcome" in body
+    assert body["mcp_consultations"] == []
+
+
+def test_trace_detail_includes_mcp_consultations(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, ws_id, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """INSERT INTO mcp_consultations (
+                 event_id, workspace_id, trace_id, after_seq, tool_name, called_at, imported_at
+               ) VALUES ('event-1', ?, ?, 3, 'cairn_should_i_stop',
+                         '2026-01-01T00:03:00Z', '2026-01-01T00:04:00Z')""",
+            (ws_id, trace_id),
+        )
+    body = api_client.get(f"/api/traces/{trace_id}").json()
+    assert body["mcp_consultations"] == [
+        {
+            "event_id": "event-1",
+            "trace_id": trace_id,
+            "after_seq": 3,
+            "tool_name": "cairn_should_i_stop",
+            "called_at": "2026-01-01T00:03:00Z",
+        }
+    ]
 
 
 def test_human_label_persists_and_updates_agreement(

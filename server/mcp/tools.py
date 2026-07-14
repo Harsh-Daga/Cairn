@@ -99,6 +99,8 @@ def list_tools() -> list[dict[str, Any]]:
 
 
 def call_tool(ctx: ToolsContext, name: str, args: dict[str, Any]) -> dict[str, Any]:
+    from server.mcp.consultations import record_consultation
+
     dispatch = {
         "cairn_have_i_read": _have_i_read,
         "cairn_before_you_read": _before_you_read,
@@ -112,9 +114,11 @@ def call_tool(ctx: ToolsContext, name: str, args: dict[str, Any]) -> dict[str, A
     if fn is None:
         return {"error": f"unknown tool: {name}"}
     try:
-        return fn(ctx, args)
+        result = fn(ctx, args)
     except Exception as exc:
-        return {"error": f"{type(exc).__name__}: {exc}"}
+        result = {"error": f"{type(exc).__name__}: {exc}"}
+    record_consultation(ctx, name)
+    return result
 
 
 def _have_i_read(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:

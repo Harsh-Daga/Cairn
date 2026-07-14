@@ -18,6 +18,7 @@ from server.ingest.contract import IngestCursor as ContractCursor
 from server.ingest.registry import build_adapters
 from server.ingest.watcher import FileWatcher
 from server.ingest.writer import IngestResult, IngestWriter
+from server.mcp.consultations import import_consultations
 from server.models.ingest import IngestCursor as StoredCursor
 from server.store.db import Database
 from server.store.repos.ingest_cursors import IngestCursorRepo
@@ -36,6 +37,7 @@ class PipelineReport:
     inserted: int = 0
     updated: int = 0
     skipped: int = 0
+    mcp_consultations: int = 0
     results: list[IngestResult] = field(default_factory=list)
 
 
@@ -132,6 +134,14 @@ class IngestPipeline:
                 report.inserted += 1
             else:
                 report.updated += 1
+        report.mcp_consultations = self._db.write(
+            lambda conn: import_consultations(conn, self.workspace_root, self.workspace_id)
+        )
+        if report.mcp_consultations:
+            self._bus.publish(
+                "views-updated",
+                {"mcp_consultations": report.mcp_consultations},
+            )
         return report
 
     def ingest_path(self, path: Path) -> IngestResult | None:
