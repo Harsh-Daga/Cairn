@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import sqlite3
 from pathlib import Path
 
@@ -39,6 +40,59 @@ def test_cuped_reduces_variance() -> None:
     adj, se = cuped_adjust(outcomes, cov)
     assert se >= 0
     assert 9.0 <= adj <= 13.0
+
+
+def test_measurement_is_plain_difference_without_synthetic_covariates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    conn = sqlite3.connect(":memory:")
+    from server.store.migrate import migrate
+
+    migrate(conn)
+    values = {
+        **{f"pre-{i}": float(i) for i in range(10)},
+        **{f"post-{i}": float(i) - 2.0 for i in range(15)},
+    }
+
+    def fail_if_called(*_args: object, **_kwargs: object) -> tuple[float, float]:
+        raise AssertionError("CUPED must not be used without per-unit covariates")
+
+    monkeypatch.setattr("server.improve.stats.cuped_adjust", fail_if_called)
+    result = measure_causal_effect(
+        conn,
+        pre_trace_ids=[f"pre-{i}" for i in range(10)],
+        post_trace_ids=[f"post-{i}" for i in range(15)],
+        metric_fn=values.__getitem__,
+    )
+
+    assert result.effect_estimate == pytest.approx(0.5)
+    assert result.test_method == "difference_in_means+anytime_valid_cs"
+
+
+def test_difference_in_means_confidence_sequence_has_simulated_coverage() -> None:
+    rng = random.Random(20260714)
+    conn = sqlite3.connect(":memory:")
+    from server.store.migrate import migrate
+
+    migrate(conn)
+    true_effect = -0.35
+    simulations = 300
+    covered = 0
+    for simulation in range(simulations):
+        pre_ids = [f"{simulation}-pre-{i}" for i in range(40)]
+        post_ids = [f"{simulation}-post-{i}" for i in range(40)]
+        values = {trace_id: rng.gauss(2.0, 1.0) for trace_id in pre_ids}
+        values.update({trace_id: rng.gauss(2.0 + true_effect, 1.0) for trace_id in post_ids})
+        result = measure_causal_effect(
+            conn,
+            pre_trace_ids=pre_ids,
+            post_trace_ids=post_ids,
+            metric_fn=values.__getitem__,
+        )
+        assert result.effect_ci_low is not None and result.effect_ci_high is not None
+        covered += int(result.effect_ci_low <= true_effect <= result.effect_ci_high)
+
+    assert covered / simulations >= 0.95
 
 
 def test_anytime_valid_improved_when_ci_below_practical_band() -> None:

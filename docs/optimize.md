@@ -77,10 +77,17 @@ cairn action experiment_apply --params-json '{"experiment_id":"…"}'
 
 New sessions ingested after apply form the **holdout** set. When enough holdout sessions exist (`min_holdout`, default 8), Cairn runs causal measurement:
 
-- `server/improve/stats.py` — clustered effective *n*, CUPED-style effect estimates
+- `server/improve/stats.py` — clustered effective *n*, plain difference-in-means estimates,
+  and an anytime-valid confidence-sequence boundary
 - `server/improve/experiments.py` — transitions experiment to `measuring` then `verdict`
 
 Trigger measurement manually with `experiment_measure` or wait for post-sync evaluation.
+
+Sessions in the before and after windows are independent; Cairn does not pair them by list
+position and does not synthesize CUPED covariates. The effect is `mean(after) - mean(before)`.
+The confidence-sequence scale is the root-sum-square of the two windows' sample standard
+deviations and uses the smaller window size. This is deliberately conservative when window
+sizes differ. The stored `test_method` is `difference_in_means+anytime_valid_cs`.
 
 ## 6. Verdict
 

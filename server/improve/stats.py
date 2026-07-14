@@ -1,4 +1,4 @@
-"""CUPED + anytime-valid confidence sequences + clustered ESS."""
+"""Difference-in-means confidence sequences, confound guards, and clustered ESS."""
 
 from __future__ import annotations
 
@@ -73,6 +73,14 @@ def _se(xs: list[float]) -> float:
     m = sum(xs) / n
     var = sum((x - m) ** 2 for x in xs) / (n - 1)
     return math.sqrt(var / n)
+
+
+def _sample_std(xs: list[float]) -> float:
+    if len(xs) < 2:
+        return 0.0
+    mean = sum(xs) / len(xs)
+    variance = sum((value - mean) ** 2 for value in xs) / (len(xs) - 1)
+    return math.sqrt(max(variance, 0.0))
 
 
 def anytime_valid_radius(
@@ -167,17 +175,15 @@ def measure_causal_effect(
     post_trace_ids: list[str],
     metric_fn: Callable[[str], float],
 ) -> CausalResult:
-    """CUPED-adjusted before/after with confounder guard on model mix."""
+    """Compare independent pre/post means with an anytime-valid confidence sequence.
+
+    Sessions are not paired across windows. The point estimate is ``mean(post) -
+    mean(pre)`` and the confidence-sequence scale is the root-sum-square of the two
+    windows' sample standard deviations. The sequence uses the smaller window size,
+    which is conservative when the windows differ. No CUPED covariate is constructed.
+    """
     pre_out = [metric_fn(tid) for tid in pre_trace_ids]
     post_out = [metric_fn(tid) for tid in post_trace_ids]
-    pre_cov = pre_out
-    post_cov = (
-        pre_cov[: len(post_out)]
-        if len(pre_cov) >= len(post_out)
-        else pre_cov + [0.0] * (len(post_out) - len(pre_cov))
-    )
-    if len(post_out) != len(post_cov):
-        post_cov = [sum(pre_out) / len(pre_out) if pre_out else 0.0] * len(post_out)
 
     before_mix = _model_mix(conn, pre_trace_ids)
     after_mix = _model_mix(conn, post_trace_ids)
@@ -187,17 +193,31 @@ def measure_causal_effect(
             effect_ci_low=None,
             effect_ci_high=None,
             verdict="confounded",
-            test_method="cuped+anytime_valid_cs",
+            test_method="difference_in_means+anytime_valid_cs",
             confound_flag=True,
-            data_notes=["model/task mix shifted between windows"],
+            data_notes=["model mix shifted between windows"],
+        )
+
+    if not pre_out or not post_out:
+        return CausalResult(
+            effect_estimate=None,
+            effect_ci_low=None,
+            effect_ci_high=None,
+            verdict="inconclusive",
+            test_method="difference_in_means+anytime_valid_cs",
+            confound_flag=False,
+            data_notes=["both pre and post windows require at least one session"],
         )
 
     pre_mean = sum(pre_out) / len(pre_out) if pre_out else 0.0
-    adj_post, se = cuped_adjust(post_out, post_cov[: len(post_out)])
-    effect = adj_post - pre_mean
-    return anytime_valid_verdict(
+    post_mean = sum(post_out) / len(post_out)
+    effect = post_mean - pre_mean
+    uncertainty_scale = math.hypot(_sample_std(pre_out), _sample_std(post_out))
+    result = anytime_valid_verdict(
         effect,
-        se,
-        n=len(post_trace_ids),
+        uncertainty_scale,
+        n=min(len(pre_out), len(post_out)),
         baseline=pre_mean,
     )
+    result.test_method = "difference_in_means+anytime_valid_cs"
+    return result
