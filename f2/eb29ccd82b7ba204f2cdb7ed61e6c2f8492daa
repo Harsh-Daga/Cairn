@@ -1,0 +1,28 @@
+tests/test_docs.py
+  s_89f082b63228d7::t_5a49e26b94bc5b 8,24,141-168
+  s_89f082b63228d7::t_3b52ebbdebf0da 169-170
+tests/test_scaffold.py
+  s_89f082b63228d7::t_5a49e26b94bc5b 7-8,14-16
+README.md
+  s_89f082b63228d7::t_5a49e26b94bc5b 17
+tests/test_release_publish.py
+  s_89f082b63228d7::t_aebd5ed4798c50 5
+  s_89f082b63228d7::t_5a49e26b94bc5b 13-16,19,27,38
+  s_89f082b63228d7::t_0b5586e5d51bc9 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "f2eb29ccd82b7ba204f2cdb7ed61e6c2f8492daa",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
