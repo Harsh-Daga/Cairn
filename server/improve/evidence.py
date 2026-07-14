@@ -51,6 +51,12 @@ def draft_from_legacy(rule_id: str, legacy: Any, *, detector_version: int = 1) -
     if run_ids := evidence.get("run_ids"):
         trace_ids.extend(str(r) for r in run_ids)
     savings = getattr(legacy, "savings_estimate", None)
+    fix_payload = getattr(legacy, "fix", None)
+    contract = {
+        "savings_unavailable_reason": getattr(legacy, "savings_unavailable_reason", None),
+        "fix": fix_payload.as_dict() if fix_payload is not None else None,
+        "diagnostic": bool(getattr(legacy, "diagnostic", False)),
+    }
     ci = None
     if savings is not None and savings > 0:
         ci = {"low": round(savings * 0.5, 2), "high": round(savings * 1.5, 2)}
@@ -62,7 +68,7 @@ def draft_from_legacy(rule_id: str, legacy: Any, *, detector_version: int = 1) -
         title=str(getattr(legacy, "title", "")),
         body=str(getattr(legacy, "body", "")),
         trace_ids=trace_ids,
-        metrics=dict(evidence),
+        metrics={**dict(evidence), "insight_contract": contract},
         savings_estimate=savings,
         savings_ci=ci,
         action=getattr(legacy, "action", None),

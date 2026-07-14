@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_runaway_sessions(ctx: dict[str, Any]) -> Insight | None:
@@ -24,6 +24,17 @@ def rule_runaway_sessions(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"count": len(runaways), "worst_ratio": top["ratio"], "run_id": top["run_id"]},
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Difficulty-adjusted growth is a ratio, not an attributable waste cost."
+        ),
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy runaway-session rule",
+            value=(
+                "If per-turn context keeps growing after two failed approaches, checkpoint "
+                "progress and split the remaining task into a fresh session."
+            ),
+        ),
         action="cairn show last",
         difficulty_aware=True,
     )

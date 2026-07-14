@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_high_file_churn(ctx: dict[str, Any]) -> Insight | None:
@@ -24,5 +24,16 @@ def rule_high_file_churn(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"path": path, "edits": count},
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Edit counts cannot be converted to cost without per-edit token attribution."
+        ),
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy test-first edit rule",
+            value=(
+                f"Before editing `{path}` again, write or run the narrowest relevant test and "
+                "state the expected failing behavior."
+            ),
+        ),
         action="cairn optimize",
     )

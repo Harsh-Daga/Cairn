@@ -13,6 +13,13 @@ const GROUPS: { state: InsightLifecycle; label: string }[] = [
   { state: "regressed", label: "Regressed" },
 ];
 
+export function splitInsights(insights: InsightRow[]) {
+  return {
+    recommendations: insights.filter((insight) => !insight.diagnostic),
+    diagnostics: insights.filter((insight) => insight.diagnostic),
+  };
+}
+
 export function InsightsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string | null>(null);
@@ -62,6 +69,7 @@ export function InsightsPage() {
         : insights,
     [insights, severityFilter],
   );
+  const { recommendations, diagnostics } = splitInsights(filtered);
   const severities = useMemo(
     () => [...new Set(insights.map((i) => i.severity))],
     [insights],
@@ -121,7 +129,7 @@ export function InsightsPage() {
             </div>
           ) : null}
           {GROUPS.map((group) => {
-            const items = filtered.filter((i) => i.state === group.state);
+            const items = recommendations.filter((i) => i.state === group.state);
             if (items.length === 0) return null;
             return (
               <section key={group.state}>
@@ -144,6 +152,27 @@ export function InsightsPage() {
               </section>
             );
           })}
+          {diagnostics.length > 0 ? (
+            <section>
+              <h2 className="mb-1 font-display text-lg text-bone">Diagnostics</h2>
+              <p className="mb-3 text-xs text-cinder">
+                Supporting evidence that needs investigation before Cairn can recommend a change.
+              </p>
+              <div className="space-y-3">
+                {diagnostics.map((insight) => (
+                  <InsightCard
+                    key={insight.insight_id}
+                    insight={insight}
+                    expanded={expanded === insight.insight_id}
+                    onToggle={() =>
+                      setExpanded(expanded === insight.insight_id ? null : insight.insight_id)
+                    }
+                    onAck={(row) => ackMutation.mutate(row)}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
       )}
     </PageShell>

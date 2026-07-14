@@ -224,8 +224,8 @@ def _money_summary(
         for category, raw_tokens in categories.items():
             allocated_tokens = int(round(raw_tokens * scale))
             category_tokens[category] += allocated_tokens
-            category_cost[category] += trace_waste_cost * raw_tokens / max(
-                1, sum(categories.values())
+            category_cost[category] += (
+                trace_waste_cost * raw_tokens / max(1, sum(categories.values()))
             )
 
     causes: list[WasteCause] = []
@@ -917,21 +917,41 @@ def build_insights(
     if state is not None:
         lifecycle = state  # type: ignore[assignment]
     rows = InsightRepo.list_by_state(conn, lifecycle, limit=limit)
-    insights = [
-        InsightRow(
-            insight_id=row.insight.insight_id,
-            fingerprint=row.insight.fingerprint,
-            detector=row.insight.detector,
-            severity=row.insight.severity,
-            title=row.insight.title,
-            body=row.insight.body,
-            state=row.state.state,
-            savings_estimate=row.insight.savings_estimate,
-            action=row.insight.action,
-            last_seen_at=row.insight.last_seen_at,
+    insights: list[InsightRow] = []
+    for row in rows:
+        evidence = EvidenceRepo.get(conn, row.insight.evidence_id)
+        contract_raw = evidence.metrics.get("insight_contract", {}) if evidence else {}
+        contract = contract_raw if isinstance(contract_raw, dict) else {}
+        fix_raw = contract.get("fix")
+        fix = fix_raw if isinstance(fix_raw, dict) else {}
+        if not fix.get("value"):
+            fix = {
+                "kind": "manual",
+                "label": "Review supporting evidence",
+                "value": row.insight.action or row.insight.body,
+            }
+        unavailable_reason = contract.get("savings_unavailable_reason")
+        if row.insight.savings_estimate is None and not unavailable_reason:
+            unavailable_reason = "Legacy insight without a defensible savings estimate."
+        insights.append(
+            InsightRow(
+                insight_id=row.insight.insight_id,
+                fingerprint=row.insight.fingerprint,
+                detector=row.insight.detector,
+                severity=row.insight.severity,
+                title=row.insight.title,
+                body=row.insight.body,
+                state=row.state.state,
+                savings_estimate=row.insight.savings_estimate,
+                savings_unavailable_reason=(
+                    str(unavailable_reason) if unavailable_reason else None
+                ),
+                fix={str(key): str(value) for key, value in fix.items()},
+                diagnostic=bool(contract.get("diagnostic", not contract)),
+                action=row.insight.action,
+                last_seen_at=row.insight.last_seen_at,
+            )
         )
-        for row in rows
-    ]
     return InsightsResponse(insights=insights, total=InsightRepo.count_by_state(conn, lifecycle))
 
 
@@ -1045,7 +1065,7 @@ def build_search(
         title_rows = conn.execute(
             f"""
             SELECT trace_id, title FROM traces
-            WHERE {' AND '.join(trace_clauses)}
+            WHERE {" AND ".join(trace_clauses)}
             ORDER BY started_at DESC
             """,
             trace_params,
@@ -1086,7 +1106,7 @@ def build_search(
         SELECT s.trace_id, s.span_id, s.text_inline, s.name, s.path_rel
         FROM spans s
         JOIN traces t ON t.trace_id = s.trace_id
-        WHERE {' AND '.join(span_clauses)}
+        WHERE {" AND ".join(span_clauses)}
         ORDER BY COALESCE(s.started_at, t.started_at) DESC, s.seq DESC
         """,
         span_params,

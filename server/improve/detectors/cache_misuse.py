@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_cache_misuse(ctx: dict[str, Any]) -> Insight | None:
@@ -67,5 +67,16 @@ def rule_cache_misuse(ctx: dict[str, Any]) -> Insight | None:
         body=" ".join(parts),
         evidence=evidence,
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Provider cache write and read prices are not available in this aggregate."
+        ),
+        fix=FixPayload(
+            kind="settings",
+            label="Stabilize the cached prefix",
+            value=(
+                "Keep the system prompt and tool schema stable; place cache_control breakpoints "
+                "after stable content."
+            ),
+        ),
         action=None,
     )

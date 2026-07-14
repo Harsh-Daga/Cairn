@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight, _cap_savings, _data_note, _weekly_spend
+from server.improve.detectors._types import (
+    FixPayload,
+    Insight,
+    _cap_savings,
+    _data_note,
+    _weekly_spend,
+)
 
 
 def rule_identical_tool_calls(ctx: dict[str, Any]) -> Insight | None:
@@ -36,5 +42,14 @@ def rule_identical_tool_calls(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence=evidence,
         savings_estimate=savings,
+        savings_unavailable_reason="No reliable cost data is available for the affected sessions.",
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy duplicate-call rule",
+            value=(
+                "Reuse an earlier tool result when the tool arguments and underlying file or "
+                "input have not changed."
+            ),
+        ),
         action="cairn optimize",
     )

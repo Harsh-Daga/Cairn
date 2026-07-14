@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 from server.improve.context import build_context
+from server.improve.detectors._types import validate_insight_contract
 from server.improve.detectors.rules import ALL_RULES
 from server.improve.evidence import draft_from_legacy
 from server.improve.lifecycle import mark_stale_fixed, upsert_insight
@@ -23,6 +24,7 @@ def evaluate(
     for rule in ALL_RULES:
         result = rule(ctx)
         if result is not None:
+            validate_insight_contract(result)
             drafts.append(draft_from_legacy(result.id, result))
 
     insights: list[Insight] = []

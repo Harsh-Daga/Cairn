@@ -3,6 +3,7 @@ import { fetchInsightEvidence } from "@/lib/api";
 import type { InsightRow } from "@/lib/types";
 import { Chip } from "@/components/common/Chip";
 import { formatCost } from "@/lib/format";
+import { useToastStore } from "@/state/toast";
 
 const SEVERITY_TONE: Record<string, "cinnabar" | "ochre" | "patina" | "malachite"> = {
   error: "cinnabar",
@@ -19,6 +20,7 @@ interface InsightCardProps {
 }
 
 export function InsightCard({ insight, onAck, expanded, onToggle }: InsightCardProps) {
+  const showToast = useToastStore((state) => state.show);
   const { data: evidence } = useQuery({
     queryKey: ["evidence", insight.insight_id],
     queryFn: () => fetchInsightEvidence(insight.insight_id),
@@ -42,7 +44,11 @@ export function InsightCard({ insight, onAck, expanded, onToggle }: InsightCardP
               <p className="mt-2 font-mono text-[11px] text-malachite">
                 est. savings {formatCost(insight.savings_estimate)}/wk
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-2 text-[11px] text-cinder">
+                Savings not priced: {insight.savings_unavailable_reason}
+              </p>
+            )}
           </div>
         </button>
         {insight.state === "new" ? (
@@ -57,6 +63,28 @@ export function InsightCard({ insight, onAck, expanded, onToggle }: InsightCardP
           <Chip label={insight.state} />
         )}
       </div>
+      {expanded ? (
+        <div className="border-t border-quartz-vein bg-granite/10 p-4">
+          <div className="rounded-sm border border-patina/30 bg-patina/5 p-3">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-patina">
+              {insight.fix.kind} fix
+            </p>
+            <p className="mt-2 text-sm text-bone">{insight.fix.value}</p>
+            <button
+              type="button"
+              className="mt-3 rounded-sm border border-patina/50 px-2.5 py-1.5 font-mono text-[10px] text-patina hover:bg-patina/10"
+              onClick={() => {
+                navigator.clipboard.writeText(insight.fix.value).then(
+                  () => showToast("Fix copied"),
+                  () => showToast("Copy failed", undefined, "error"),
+                );
+              }}
+            >
+              Copy fix
+            </button>
+          </div>
+        </div>
+      ) : null}
       {expanded && evidence ? (
         <div className="border-t border-quartz-vein bg-granite/10 p-4">
           <h4 className="font-mono text-[10px] uppercase tracking-wide text-cinder">Evidence</h4>

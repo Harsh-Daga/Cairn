@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_failing_command(ctx: dict[str, Any]) -> Insight | None:
@@ -26,5 +26,16 @@ def rule_failing_command(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"command": name, "failures": failures},
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Command failures are counted, but their per-attempt token cost is unavailable."
+        ),
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy failing-command rule",
+            value=(
+                f"Do not rerun `{name}` unchanged after it fails; read the error, change one "
+                "input or configuration, then retry once."
+            ),
+        ),
         action="cairn optimize",
     )

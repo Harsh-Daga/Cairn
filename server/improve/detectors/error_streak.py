@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_error_streak(ctx: dict[str, Any]) -> Insight | None:
@@ -21,5 +21,14 @@ def rule_error_streak(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"max_streak": streak},
         savings_estimate=None,
+        savings_unavailable_reason="Error spans do not contain a separable dollar cost estimate.",
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy error-stop rule",
+            value=(
+                "After two consecutive tool errors, stop retrying, explain the failure, and run "
+                "a different diagnostic step."
+            ),
+        ),
         action="cairn optimize",
     )

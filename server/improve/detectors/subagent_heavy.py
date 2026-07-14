@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 # Subagent/sidechain lanes above this share of run tokens trigger the insight.
 SUBAGENT_HEAVY_THRESHOLD = 0.60
@@ -31,5 +31,16 @@ def rule_subagent_heavy(ctx: dict[str, Any]) -> Insight | None:
             "subagent_tokens": hit.get("subagent_tokens"),
         },
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Subagent token share cannot distinguish necessary delegation from waste."
+        ),
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy delegation-budget rule",
+            value=(
+                "Give each subagent one bounded deliverable and stop delegation when its combined "
+                "token budget exceeds the main task budget without a usable result."
+            ),
+        ),
         action=f"cairn show {sid}",
     )

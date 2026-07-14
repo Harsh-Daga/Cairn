@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight, _cap_savings, _data_note, _weekly_spend
+from server.improve.detectors._types import (
+    FixPayload,
+    Insight,
+    _cap_savings,
+    _data_note,
+    _weekly_spend,
+)
 
 
 def rule_rebilling_waste(ctx: dict[str, Any]) -> Insight | None:
@@ -38,6 +44,17 @@ def rule_rebilling_waste(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence=evidence,
         savings_estimate=savings,
+        savings_unavailable_reason=(
+            "No reliable input-token price is available for re-billed context."
+        ),
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy context-trimming rule",
+            value=(
+                "Summarize consumed tool results, remove their raw output from working context, "
+                "and re-read only if the source changes."
+            ),
+        ),
         action="cairn profile",
         difficulty_aware=True,
     )

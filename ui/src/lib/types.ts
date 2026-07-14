@@ -216,6 +216,9 @@ export interface InsightRow {
   body: string;
   state: InsightLifecycle;
   savings_estimate: number | null;
+  savings_unavailable_reason: string | null;
+  fix: { kind: string; label: string; value: string };
+  diagnostic: boolean;
   action: string | null;
   last_seen_at: string;
 }

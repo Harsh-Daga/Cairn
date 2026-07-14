@@ -66,9 +66,7 @@ def test_traces_search_total_matches_filtered_results(api_client: TestClient) ->
     assert body["total"] == 0
 
 
-def test_traces_agent_filter_runs_in_database(
-    api_client: TestClient, api_workspace: tuple
-) -> None:
+def test_traces_agent_filter_runs_in_database(api_client: TestClient, api_workspace: tuple) -> None:
     root, _ws, trace_id = api_workspace
     with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
         conn.execute(
@@ -133,9 +131,7 @@ def test_trace_replay_checkpoints_shape(api_client: TestClient, api_workspace: t
     assert len(body["checkpoints"]) >= 1
 
 
-def test_trace_replay_cost_is_cumulative(
-    api_client: TestClient, api_workspace: tuple
-) -> None:
+def test_trace_replay_cost_is_cumulative(api_client: TestClient, api_workspace: tuple) -> None:
     root, _ws, trace_id = api_workspace
     with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
         conn.execute("UPDATE traces SET cost = 8.0 WHERE trace_id = ?", (trace_id,))
@@ -228,6 +224,27 @@ def test_insights_shape(api_client: TestClient) -> None:
     body = resp.json()
     assert "insights" in body
     assert "total" in body
+
+
+def test_insights_expose_savings_reason_fix_and_diagnostic_classification(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """UPDATE traces SET peak_context_pct = 90, started_at = datetime('now')
+               WHERE trace_id = ?""",
+            (trace_id,),
+        )
+    response = api_client.post("/api/actions/optimize_propose", json={})
+    assert response.status_code == 200
+    rows = api_client.get("/api/insights").json()["insights"]
+    assert rows
+    assert all(row["fix"]["value"] for row in rows)
+    assert all(
+        row["savings_estimate"] is not None or row["savings_unavailable_reason"] for row in rows
+    )
+    assert all("diagnostic" in row for row in rows)
 
 
 def test_experiments_shape(api_client: TestClient) -> None:

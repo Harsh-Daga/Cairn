@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_quality_regression(ctx: dict[str, Any]) -> Insight | None:
@@ -29,6 +29,16 @@ def rule_quality_regression(ctx: dict[str, Any]) -> Insight | None:
         body=body,
         evidence=evidence,
         savings_estimate=None,
+        savings_unavailable_reason="Quality regression has no defensible direct dollar conversion.",
+        fix=FixPayload(
+            kind="manual",
+            label="Review regressed sessions",
+            value=(
+                "Compare failed quality components and human labels between the recent and "
+                "prior windows before changing instructions."
+            ),
+        ),
+        diagnostic=True,
         action="cairn outcomes",
         difficulty_aware=True,
     )

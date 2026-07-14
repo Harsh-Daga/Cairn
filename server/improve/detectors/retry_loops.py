@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_retry_loops_detected(ctx: dict[str, Any]) -> Insight | None:
@@ -21,5 +21,16 @@ def rule_retry_loops_detected(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"events": count},
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Retry counts are available, but per-retry cost is not reliably attributed."
+        ),
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy retry-breaker rule",
+            value=(
+                "After a tool fails, quote the relevant error and change the command, input, or "
+                "strategy before retrying."
+            ),
+        ),
         action="cairn optimize",
     )

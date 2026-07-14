@@ -29,7 +29,19 @@ After sync, the improve engine runs modular detectors (`server/improve/detectors
 | `error-streak` | ≥4 consecutive tool errors |
 | `cost-anomaly` | Session cost > μ+3σ for difficulty bucket |
 
-Insights appear on the **Insights** page and feed the proposal generator.
+The registry enforces an action contract before an insight can be persisted. Every detector
+must provide either a weekly savings estimate or a specific reason the signal cannot be
+priced, plus one structured fix payload:
+
+- `instruction` — a `CLAUDE.md` / `AGENTS.md` rule that can be copied;
+- `settings` — a concrete model, cache, or tool configuration change; or
+- `manual` — a bounded investigation step when automation would overclaim.
+
+Actionable findings appear in the main **Insights** feed and feed the proposal generator.
+Signals such as behavioral drift, quality regression, and cost anomalies identify a change
+but do not establish its cause; they are explicitly marked as supporting **Diagnostics**.
+Expanding any card shows its fix and a copy-to-clipboard control. A detector with neither a
+fix nor an explicit null-savings reason fails contract validation instead of reaching the UI.
 
 ## 2. Diagnose — evidence chains
 

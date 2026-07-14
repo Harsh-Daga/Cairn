@@ -264,6 +264,9 @@ class InsightRow(BaseModel):
     body: str
     state: InsightLifecycle
     savings_estimate: float | None
+    savings_unavailable_reason: str | None
+    fix: dict[str, str]
+    diagnostic: bool
     action: str | None
     last_seen_at: str
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from server.improve.detectors._types import (
+    FixPayload,
     Insight,
     context_rot_warning_pct,
     context_rot_waste_pct,
@@ -33,5 +34,16 @@ def rule_context_window_pressure(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"run_id": top["run_id"], "peak_context_pct": pct},
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "The marginal price of context pressure cannot be isolated from this session."
+        ),
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy context checkpoint rule",
+            value=(
+                "When context usage exceeds 70%, summarize progress, clear consumed tool output, "
+                "and split remaining work into a fresh session."
+            ),
+        ),
         action="cairn show last",
     )
