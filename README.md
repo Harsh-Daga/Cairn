@@ -50,6 +50,12 @@ curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/insta
 cd your-repo && cairn
 ```
 
+**PowerShell installer (Windows)**
+
+```powershell
+irm https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.ps1 | iex
+```
+
 No account, no cloud, no config. `cairn stop` to quit (or `uv run cairn stop` from a dev checkout).
 
 Already installed? Run `cairn upgrade` to update the local CLI to the newest published release. Add `--check` to preview the package-manager command.

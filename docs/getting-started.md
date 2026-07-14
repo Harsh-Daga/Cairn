@@ -7,8 +7,13 @@
 | **uv tool** (recommended) | `uv tool install cairn-workspace` |
 | **pip** | `pip install cairn-workspace` |
 | **curl** | `curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/install.sh \| sh` |
+| **PowerShell** | `irm https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.ps1 \| iex` |
 
-To pin a published version, set `CAIRN_VERSION=<published-version>` for the installer or run `uv tool install cairn-workspace==<published-version>`.
+The Cairn installer URLs above resolve directly to tracked files on the repository's `main`
+branch. If `uv` is absent, those scripts use the official Astral installer at
+`https://astral.sh/uv/install.sh` (Unix) or `install.ps1` (Windows). To pin a published
+version, set `CAIRN_VERSION=<published-version>` for the installer or run
+`uv tool install cairn-workspace==<published-version>`.
 
 ## Upgrade
 

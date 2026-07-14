@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tomllib
 from pathlib import Path
+from urllib.parse import urlparse
 
 import typer
 
@@ -18,6 +19,14 @@ ROOT = Path(__file__).resolve().parent.parent
 README = ROOT / "README.md"
 CLI_DOC = ROOT / "docs" / "cli.md"
 GEN_CLI = ROOT / "scripts" / "gen_cli_docs.py"
+INSTALL_REFERENCE_FILES = [
+    README,
+    ROOT / "docs" / "getting-started.md",
+    ROOT / "AGENT_SETUP.md",
+    ROOT / "scripts" / "install.sh",
+    ROOT / "install.ps1",
+    ROOT / "server" / "mcp" / "install.py",
+]
 
 FENCED_CMD = re.compile(r"```(?:bash|sh|shell)?\n(.*?)```", re.DOTALL)
 README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]*)`\s*\|", re.MULTILINE)
@@ -258,6 +267,43 @@ def test_no_retired_release_terms_in_public_docs() -> None:
 def test_agent_setup_bootstrap_url() -> None:
     assert AGENT_SETUP_URL in BOOTSTRAP_PROMPT
     assert "raw.githubusercontent.com/Harsh-Daga/Cairn/main/AGENT_SETUP.md" in BOOTSTRAP_PROMPT
+
+
+def test_cairn_raw_github_urls_reference_tracked_main_files() -> None:
+    pattern = re.compile(
+        r"https://raw\.githubusercontent\.com/Harsh-Daga/Cairn/main/([^\s)`\"'|]+)"
+    )
+    references: list[tuple[Path, str]] = []
+    for source in INSTALL_REFERENCE_FILES:
+        for relative in pattern.findall(source.read_text(encoding="utf-8")):
+            references.append((source, relative))
+    assert references, "No raw GitHub install references found"
+    missing = [
+        f"{source.relative_to(ROOT)} -> {relative}"
+        for source, relative in references
+        if not (ROOT / relative).is_file()
+    ]
+    assert not missing, "Raw GitHub URLs reference missing repository files: " + str(missing)
+
+
+def test_script_downloads_use_audited_hosts_and_paths() -> None:
+    script_url = re.compile(r"https://[^\s)`\"'|]+install\.(?:sh|ps1)")
+    allowed = {
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/scripts/install.sh"),
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/install.ps1"),
+        ("astral.sh", "/uv/install.sh"),
+        ("astral.sh", "/uv/install.ps1"),
+    }
+    found = {
+        (urlparse(url).hostname or "", urlparse(url).path)
+        for source in INSTALL_REFERENCE_FILES
+        for url in script_url.findall(source.read_text(encoding="utf-8"))
+    }
+    assert found >= {
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/scripts/install.sh"),
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/install.ps1"),
+    }
+    assert not found - allowed, f"Unaudited script download URLs: {sorted(found - allowed)}"
 
 
 def test_agent_setup_commands_exist() -> None:
