@@ -24,6 +24,7 @@ Cairn CLI entry point: `server.cli:app`. Mutations are also available as `cairn 
 | `cairn action server-stop` | Stop background server |
 | `cairn action sync` | Sync agent logs |
 | `cairn action workspace-scan` | Scan workspace for adapters |
+| `cairn adapter doctor` | Compare a live log sample with an adapter's expected shape. |
 | `cairn adapter new` | Scaffold a new ingest adapter module, fixture, and test. |
 | `cairn check` | CI quality gate — exits non-zero on failure. |
 | `cairn config set` |  |
@@ -34,8 +35,12 @@ Cairn CLI entry point: `server.cli:app`. Mutations are also available as `cairn 
 | `cairn export` | Export a scrubbed trace bundle. |
 | `cairn insights` | List insights. |
 | `cairn mcp install` | Install Cairn MCP config for Claude Code, Cursor, or Codex. |
-| `cairn optimize` | Generate optimization proposals. |
+| `cairn mcp` | Run the Cairn MCP stdio server. |
+| `cairn optimize export-effects` | Write a scrubbed local JSON of measured rule effects. |
+| `cairn optimize revert` | Revert one applied optimization from its exact backup. |
+| `cairn optimize` | Generate optimization proposals when no subcommand is given. |
 | `cairn rebuild` | Rebuild an incremental analyzer view. |
+| `cairn recap` | Show a one-screen weekly spend, waste, quality, and experiment recap. |
 | `cairn setup-prompt` | Print the short agent bootstrap prompt for README copy-paste. |
 | `cairn show` | Print a text waterfall for a trace. |
 | `cairn stop` | Stop a running Cairn UI server (by port). |
@@ -43,6 +48,7 @@ Cairn CLI entry point: `server.cli:app`. Mutations are also available as `cairn 
 | `cairn traces ls` | List recent traces as a plain table. |
 | `cairn traces show` | Alias for `cairn show`. |
 | `cairn ui` | Start the Cairn web UI server. |
+| `cairn upgrade` | Upgrade Cairn to the latest published release. |
 
 ## Action registry
 

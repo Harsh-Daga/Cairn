@@ -25,6 +25,12 @@ class Settings(BaseSettings):
         description="Built UI static assets directory",
     )
     workspace_root: Path | None = Field(default=None, description="Active workspace root path")
+    outcome_revert_window_hours: int = Field(
+        default=24,
+        ge=1,
+        le=168,
+        description="Window for same-file revert/fixup outcome signals",
+    )
 
     def validate_bind(self) -> None:
         """Refuse non-loopback bind without token auth."""

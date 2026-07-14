@@ -21,8 +21,14 @@ export function LivePage() {
   const [dropped, setDropped] = useState(0);
   const [paused, setPaused] = useState(false);
   const [eventFilter, setEventFilter] = useState<string | null>(null);
-  const pendingRef = useRef(0);
+  const [pending, setPending] = useState(0);
+  const bufferRef = useRef<LiveRow[]>([]);
+  const pausedRef = useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     if (!watchOn) return;
@@ -35,8 +41,9 @@ export function LivePage() {
         spanId: typeof data.span_id === "string" ? data.span_id : undefined,
         detail: typeof data.kind === "string" ? data.kind : undefined,
       };
-      if (paused) {
-        pendingRef.current += 1;
+      if (pausedRef.current) {
+        bufferRef.current = [row, ...bufferRef.current].slice(0, 200);
+        setPending(bufferRef.current.length);
         return;
       }
       setRows((prev) => [row, ...prev].slice(0, 200));
@@ -44,15 +51,21 @@ export function LivePage() {
         setDropped(data.dropped_events);
       }
     });
-  }, [watchOn, paused]);
+  }, [watchOn]);
 
-  const pending = pendingRef.current;
+  const resume = () => {
+    const buffered = bufferRef.current;
+    bufferRef.current = [];
+    setRows((current) => [...buffered, ...current].slice(0, 200));
+    setPending(0);
+    setPaused(false);
+  };
   const eventTypes = [...new Set(rows.map((r) => r.event))];
   const visibleRows = eventFilter ? rows.filter((r) => r.event === eventFilter) : rows;
 
   if (!watchOn) {
     return (
-      <PageShell title="Live" question="What are my agents doing right now?">
+      <PageShell title="Live" question="Follow active runs, ingest events, and emerging signals as they happen.">
         <EmptyCard
           title="Watch is off"
           detail="Turn on Watch in the top bar to stream live span events."
@@ -62,7 +75,7 @@ export function LivePage() {
   }
 
   return (
-    <PageShell title="Live" question="What are my agents doing right now?">
+    <PageShell title="Live" question="Follow active runs, ingest events, and emerging signals as they happen.">
       <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-quartz-vein px-4 py-2">
@@ -73,10 +86,7 @@ export function LivePage() {
               <button
                 type="button"
                 className="rounded-chip bg-granite px-2 py-1 font-mono text-[10px] text-copper"
-                onClick={() => {
-                  setPaused(false);
-                  pendingRef.current = 0;
-                }}
+                onClick={resume}
               >
                 ▶ resume · {pending} new
               </button>
@@ -162,8 +172,8 @@ export function LivePage() {
             </p>
           </div>
           <div className="card p-4 text-sm text-cinder">
-            Active session cards appear when trace-updated events include running cost and context
-            fill. Connect an adapter and keep Watch on.
+            Trace and span updates appear here as they are ingested. Open any linked event to jump
+            directly to its session and inspect the affected span.
           </div>
         </div>
       </div>

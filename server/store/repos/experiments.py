@@ -27,6 +27,18 @@ class ExperimentRepo:
         return fetch_one(conn, _TABLE, "experiment_id = ?", (experiment_id,), Experiment)
 
     @staticmethod
+    def get_active_for_block(
+        conn: sqlite3.Connection, target_file: str, block_key: str
+    ) -> Experiment | None:
+        return fetch_one(
+            conn,
+            _TABLE,
+            "target_file = ? AND block_key = ? AND status IN ('proposed','applied','measuring')",
+            (target_file, block_key),
+            Experiment,
+        )
+
+    @staticmethod
     def list_all(
         conn: sqlite3.Connection,
         *,

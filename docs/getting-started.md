@@ -7,8 +7,17 @@
 | **uv tool** (recommended) | `uv tool install cairn-workspace` |
 | **pip** | `pip install cairn-workspace` |
 | **curl** | `curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/install.sh \| sh` |
+| **PowerShell** | `irm https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.ps1 \| iex` |
 
-To pin a published version, set `CAIRN_VERSION=<published-version>` for the installer or run `uv tool install cairn-workspace==<published-version>`.
+The Cairn installer URLs above resolve directly to tracked files on the repository's `main`
+branch. If `uv` is absent, those scripts use the official Astral installer at
+`https://astral.sh/uv/install.sh` (Unix) or `install.ps1` (Windows). To pin a published
+version, set `CAIRN_VERSION=<published-version>` for the installer or run
+`uv tool install cairn-workspace==<published-version>`.
+
+## Upgrade
+
+Run `cairn upgrade` whenever you want the latest published Cairn release. It uses `uv tool` when available, then `pipx`, then the Python environment that launched Cairn. Use `cairn upgrade --check` to see the exact command first.
 
 Verify: `cairn doctor`
 
@@ -34,6 +43,10 @@ cairn doctor             # verify install
 Screenshots: [README § What it looks like](../README.md#what-it-looks-like).
 
 ## Manual sync
+
+While `cairn ui` is running, Cairn automatically imports existing sessions at startup,
+watches active logs, and rescans for newly created session files. Dashboard queries refresh
+when live ingest events arrive. Use manual sync when the UI is not running or when scripting.
 
 ```bash
 cairn sync

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_behavioral_drift(ctx: dict[str, Any]) -> Insight | None:
@@ -31,6 +31,18 @@ def rule_behavioral_drift(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence=evidence,
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Behavior drift is a diagnostic signal, not a priced waste event."
+        ),
+        fix=FixPayload(
+            kind="manual",
+            label="Review changed behavior axes",
+            value=(
+                "Compare the changed fingerprint axes with recent model, tool, and instruction "
+                "changes before editing agent rules."
+            ),
+        ),
+        diagnostic=True,
         action="cairn behavior",
         difficulty_aware=True,
     )

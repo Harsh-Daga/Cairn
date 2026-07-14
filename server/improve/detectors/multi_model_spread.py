@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_multi_model_cost_spread(ctx: dict[str, Any]) -> Insight | None:
@@ -30,5 +30,17 @@ def rule_multi_model_cost_spread(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"models": models, "ratio": ratio},
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "Model cost differences are not savings until tasks are matched for quality and "
+            "difficulty."
+        ),
+        fix=FixPayload(
+            kind="settings",
+            label="Route routine work to the cheaper model",
+            value=(
+                f"Use {cheap_name} for routine reads and edits; reserve {expensive_name} for "
+                "tasks that require its measured quality advantage."
+            ),
+        ),
         action=None,
     )

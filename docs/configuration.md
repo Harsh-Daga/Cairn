@@ -10,6 +10,7 @@ Cairn reads `~/.config/cairn/config.toml` for user-level settings. Runtime overr
 | `CAIRN_PORT` | `8787` | HTTP port |
 | `CAIRN_TOKEN` | — | Required for non-loopback bind; protects every route with Bearer or browser-cookie auth |
 | `CAIRN_WORKSPACE_ROOT` | cwd | Active workspace |
+| `CAIRN_OUTCOME_REVERT_WINDOW_HOURS` | `24` | Same-file revert/fixup detection window (1–168h) |
 
 ## config.toml sections
 

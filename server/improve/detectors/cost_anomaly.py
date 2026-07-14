@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_cost_anomaly(ctx: dict[str, Any]) -> Insight | None:
@@ -25,5 +25,17 @@ def rule_cost_anomaly(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"trace_id": trace_id, "cost": cost, "threshold": threshold},
         savings_estimate=None,
+        savings_unavailable_reason=(
+            "An outlier is not automatically waste, so Cairn does not claim it as savings."
+        ),
+        fix=FixPayload(
+            kind="manual",
+            label="Inspect the outlier session",
+            value=(
+                f"Open trace {trace_id} and compare its tool calls and context growth with "
+                "sessions in the same difficulty bucket."
+            ),
+        ),
+        diagnostic=True,
         action="cairn check --max-tail-cost",
     )

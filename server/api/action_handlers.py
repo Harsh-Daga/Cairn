@@ -6,7 +6,6 @@ import json
 import os
 import signal
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -99,18 +98,26 @@ class DemoSeedParams(BaseModel):
 
 
 def _sync_action(params: SyncParams, ctx: ActionCtx) -> dict[str, Any]:
-    report = ctx.pipeline.sync_all()
+    report = ctx.pipeline.sync_all(params.source)
     return {
         "scanned": report.scanned,
         "inserted": report.inserted,
+        "updated": report.updated,
         "skipped": report.skipped,
+        "mcp_consultations": report.mcp_consultations,
         "source": params.source,
     }
 
 
 def _backfill_action(params: BackfillParams, ctx: ActionCtx) -> dict[str, Any]:
     report = ctx.pipeline.sync_all()
-    return {"days": params.days, "inserted": report.inserted, "scanned": report.scanned}
+    return {
+        "days": params.days,
+        "inserted": report.inserted,
+        "updated": report.updated,
+        "scanned": report.scanned,
+        "mcp_consultations": report.mcp_consultations,
+    }
 
 
 def _rebuild_view_action(params: RebuildViewParams, ctx: ActionCtx) -> dict[str, Any]:
@@ -170,6 +177,8 @@ def _check_action(params: CheckParams, ctx: ActionCtx) -> dict[str, Any]:
 
 
 def _export_bundle_action(params: ExportBundleParams, ctx: ActionCtx) -> dict[str, Any]:
+    from server.export.scrub import scrub_export_value
+
     out_dir = ctx.workspace_root / ".cairn" / "exports"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
@@ -185,6 +194,8 @@ def _export_bundle_action(params: ExportBundleParams, ctx: ActionCtx) -> dict[st
             (ctx.workspace_id,),
         ).fetchall()
     trace_rows = [dict(r) for r in rows]
+    if params.scrub:
+        trace_rows = [scrub_export_value(row, ctx.workspace_root) for row in trace_rows]
     payload: dict[str, Any] = {"traces": trace_rows, "scrubbed": params.scrub}
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return {"path": str(out_path), "count": len(trace_rows)}
@@ -215,9 +226,26 @@ def _demo_seed_action(params: DemoSeedParams, _ctx: ActionCtx) -> dict[str, Any]
 
 
 def _optimize_propose_action(params: OptimizeProposeParams, ctx: ActionCtx) -> dict[str, Any]:
+    from server.improve.experiments import create_experiment
+
     evaluate_insights(ctx.db.reader, workspace_id=ctx.workspace_id)
-    ctx.db.reader.commit()
     proposals = generate_proposals(ctx.db.reader, limit=params.limit)
+    experiments = []
+    for proposal in proposals:
+        experiment = ExperimentRepo.get_active_for_block(
+            ctx.db.reader, proposal.target_file, proposal.block_key
+        )
+        if experiment is None:
+            experiment = create_experiment(
+                ctx.db.reader,
+                target_file=proposal.target_file,
+                block_key=proposal.block_key,
+                kind=proposal.kind,
+                content=proposal.content,
+                evidence_id=proposal.evidence_id,
+            )
+        experiments.append(experiment)
+    ctx.db.reader.commit()
     return {
         "proposals": [
             {
@@ -226,8 +254,9 @@ def _optimize_propose_action(params: OptimizeProposeParams, ctx: ActionCtx) -> d
                 "kind": p.kind,
                 "content": p.content,
                 "evidence_id": p.evidence_id,
+                "experiment_id": experiments[index].experiment_id,
             }
-            for p in proposals
+            for index, p in enumerate(proposals)
         ],
         "llm": params.llm,
         "apply": params.apply,
@@ -251,14 +280,17 @@ def _experiment_revert_action(params: ExperimentRevertParams, ctx: ActionCtx) ->
     if exp is None:
         msg = "experiment not found"
         raise ValueError(msg)
+    from server.improve.apply import find_backup
+
     backup_dir = ctx.workspace_root / ".cairn" / "backups"
-    backups = sorted(backup_dir.glob(f"{Path(exp.target_file).name}.*.bak"))
-    if not backups:
+    target = ctx.workspace_root / exp.target_file
+    backup = find_backup(backup_dir, target, backup_key=exp.experiment_id)
+    if backup is None:
         msg = "no backup found"
         raise ValueError(msg)
     from server.improve.experiments import revert_experiment
 
-    revert_experiment(ctx.db.reader, exp, repo_root=ctx.workspace_root, backup=backups[-1])
+    revert_experiment(ctx.db.reader, exp, repo_root=ctx.workspace_root, backup=backup)
     ctx.db.reader.commit()
     return {"experiment_id": params.experiment_id, "status": "reverted"}
 

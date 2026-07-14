@@ -41,6 +41,13 @@ uv run pytest -q
 uv run pytest tests/test_docs.py -q   # docs + CLI surface
 ```
 
+## README media
+
+README screenshots are captures of the real deterministic demo workspace, not mock artwork. After
+a UI change, run `cairn demo --reset`, start `cairn ui --workspace ~/.cairn-demo --no-open`, then
+run `uv run python scripts/gen_readme_assets.py`. Use `--base-url` when the dashboard is on a
+non-default port.
+
 ## Pull requests
 
 - One logical change per PR when possible

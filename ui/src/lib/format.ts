@@ -4,8 +4,8 @@ export function formatTokens(n: number): string {
   return String(n);
 }
 
-export function formatCost(n: number): string {
-  return `$${n.toFixed(2)}`;
+export function formatCost(n: number, digits = 2): string {
+  return `$${n.toFixed(digits)}`;
 }
 
 export function formatRelative(iso: string): string {

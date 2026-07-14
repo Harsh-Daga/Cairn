@@ -13,7 +13,7 @@ import pytest
 
 from server.api.sse import EventBus
 from server.ingest.adapters.claude_code_adapter import ClaudeCodeAdapter
-from server.ingest.pipeline import IngestPipeline
+from server.ingest.pipeline import IngestPipeline, PipelineReport
 from server.models.workspace import Workspace
 from server.store.db import Database
 from server.store.repos.traces import TraceRepo
@@ -78,6 +78,10 @@ def test_pipeline_ingest_trace_and_sse(workspace_bundle: tuple[Database, str, Pa
     trace = TraceRepo.get(db.reader, result.trace_id)
     assert trace is not None
     assert trace.input_tokens > 0
+    health = db.reader.execute(
+        "SELECT attempts, fully_parsed, degraded, skipped FROM adapter_parse_health"
+    ).fetchone()
+    assert dict(health) == {"attempts": 1, "fully_parsed": 1, "degraded": 0, "skipped": 0}
 
     event = received.get(timeout=2)
     assert event.event == "trace-updated"
@@ -120,3 +124,116 @@ def test_watcher_detects_appended_log(workspace_bundle: tuple[Database, str, Pat
     pipeline.stop()
     assert result is not None
     assert TraceRepo.get(db.reader, result.trace_id) is not None
+
+
+def test_start_runs_initial_sync(
+    workspace_bundle: tuple[Database, str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, ws_id, root = workspace_bundle
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    calls = 0
+    synced = threading.Event()
+
+    def fake_sync(source: str | None = None) -> PipelineReport:
+        nonlocal calls
+        calls += 1
+        synced.set()
+        return PipelineReport()
+
+    monkeypatch.setattr(pipeline, "sync_all", fake_sync)
+    pipeline.start()
+    assert synced.wait(timeout=1)
+    pipeline.stop()
+
+    assert calls == 1
+
+
+def test_sync_all_honors_source_filter(
+    workspace_bundle: tuple[Database, str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, ws_id, root = workspace_bundle
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    adapter = ClaudeCodeAdapter(root, ws_id)
+    codex_path = root / "codex.jsonl"
+    claude_path = root / "claude.jsonl"
+    pipeline._path_adapter = {
+        codex_path: (adapter, "codex"),
+        claude_path: (adapter, "claude_code"),
+    }
+    seen: list[tuple[Path, str]] = []
+
+    monkeypatch.setattr(pipeline, "_refresh_path_index", lambda: None)
+
+    def fake_ingest(path: Path, _adapter: object, source: str) -> None:
+        seen.append((path, source))
+
+    monkeypatch.setattr(pipeline, "_ingest_path", fake_ingest)
+    report = pipeline.sync_all("codex")
+
+    assert report.scanned == 1
+    assert report.skipped == 1
+    assert seen == [(codex_path, "codex")]
+
+
+def test_sync_imports_mcp_consultations_idempotently(
+    workspace_bundle: tuple[Database, str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, ws_id, root = workspace_bundle
+    trace_id = new_ulid()
+    db.reader.execute(
+        """INSERT INTO traces (trace_id, workspace_id, source, started_at, status)
+           VALUES (?, ?, 'codex', '2026-01-02T00:00:00Z', 'completed')""",
+        (trace_id, ws_id),
+    )
+    db.reader.commit()
+    sidecar = root / ".cairn" / "mcp-events.jsonl"
+    sidecar.parent.mkdir()
+    sidecar.write_text(
+        json.dumps(
+            {
+                "event_id": new_ulid(),
+                "trace_id": trace_id,
+                "after_seq": 7,
+                "tool_name": "cairn_should_i_stop",
+                "called_at": "2026-01-02T00:01:00Z",
+            }
+        )
+        + "\n"
+        + "not-json\n",
+        encoding="utf-8",
+    )
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    monkeypatch.setattr(pipeline, "_refresh_path_index", lambda: None)
+
+    first = pipeline.sync_all()
+    second = pipeline.sync_all()
+
+    assert first.mcp_consultations == 1
+    assert second.mcp_consultations == 0
+    row = db.reader.execute(
+        "SELECT trace_id, after_seq, tool_name FROM mcp_consultations"
+    ).fetchone()
+    assert dict(row) == {
+        "trace_id": trace_id,
+        "after_seq": 7,
+        "tool_name": "cairn_should_i_stop",
+    }
+
+
+def test_pipeline_marks_unknown_field_spike_as_degraded(
+    workspace_bundle: tuple[Database, str, Path]
+) -> None:
+    db, ws_id, root = workspace_bundle
+    source = FIXTURES / "claude_code_mini.jsonl"
+    changed = root / "future-claude.jsonl"
+    records = [json.loads(line) for line in source.read_text(encoding="utf-8").splitlines()]
+    for record in records:
+        record["future_schema_field"] = True
+    changed.write_text("\n".join(json.dumps(record) for record in records) + "\n", encoding="utf-8")
+    pipeline = IngestPipeline(db, ws_id, root, EventBus())
+    pipeline._path_adapter[changed.resolve()] = (ClaudeCodeAdapter(root, ws_id), "claude_code")
+
+    assert pipeline.ingest_path(changed) is not None
+    row = db.reader.execute("SELECT * FROM adapter_parse_health").fetchone()
+    assert row["degraded"] == 1
+    assert json.loads(row["recent_unknown_fields_json"])["future_schema_field"] >= 3

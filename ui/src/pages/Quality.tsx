@@ -7,7 +7,8 @@ import { useToastStore } from "@/state/toast";
 import { PageShell } from "@/components/common/PageShell";
 import { ChartFrame } from "@/components/common/Chip";
 import { EmptyCard, ErrorCard } from "@/components/common/DataViews";
-import { HorizontalBars, IntervalPlot, Sparkline } from "@/components/charts";
+import { HorizontalBars, Sparkline } from "@/components/charts";
+import { QualityScoreDetails } from "@/components/quality/QualityScoreDetails";
 
 export function QualityPage() {
   const timeRange = useUiStore((s) => s.timeRange);
@@ -30,7 +31,7 @@ export function QualityPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+      <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -38,7 +39,7 @@ export function QualityPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+      <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
         <ErrorCard />
       </PageShell>
     );
@@ -46,7 +47,7 @@ export function QualityPage() {
 
   if (data.outcomes.length === 0) {
     return (
-      <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+      <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
         <EmptyCard
           title="Outcomes not captured yet"
           detail="Enable outcome capture in Settings to score sessions against git and tests."
@@ -64,7 +65,9 @@ export function QualityPage() {
     );
   }
 
-  const passed = data.outcomes.filter((o) => Number(o.tests_passed ?? 0) > 0).length;
+  const passed = data.outcomes.filter(
+    (o) => Number(o.tests_run ?? 0) > 0 && Number(o.tests_failed ?? 0) === 0,
+  ).length;
   const landed = data.outcomes.filter((o) => Number(o.commit_landed ?? 0) > 0).length;
   const funnel = [
     { label: "Sessions scored", value: data.outcomes.length },
@@ -76,23 +79,8 @@ export function QualityPage() {
     .map((row) => Number(row.cost_per_success))
     .filter((v) => Number.isFinite(v));
 
-  const histogramIntervals = data.histogram.map((b) => {
-    const parts = b.bucket.split("-").map(Number);
-    const lo = parts[0] ?? 0;
-    const hi = parts[1] ?? 1;
-    const mid = (lo + hi) / 2;
-    const spread = (hi - lo) / 4;
-    return {
-      label: b.bucket,
-      value: mid,
-      low: mid - spread,
-      high: mid + spread,
-      count: b.count,
-    };
-  });
-
   return (
-    <PageShell title="Quality" question="Is the work actually good, and what does success cost?">
+    <PageShell title="Quality" question="Connect agent activity to outcomes, reliability, and the true cost of success.">
       <div className="space-y-6">
         <div className="card p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -121,27 +109,14 @@ export function QualityPage() {
         </ChartFrame>
 
         {data.histogram.length > 0 ? (
-          <ChartFrame title="Quality histogram" subtitle="Score distribution 0–1">
-            {histogramIntervals.length >= 2 ? (
-              <IntervalPlot
-                points={histogramIntervals.map((h) => ({
-                  label: h.label,
-                  value: h.value,
-                  low: h.low,
-                  high: h.high,
-                }))}
-                width={480}
-                height={Math.max(120, histogramIntervals.length * 36)}
-              />
-            ) : (
-              <HorizontalBars
-                items={data.histogram.map((b) => ({
-                  label: b.bucket,
-                  value: b.count,
-                }))}
-                width={480}
-              />
-            )}
+          <ChartFrame title="Quality histogram" subtitle="Score distribution 0–100">
+            <HorizontalBars
+              items={data.histogram.map((bucket) => ({
+                label: bucket.bucket,
+                value: bucket.count,
+              }))}
+              width={480}
+            />
           </ChartFrame>
         ) : null}
 
@@ -175,8 +150,16 @@ export function QualityPage() {
                       {String(o.trace_id).slice(0, 10)}…
                     </Link>
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-bone">
-                    {o.quality_score != null ? Number(o.quality_score).toFixed(2) : "—"}
+                  <td className="px-4 py-2 text-xs text-bone">
+                    {o.quality_score != null ? (
+                      <QualityScoreDetails
+                        score={Number(o.quality_score)}
+                        components={o.quality_components}
+                        weights={o.quality_weights}
+                      />
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-2 font-mono text-xs text-cinder">
                     {String(o.tests_passed ?? 0)}/{String(o.tests_run ?? 0)}

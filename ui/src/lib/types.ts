@@ -36,12 +36,53 @@ export interface TailRisk {
   threshold?: number | null;
 }
 
+export interface WasteCause {
+  category: string;
+  waste_tokens: number;
+  estimated_savings_usd: number;
+  cause: string;
+  fix: string;
+}
+
+export interface MoneySummary {
+  period_days: number;
+  total_spend_usd: number;
+  spend_estimated: boolean;
+  wasted_spend_usd: number;
+  wasted_spend_pct: number;
+  waste_estimated: boolean;
+  top_causes: WasteCause[];
+  primary_action: string;
+}
+
 export interface OverviewResponse {
   days: number;
   kpis: Record<string, number | null>;
+  money: MoneySummary;
   narrative: NarrativeSentence[];
   tail_risk: TailRisk;
   data_notes: DataNote[];
+}
+
+export interface RecapResponse {
+  generated_at: string;
+  period_days: number;
+  money: MoneySummary;
+  quality_trend: {
+    current_mean: number | null;
+    previous_mean: number | null;
+    delta: number | null;
+    current_sessions: number;
+    previous_sessions: number;
+  };
+  experiment_verdicts: Array<{
+    experiment_id: string;
+    verdict: string;
+    effect_estimate: number | null;
+    effect_ci_low: number | null;
+    effect_ci_high: number | null;
+    measured_at: string;
+  }>;
 }
 
 export interface TraceRow {
@@ -126,9 +167,29 @@ export interface TraceDetailResponse {
   spans: Span[];
   tree: SpanNode[];
   links: { from_span_id: string; to_span_id: string; link_type: string }[];
+  mcp_consultations: McpConsultation[];
   regions: Record<string, unknown>[];
   diagnostics: Record<string, unknown> | null;
   quality: Record<string, unknown> | null;
+  outcome: OutcomeRecord | null;
+}
+
+export interface McpConsultation {
+  event_id: string;
+  trace_id: string;
+  after_seq: number;
+  tool_name: string;
+  called_at: string;
+}
+
+export interface OutcomeRecord extends Record<string, unknown> {
+  trace_id: string;
+  quality_score: number | null;
+  quality_components: Record<string, number> | null;
+  quality_weights: Record<string, number> | null;
+  human_label: "up" | "down" | null;
+  human_note: string | null;
+  human_labeled_at: string | null;
 }
 
 export interface ReplayCheckpoint {
@@ -185,6 +246,9 @@ export interface InsightRow {
   body: string;
   state: InsightLifecycle;
   savings_estimate: number | null;
+  savings_unavailable_reason: string | null;
+  fix: { kind: string; label: string; value: string };
+  diagnostic: boolean;
   action: string | null;
   last_seen_at: string;
 }
@@ -220,6 +284,7 @@ export interface ActionsManifestResponse {
 export interface AgentAggregate {
   agent_id: string | null;
   actor_id: string | null;
+  actor_name: string | null;
   traces: number;
   input_tokens: number;
   output_tokens: number;
@@ -234,15 +299,35 @@ export interface AgentsResponse {
 
 export interface BehaviorResponse {
   days: number;
-  series: Record<string, unknown>[];
-  drift: Record<string, unknown>[];
+  series: {
+    trace_id: string;
+    ts: string | null;
+    vector: number[];
+    project: string | null;
+    model: string | null;
+  }[];
+  drift: {
+    kind: string;
+    trace_id?: string;
+    project?: string | null;
+    model?: string | null;
+    distance?: number | null;
+    threshold?: number | null;
+    axes?: { axis_label: string; weeks_outside: number }[];
+  }[];
   radar: Record<string, unknown> | null;
+  baseline_progress: {
+    collected: number;
+    required: number;
+    ready: boolean;
+    note: string;
+  };
   data_notes: DataNote[];
 }
 
 export interface QualityResponse {
   days: number;
-  outcomes: Record<string, unknown>[];
+  outcomes: OutcomeRecord[];
   histogram: { bucket: string; count: number }[];
   cost_per_success: Record<string, unknown>[];
   data_notes: DataNote[];
@@ -263,6 +348,7 @@ export interface UsageSeriesRow {
   key: string;
   input_tokens: number;
   output_tokens: number;
+  waste_tokens: number;
   cost: number;
   traces: number;
 }
@@ -284,8 +370,14 @@ export interface ExperimentRow {
   status: string;
   target_file: string | null;
   created_at: string;
+  applied_at: string | null;
+  min_holdout: number;
+  outcome_n_effective: number | null;
   verdict: string | null;
   lift_pct: number | null;
+  effect_ci_low: number | null;
+  effect_ci_high: number | null;
+  measured_at: string | null;
 }
 
 export interface ExperimentsResponse {
@@ -322,6 +414,15 @@ export interface WorkspaceAdapter {
   source: string;
   streams: number;
   cursor_updated_at: string | null;
+  attempts: number;
+  fully_parsed: number;
+  degraded: number;
+  skipped: number;
+  parse_coverage: number | null;
+  unknown_fields: Record<string, number>;
+  last_success_at: string | null;
+  warning: boolean;
+  issue_url: string;
 }
 
 export interface PlanWindowGauge {

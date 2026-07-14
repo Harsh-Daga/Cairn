@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
+from urllib.parse import urlparse
 
 import typer
 
@@ -17,9 +19,18 @@ ROOT = Path(__file__).resolve().parent.parent
 README = ROOT / "README.md"
 CLI_DOC = ROOT / "docs" / "cli.md"
 GEN_CLI = ROOT / "scripts" / "gen_cli_docs.py"
+INSTALL_REFERENCE_FILES = [
+    README,
+    ROOT / "docs" / "getting-started.md",
+    ROOT / "AGENT_SETUP.md",
+    ROOT / "scripts" / "install.sh",
+    ROOT / "install.ps1",
+    ROOT / "server" / "mcp" / "install.py",
+]
 
 FENCED_CMD = re.compile(r"```(?:bash|sh|shell)?\n(.*?)```", re.DOTALL)
-README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]+)`\s*\|", re.MULTILINE)
+README_CLI_ROW = re.compile(r"^\|\s*`(cairn[^`]*)`\s*\|", re.MULTILINE)
+README_VERSION_BADGE = re.compile(r"img\.shields\.io/badge/version-([0-9]+\.[0-9]+\.[0-9]+)-")
 
 DOCS_INDEX = [
     "docs/README.md",
@@ -31,6 +42,7 @@ DOCS_INDEX = [
     "docs/adapters.md",
     "docs/otlp.md",
     "docs/optimize.md",
+    "docs/roadmap.md",
     "docs/ci.md",
     "docs/configuration.md",
     "ACCURACY.md",
@@ -47,21 +59,6 @@ FORBIDDEN_DOC_PATTERNS = [
     re.compile(r"docs/guides/"),
     re.compile(r"docs/spec/"),
 ]
-
-README_CLI_COMMANDS = [
-    "cairn",
-    "cairn sync",
-    "cairn show ID",
-    "cairn insights",
-    "cairn optimize",
-    "cairn experiments ls",
-    "cairn check",
-    "cairn export",
-    "cairn mcp install",
-    "cairn doctor",
-    "cairn setup-prompt",
-]
-
 
 def _command_label(cmd: object) -> str | None:
     name = getattr(cmd, "name", None)
@@ -81,6 +78,8 @@ def _cli_command_names() -> set[str]:
             names.add(label)
     for group in app.registered_groups:
         gname = group.name or ""
+        if group.typer_instance.registered_callback is not None:
+            names.add(gname.replace("_", "-"))
         for sub in group.typer_instance.registered_commands:
             sublabel = _command_label(sub)
             if sublabel:
@@ -136,6 +135,36 @@ def test_readme_line_count() -> None:
     assert len(lines) <= 250, f"README has {len(lines)} lines (max 250)"
 
 
+def _project_version() -> str:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    return str(project["version"])
+
+
+def test_readme_version_badge_matches_pyproject() -> None:
+    match = README_VERSION_BADGE.search(README.read_text(encoding="utf-8"))
+    assert match is not None, "README must have an explicit version badge"
+    assert match.group(1) == _project_version()
+
+
+def test_release_version_sources_match_pyproject() -> None:
+    version = _project_version()
+    expected = {
+        "server/__init__.py": f'__version__ = "{version}"',
+        "CHANGELOG.md": f"## [{version}]",
+        "docs/README.md": f"current {version} public beta",
+        "docs/api.md": f'\"version\": \"{version}\"',
+        "examples/e2e-demo/cairn.toml": f'version = "{version}"',
+        "ui/package.json": f'\"version\": \"{version}\"',
+        "ui/package-lock.json": f'\"version\": \"{version}\"',
+    }
+    mismatches = [
+        path
+        for path, marker in expected.items()
+        if marker not in (ROOT / path).read_text(encoding="utf-8")
+    ]
+    assert not mismatches, f"Release version differs from pyproject.toml: {mismatches}"
+
+
 def test_docs_index_links_resolve() -> None:
     missing = [rel for rel in DOCS_INDEX if not (ROOT / rel).is_file()]
     assert not missing, f"Missing docs: {missing}"
@@ -175,17 +204,32 @@ def test_documentation_internal_links_resolve() -> None:
 def test_readme_cli_table_commands_exist() -> None:
     cli = _cli_command_names()
     actions = _action_names()
-    missing = [c for c in README_CLI_COMMANDS if not _command_exists(c, cli, actions)]
+    commands = README_CLI_ROW.findall(README.read_text(encoding="utf-8"))
+    assert commands, "README CLI command table not found"
+    missing = [c for c in commands if not _command_exists(c, cli, actions)]
     assert not missing, f"README CLI commands missing from surface: {missing}"
 
 
-def test_readme_cli_table_matches_list() -> None:
-    text = README.read_text(encoding="utf-8")
-    found = README_CLI_ROW.findall(text)
-    assert found, "README CLI table not found"
-    for cmd in found:
-        base = cmd.replace(" ID", "").strip()
-        assert base in README_CLI_COMMANDS or base.startswith("cairn ")
+def test_all_readme_commands_exist() -> None:
+    cli = _cli_command_names()
+    actions = _action_names()
+    table_commands = README_CLI_ROW.findall(README.read_text(encoding="utf-8"))
+    fenced_commands = _commands_in_markdown(README)
+    missing = [
+        c
+        for c in [*table_commands, *fenced_commands]
+        if not _command_exists(c, cli, actions)
+    ]
+    assert not missing, f"Unknown README commands: {missing}"
+
+
+def test_readme_comparison_examples_link_to_projects() -> None:
+    after_heading = README.read_text(encoding="utf-8").split("## Why Cairn", 1)[1]
+    section = after_heading.split("## Privacy", 1)[0]
+    rows = [line for line in section.splitlines() if line.startswith("|")][2:]
+    assert rows, "README comparison table not found"
+    unlinked = [row.split("|")[2].strip() for row in rows if "](https://" not in row.split("|")[2]]
+    assert not unlinked, f"Comparison examples must link to verifiable projects: {unlinked}"
 
 
 def test_cli_doc_is_current() -> None:
@@ -226,6 +270,43 @@ def test_no_retired_release_terms_in_public_docs() -> None:
 def test_agent_setup_bootstrap_url() -> None:
     assert AGENT_SETUP_URL in BOOTSTRAP_PROMPT
     assert "raw.githubusercontent.com/Harsh-Daga/Cairn/main/AGENT_SETUP.md" in BOOTSTRAP_PROMPT
+
+
+def test_cairn_raw_github_urls_reference_tracked_main_files() -> None:
+    pattern = re.compile(
+        r"https://raw\.githubusercontent\.com/Harsh-Daga/Cairn/main/([^\s)`\"'|]+)"
+    )
+    references: list[tuple[Path, str]] = []
+    for source in INSTALL_REFERENCE_FILES:
+        for relative in pattern.findall(source.read_text(encoding="utf-8")):
+            references.append((source, relative))
+    assert references, "No raw GitHub install references found"
+    missing = [
+        f"{source.relative_to(ROOT)} -> {relative}"
+        for source, relative in references
+        if not (ROOT / relative).is_file()
+    ]
+    assert not missing, "Raw GitHub URLs reference missing repository files: " + str(missing)
+
+
+def test_script_downloads_use_audited_hosts_and_paths() -> None:
+    script_url = re.compile(r"https://[^\s)`\"'|]+install\.(?:sh|ps1)")
+    allowed = {
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/scripts/install.sh"),
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/install.ps1"),
+        ("astral.sh", "/uv/install.sh"),
+        ("astral.sh", "/uv/install.ps1"),
+    }
+    found = {
+        (urlparse(url).hostname or "", urlparse(url).path)
+        for source in INSTALL_REFERENCE_FILES
+        for url in script_url.findall(source.read_text(encoding="utf-8"))
+    }
+    assert found >= {
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/scripts/install.sh"),
+        ("raw.githubusercontent.com", "/Harsh-Daga/Cairn/main/install.ps1"),
+    }
+    assert not found - allowed, f"Unaudited script download URLs: {sorted(found - allowed)}"
 
 
 def test_agent_setup_commands_exist() -> None:

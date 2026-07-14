@@ -14,6 +14,7 @@ from server.analyze.outcome_labels import derive_outcome_label
 from server.analyze.outcome_tests import TestResult, run_tests, test_command_for
 from server.analyze.views import IncrementalView, trace_input_hash
 from server.analyze.waste import compute_waste
+from server.config import Settings
 from server.models.outcome import Outcome
 from server.store.repos.outcomes import OutcomeRepo
 from server.store.repos.spans import SpanRepo
@@ -43,6 +44,14 @@ class GitSignals:
 
 
 @dataclass
+class FollowupSignals:
+    reverted: bool = False
+    fixup: bool = False
+    commits: list[str] = field(default_factory=list)
+    data_notes: list[str] = field(default_factory=list)
+
+
+@dataclass
 class QualityScore:
     score: float
     components: dict[str, float] = field(default_factory=dict)
@@ -52,9 +61,12 @@ class QualityScore:
 def agent_quality_score(
     *,
     commit_landed: bool,
+    tests_run: int | None,
     tests_passed: int | None,
     tests_failed: int | None,
     build_status: str | None,
+    reverted_within_window: bool,
+    fixup_within_window: bool,
     waste_tokens: int,
     total_tokens: int,
     peak_context_pct: float | None,
@@ -67,14 +79,24 @@ def agent_quality_score(
 ) -> QualityScore:
     """Compute outcomes quality score in the 0..100 range."""
     merged_weights = {**_DEFAULT_QUALITY_WEIGHTS, **(weights or {})}
-    tests_unknown = (
-        tests_passed is None and tests_failed is None and build_status in (None, "unknown")
+    tests_ran = bool(
+        (tests_run or 0) > 0
+        or tests_passed is not None
+        or tests_failed is not None
+        or build_status not in (None, "unknown")
     )
-    success = (
-        1.0
-        if (commit_landed and (tests_unknown or (tests_passed or 0) > (tests_failed or 0)))
-        else 0.0
+    tests_succeeded = tests_ran and (tests_failed or 0) == 0 and (
+        (tests_passed or 0) > 0 or build_status in {"passed", "success", "ok"}
     )
+    success = 0.0
+    if commit_landed:
+        success = 0.25
+    if commit_landed and tests_ran:
+        success = 0.50
+    if commit_landed and tests_succeeded:
+        success = 0.75
+    if commit_landed and tests_succeeded and not (reverted_within_window or fixup_within_window):
+        success = 1.0
     efficiency = 1.0 - _clamp01(waste_tokens / max(1, total_tokens)) if total_tokens > 0 else 0.0
     context_efficiency = (
         1.0 - _clamp01((peak_context_pct / 100.0) * context_rot_penalty)
@@ -143,6 +165,64 @@ def capture_git_signals(
         uncommitted=uncommitted,
         dirty=dirty,
         stashes=stashes,
+        data_notes=notes,
+    )
+
+
+def capture_followup_signals(
+    repo: Path,
+    commit_sha: str | None,
+    files_changed: list[str],
+    *,
+    window_hours: int = 24,
+) -> FollowupSignals:
+    """Detect revert/fixup-style follow-up commits touching the same files."""
+    if not commit_sha or not files_changed:
+        return FollowupSignals()
+    commit_result = _run_git(repo, ["git", "show", "-s", "--format=%cI", commit_sha])
+    if commit_result is None or commit_result.returncode != 0:
+        return FollowupSignals(data_notes=["commit timestamp unavailable for follow-up check"])
+    committed_at = _parse_iso(commit_result.stdout.strip())
+    if committed_at is None:
+        return FollowupSignals(data_notes=["commit timestamp invalid for follow-up check"])
+    until = (committed_at + timedelta(hours=window_hours)).isoformat()
+    result = _run_git(
+        repo,
+        [
+            "git",
+            "log",
+            "--format=%H%x00%s",
+            f"--since={committed_at.isoformat()}",
+            f"--until={until}",
+            "--",
+            *files_changed,
+        ],
+    )
+    if result is None or result.returncode != 0:
+        return FollowupSignals(data_notes=["follow-up commit scan unavailable"])
+    reverted = False
+    fixup = False
+    commits: list[str] = []
+    for line in result.stdout.splitlines():
+        sha, _, subject = line.partition("\x00")
+        if not sha or sha == commit_sha:
+            continue
+        lowered = subject.strip().lower()
+        is_revert = lowered.startswith("revert") or "this reverts commit" in lowered
+        is_fixup = lowered.startswith(("fixup!", "squash!")) or "fixup" in lowered
+        if is_revert or is_fixup:
+            commits.append(sha)
+        reverted = reverted or is_revert
+        fixup = fixup or is_fixup
+    notes: list[str] = []
+    if reverted:
+        notes.append(f"same-file revert detected within {window_hours}h")
+    if fixup:
+        notes.append(f"same-file fixup detected within {window_hours}h")
+    return FollowupSignals(
+        reverted=reverted,
+        fixup=fixup,
+        commits=commits,
         data_notes=notes,
     )
 
@@ -248,7 +328,7 @@ class OutcomesView(IncrementalView):
     """Capture outcomes row per trace using git/test/session signals."""
 
     view_name = "outcomes"
-    VERSION = 1
+    VERSION = 2
 
     def keys_for(self, trace_id: str) -> list[str]:
         return [trace_id]
@@ -264,6 +344,12 @@ class OutcomesView(IncrementalView):
         spans = SpanRepo.list_by_trace(conn, key)
         events = spans_to_events(spans)
         git = capture_git_signals(trace.cwd, trace.started_at, trace.ended_at)
+        followup = capture_followup_signals(
+            Path(trace.cwd) if trace.cwd else Path(),
+            git.commit_sha,
+            git.files_changed,
+            window_hours=Settings().outcome_revert_window_hours,
+        )
         tests = _run_tests_if_configured(trace.cwd, trace.project)
         retry_rate = _retry_rate(events)
         tool_calls = trace.tool_calls or sum(
@@ -272,9 +358,12 @@ class OutcomesView(IncrementalView):
         error_rate = (trace.tool_errors / tool_calls) if tool_calls else 0.0
         quality = agent_quality_score(
             commit_landed=git.commit_landed,
+            tests_run=tests.tests_run,
             tests_passed=tests.tests_passed,
             tests_failed=tests.tests_failed,
             build_status=tests.build_status,
+            reverted_within_window=followup.reverted,
+            fixup_within_window=followup.fixup,
             waste_tokens=int(trace.waste_tokens or 0),
             total_tokens=int(trace.input_tokens or 0) + int(trace.output_tokens or 0),
             peak_context_pct=trace.peak_context_pct,
@@ -292,8 +381,9 @@ class OutcomesView(IncrementalView):
             events=events,
         )
         is_success = git.commit_landed and (
-            tests.tests_passed is None or (tests.tests_passed or 0) > (tests.tests_failed or 0)
+            quality.components["success"] >= 0.75
         )
+        existing = OutcomeRepo.get(conn, key)
 
         OutcomeRepo.upsert(
             conn,
@@ -307,12 +397,24 @@ class OutcomesView(IncrementalView):
                 tests_failed=tests.tests_failed,
                 build_status=tests.build_status,
                 quality_score=quality.score,
+                quality_components=quality.components,
+                quality_weights=quality.weights,
                 cost_per_success=float(trace.cost or 0.0) if is_success else None,
+                reverted_within_window=followup.reverted,
+                fixup_within_window=followup.fixup,
                 outcome_label=outcome_label,
                 label_source=label_source,
+                human_label=existing.human_label if existing else None,
+                human_note=existing.human_note if existing else None,
+                human_labeled_at=existing.human_labeled_at if existing else None,
                 captured_at=datetime.now(UTC).isoformat(),
             ),
         )
 
 
-__all__ = ["OutcomesView", "capture_git_signals"]
+__all__ = [
+    "OutcomesView",
+    "agent_quality_score",
+    "capture_followup_signals",
+    "capture_git_signals",
+]

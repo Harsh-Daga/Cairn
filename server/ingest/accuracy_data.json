@@ -1,0 +1,74 @@
+{
+  "aider": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "agent_jsonl_mini.jsonl; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "claude_code": {
+    "mape_pct": 0.0,
+    "method": "measured",
+    "note": "assistant usage block",
+    "parse_coverage_pct": 100.0
+  },
+  "cline": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "ui_messages.json; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "codex": {
+    "mape_pct": 0.0,
+    "method": "measured",
+    "note": "task_complete usage payload",
+    "parse_coverage_pct": 100.0
+  },
+  "cursor": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "cursor_mini.jsonl; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "gemini_cli": {
+    "mape_pct": 0.0,
+    "method": "measured",
+    "note": "assistant usage payload",
+    "parse_coverage_pct": 100.0
+  },
+  "goose": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "agent_jsonl_mini.jsonl; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "hermes": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "hermes_mini.json; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "kilo": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "ui_messages.json; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "openclaw": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "openclaw_mini.jsonl; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "opencode": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "agent_jsonl_mini.jsonl; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  },
+  "roo": {
+    "mape_pct": null,
+    "method": "absent",
+    "note": "ui_messages.json; no expected-token sidecar",
+    "parse_coverage_pct": 100.0
+  }
+}

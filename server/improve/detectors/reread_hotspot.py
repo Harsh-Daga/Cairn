@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight
+from server.improve.detectors._types import FixPayload, Insight
 
 
 def rule_reread_hotspot(ctx: dict[str, Any]) -> Insight | None:
@@ -26,5 +26,14 @@ def rule_reread_hotspot(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence={"path": path, "reads": reads, "content_hash": worst.get("content_hash")},
         savings_estimate=None,
+        savings_unavailable_reason="Read events lack consistent per-call cost attribution.",
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy unchanged-file rule",
+            value=(
+                f"Reuse your summary of `{path}` while its content hash is unchanged; re-read "
+                "only the lines affected by a later edit."
+            ),
+        ),
         action="cairn optimize",
     )

@@ -7,6 +7,7 @@ import type {
   ExperimentsResponse,
   InsightsResponse,
   OverviewResponse,
+  RecapResponse,
   QualityResponse,
   RegionsAnalyticsResponse,
   ReplayResponse,
@@ -103,17 +104,25 @@ export function fetchOverview(days: number): Promise<OverviewResponse> {
   return fetchJson(`/overview?days=${days}`);
 }
 
+export function fetchRecap(): Promise<RecapResponse> {
+  return fetchJson("/recap");
+}
+
 export function fetchTraces(params: {
   days?: number;
   source?: string;
+  agent?: string;
   q?: string;
+  sort?: "recent" | "waste" | "cost";
   limit?: number;
   offset?: number;
 }): Promise<TracesListResponse> {
   const qs = new URLSearchParams();
   if (params.days) qs.set("days", String(params.days));
   if (params.source) qs.set("source", params.source);
+  if (params.agent) qs.set("agent", params.agent);
   if (params.q) qs.set("q", params.q);
+  if (params.sort && params.sort !== "recent") qs.set("sort", params.sort);
   qs.set("limit", String(params.limit ?? 50));
   qs.set("offset", String(params.offset ?? 0));
   return fetchJson(`/traces?${qs}`);
@@ -121,6 +130,18 @@ export function fetchTraces(params: {
 
 export function fetchTraceDetail(traceId: string): Promise<TraceDetailResponse> {
   return fetchJson(`/traces/${encodeURIComponent(traceId)}`);
+}
+
+export function setHumanLabel(
+  traceId: string,
+  label: "up" | "down" | null,
+  note?: string,
+): Promise<{ trace_id: string; label: "up" | "down" | null; note: string | null }> {
+  return fetchJson(`/traces/${encodeURIComponent(traceId)}/human-label`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label, note: note || null }),
+  });
 }
 
 export function fetchReplayCheckpoints(traceId: string): Promise<ReplayResponse> {

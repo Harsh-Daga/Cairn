@@ -34,7 +34,7 @@ jobs:
       - name: Verify ACCURACY.md is up to date
         run: |
           uv run python scripts/gen_accuracy.py
-          git diff --exit-code ACCURACY.md
+          git diff --exit-code ACCURACY.md server/ingest/accuracy_data.json
 
       - name: Ruff
         run: uv run ruff check .

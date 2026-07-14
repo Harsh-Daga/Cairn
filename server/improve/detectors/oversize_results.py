@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight, _cap_savings, _data_note, _weekly_spend
+from server.improve.detectors._types import (
+    FixPayload,
+    Insight,
+    _cap_savings,
+    _data_note,
+    _weekly_spend,
+)
 
 
 def rule_oversize_tool_results(ctx: dict[str, Any]) -> Insight | None:
@@ -33,5 +39,14 @@ def rule_oversize_tool_results(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence=evidence,
         savings_estimate=savings,
+        savings_unavailable_reason="No reliable cost data is available for the affected sessions.",
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy bounded-output rule",
+            value=(
+                "Bound tool output by requesting specific files, line ranges, or result counts; "
+                "summarize output over 4,000 tokens."
+            ),
+        ),
         action="cairn optimize",
     )

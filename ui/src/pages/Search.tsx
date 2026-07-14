@@ -49,7 +49,7 @@ export function SearchPage() {
   );
 
   return (
-    <PageShell title="Search" question="Find that moment.">
+    <PageShell title="Search" question="Search sessions, spans, tools, models, and evidence from one place.">
       <div className="space-y-6">
         <div className="card p-4">
           <input

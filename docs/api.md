@@ -8,7 +8,7 @@ Start the server with `cairn ui` (default `http://127.0.0.1:8787`).
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/health` | `{ "status": "ok", "version": "1.0.0" }` |
+| GET | `/api/health` | `{ "status": "ok", "version": "1.1.0" }` |
 | GET | `/api/docs` | Swagger UI |
 | GET | `/api/openapi.json` | OpenAPI schema (also used to generate UI types) |
 
@@ -38,7 +38,8 @@ Prefix: `/api/traces`
 | Method | Path | Query params | Description |
 |--------|------|--------------|-------------|
 | GET | `/api/traces` | `days`, `source`, `project`, `actor`, `q`, `limit`, `offset` | Paginated trace list |
-| GET | `/api/traces/{trace_id}` | — | Trace detail, span tree, metadata |
+| GET | `/api/traces/{trace_id}` | — | Trace detail, span tree, quality outcome, metadata |
+| PUT | `/api/traces/{trace_id}/human-label` | JSON body | Store/clear thumbs label and note |
 | GET | `/api/traces/{trace_id}/replay` | `seq` | Spans visible at replay sequence (scrubber) |
 
 ## Insights

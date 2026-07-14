@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.improve.detectors._types import Insight, _cap_savings, _data_note, _weekly_spend
+from server.improve.detectors._types import (
+    FixPayload,
+    Insight,
+    _cap_savings,
+    _data_note,
+    _weekly_spend,
+)
 
 
 def rule_stale_tool_results(ctx: dict[str, Any]) -> Insight | None:
@@ -33,5 +39,14 @@ def rule_stale_tool_results(ctx: dict[str, Any]) -> Insight | None:
         ),
         evidence=evidence,
         savings_estimate=savings,
+        savings_unavailable_reason="No reliable cost data is available for the affected sessions.",
+        fix=FixPayload(
+            kind="instruction",
+            label="Copy stale-result rule",
+            value=(
+                "Summarize tool results after use and discard the raw output when it can be "
+                "fetched again."
+            ),
+        ),
         action="cairn optimize",
     )

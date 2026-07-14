@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -116,3 +117,39 @@ def test_ingest_deterministic_ids(ingest_writer: IngestWriter, tmp_path: Path) -
     assert trace1.output_tokens == trace2.output_tokens
     assert [s.span_id for s in spans1] == [s.span_id for s in spans2]
     db2.close()
+
+
+def test_ingest_refreshes_an_existing_active_session(
+    ingest_writer: IngestWriter, tmp_path: Path
+) -> None:
+    adapter = ClaudeCodeAdapter(tmp_path / "proj", ingest_writer.workspace_id)
+    parsed = adapter.parse_path(FIXTURES / "claude_code_mini.jsonl")
+    assert parsed is not None
+
+    first = ingest_writer.ingest(parsed)
+    first_trace = TraceRepo.get(ingest_writer._db.reader, first.trace_id)
+    assert first_trace is not None
+
+    refreshed = replace(
+        parsed,
+        ended_at="2026-01-01T00:10:00Z",
+        events=[
+            *parsed.events,
+            {
+                "type": "assistant_message",
+                "text_inline": "A later live-session response",
+                "model": parsed.model,
+            },
+        ],
+    )
+    second = ingest_writer.ingest(refreshed)
+    second_trace = TraceRepo.get(ingest_writer._db.reader, first.trace_id)
+
+    assert second.inserted is False
+    assert second.trace_id == first.trace_id
+    assert second.span_count == first.span_count + 1
+    assert second_trace is not None
+    assert second_trace.ended_at == "2026-01-01T00:10:00Z"
+    assert second_trace.span_count == first_trace.span_count + 1
+    stored_spans = SpanRepo.list_by_trace(ingest_writer._db.reader, first.trace_id)
+    assert len(stored_spans) == second.span_count

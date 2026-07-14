@@ -30,12 +30,57 @@ class TailRisk(BaseModel):
     threshold: float | None = None
 
 
+class WasteCause(BaseModel):
+    category: str
+    waste_tokens: int
+    estimated_savings_usd: float
+    cause: str
+    fix: str
+
+
+class MoneySummary(BaseModel):
+    period_days: int
+    total_spend_usd: float
+    spend_estimated: bool
+    wasted_spend_usd: float
+    wasted_spend_pct: float
+    waste_estimated: bool
+    top_causes: list[WasteCause]
+    primary_action: str
+
+
 class OverviewResponse(BaseModel):
     days: int
     kpis: dict[str, float | int | None]
+    money: MoneySummary
     narrative: list[NarrativeSentence]
     tail_risk: TailRisk
     data_notes: list[DataNote]
+
+
+class QualityTrend(BaseModel):
+    current_mean: float | None
+    previous_mean: float | None
+    delta: float | None
+    current_sessions: int
+    previous_sessions: int
+
+
+class RecapVerdict(BaseModel):
+    experiment_id: str
+    verdict: str
+    effect_estimate: float | None
+    effect_ci_low: float | None
+    effect_ci_high: float | None
+    measured_at: str
+
+
+class RecapResponse(BaseModel):
+    generated_at: str
+    period_days: int
+    money: MoneySummary
+    quality_trend: QualityTrend
+    experiment_verdicts: list[RecapVerdict]
 
 
 class TraceRow(BaseModel):
@@ -104,14 +149,36 @@ class SpanLink(BaseModel):
     link_type: str
 
 
+class McpConsultation(BaseModel):
+    event_id: str
+    trace_id: str
+    after_seq: int
+    tool_name: str
+    called_at: str
+
+
 class TraceDetailResponse(BaseModel):
     trace: Trace
     spans: list[Span]
     tree: list[SpanNode]
     links: list[SpanLink]
+    mcp_consultations: list[McpConsultation]
     regions: list[dict[str, Any]]
     diagnostics: dict[str, Any] | None
     quality: dict[str, Any] | None
+    outcome: dict[str, Any] | None
+
+
+class HumanLabelRequest(BaseModel):
+    label: Literal["up", "down"] | None
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class HumanLabelResponse(BaseModel):
+    trace_id: str
+    label: Literal["up", "down"] | None
+    note: str | None
+    labeled_at: str | None
 
 
 class ReplayCheckpoint(BaseModel):
@@ -133,6 +200,7 @@ class ReplayResponse(BaseModel):
 class AgentAggregate(BaseModel):
     agent_id: str | None
     actor_id: str | None
+    actor_name: str | None
     traces: int
     input_tokens: int
     output_tokens: int
@@ -145,11 +213,33 @@ class AgentsResponse(BaseModel):
     handoff_matrix: list[dict[str, Any]]
 
 
+class BehaviorSeriesPoint(BaseModel):
+    trace_id: str
+    ts: str | None
+    vector: list[float]
+    project: str | None
+    model: str | None
+
+
+class DriftEvent(BaseModel):
+    kind: str
+    trace_id: str | None = None
+    project: str | None = None
+    model: str | None = None
+    distance: float | None = None
+    threshold: float | None = None
+    per_dim_deltas: list[float] = Field(default_factory=list)
+    drift: bool | None = None
+    axes: list[dict[str, Any]] = Field(default_factory=list)
+    data_notes: list[str] = Field(default_factory=list)
+
+
 class BehaviorResponse(BaseModel):
     days: int
-    series: list[dict[str, Any]]
-    drift: list[dict[str, Any]]
+    series: list[BehaviorSeriesPoint]
+    drift: list[DriftEvent]
     radar: dict[str, Any] | None
+    baseline_progress: dict[str, Any]
     data_notes: list[DataNote]
 
 
@@ -161,10 +251,19 @@ class QualityResponse(BaseModel):
     data_notes: list[DataNote]
 
 
+class UsageSeriesPoint(BaseModel):
+    key: str
+    input_tokens: int
+    output_tokens: int
+    waste_tokens: int
+    cost: float
+    traces: int
+
+
 class UsageAnalyticsResponse(BaseModel):
     days: int
     group_by: str
-    series: list[dict[str, Any]]
+    series: list[UsageSeriesPoint]
 
 
 class RegionsAnalyticsResponse(BaseModel):
@@ -172,9 +271,15 @@ class RegionsAnalyticsResponse(BaseModel):
     regions: list[dict[str, Any]]
 
 
+class WasteCategory(BaseModel):
+    category: str
+    tokens: int
+    events: int
+
+
 class WasteAnalyticsResponse(BaseModel):
     days: int
-    categories: list[dict[str, Any]]
+    categories: list[WasteCategory]
     total_waste_tokens: int
 
 
@@ -193,6 +298,9 @@ class InsightRow(BaseModel):
     body: str
     state: InsightLifecycle
     savings_estimate: float | None
+    savings_unavailable_reason: str | None
+    fix: dict[str, str]
+    diagnostic: bool
     action: str | None
     last_seen_at: str
 
@@ -218,8 +326,14 @@ class ExperimentRow(BaseModel):
     status: str
     target_file: str | None
     created_at: str
+    applied_at: str | None
+    min_holdout: int
+    outcome_n_effective: float | None
     verdict: str | None
     lift_pct: float | None
+    effect_ci_low: float | None
+    effect_ci_high: float | None
+    measured_at: str | None
 
 
 class ExperimentsResponse(BaseModel):
@@ -249,6 +363,15 @@ class WorkspaceAdapter(BaseModel):
     source: str
     streams: int
     cursor_updated_at: str | None
+    attempts: int
+    fully_parsed: int
+    degraded: int
+    skipped: int
+    parse_coverage: float | None
+    unknown_fields: dict[str, int]
+    last_success_at: str | None
+    warning: bool
+    issue_url: str
 
 
 class PlanWindowGauge(BaseModel):

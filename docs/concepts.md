@@ -15,7 +15,7 @@ Analyzer views in `server/analyze/` recompute incrementally per trace:
 | `regions` | Context decomposition + waste tags |
 | `fingerprint` | Behavioral vector + drift distance |
 | `diagnose` | Failure localization, cascade root |
-| `outcomes` | Git/test signals + quality score |
+| `outcomes` | Git/test/follow-up signals, explainable quality score, and human feedback |
 | `usage` | Token/cost rollups |
 
 ## Evidence and provenance
@@ -47,6 +47,10 @@ adapters/OTLP → pipeline → SQLite → views → detectors/experiments
 1. **Context profiling** — region waste taxonomy (duplicate, stale tool result, rebilling, context rot).
 2. **Behavioral fingerprinting** — drift detection on the Behavior page.
 3. **Outcome quality** — git + optional test commands from `~/.config/cairn/config.toml`.
+   Success is graded: commit, commit plus tests run, tests passed, then tests passed with no
+   same-file revert/fixup in the configured follow-up window. Score components and weights are
+   stored with each outcome. Human thumbs-up/down labels remain local and provide an agreement
+   diagnostic; they never train or contact an external service.
 4. **Measured optimize** — holdout verdicts with clustered ESS.
 5. **MCP self-awareness** — six stdio tools via `cairn mcp`.
 6. **Causal traces** — waterfall blame view, retry/handoff link arcs.

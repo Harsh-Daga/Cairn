@@ -29,7 +29,19 @@ After sync, the improve engine runs modular detectors (`server/improve/detectors
 | `error-streak` | ≥4 consecutive tool errors |
 | `cost-anomaly` | Session cost > μ+3σ for difficulty bucket |
 
-Insights appear on the **Insights** page and feed the proposal generator.
+The registry enforces an action contract before an insight can be persisted. Every detector
+must provide either a weekly savings estimate or a specific reason the signal cannot be
+priced, plus one structured fix payload:
+
+- `instruction` — a `CLAUDE.md` / `AGENTS.md` rule that can be copied;
+- `settings` — a concrete model, cache, or tool configuration change; or
+- `manual` — a bounded investigation step when automation would overclaim.
+
+Actionable findings appear in the main **Insights** feed and feed the proposal generator.
+Signals such as behavioral drift, quality regression, and cost anomalies identify a change
+but do not establish its cause; they are explicitly marked as supporting **Diagnostics**.
+Expanding any card shows its fix and a copy-to-clipboard control. A detector with neither a
+fix nor an explicit null-savings reason fails contract validation instead of reaching the UI.
 
 ## 2. Diagnose — evidence chains
 
@@ -52,12 +64,22 @@ Or on the **Optimize** page, review experiments in the **Proposed** column.
 Applying an experiment writes a managed block:
 
 ```html
-<!-- cairn:managed start block-key -->
-…instruction text…
-<!-- cairn:managed end -->
+<!-- cairn:begin sha256=<checksum-of-the-managed-body> -->
+## Cairn agent guide
+- …instruction text…  <!-- cairn:entry rule/<id> conf=0.8 -->
+<!-- cairn:end -->
 ```
 
-Backups land in `.cairn/backups/`. Apply via UI (**Apply** button) or:
+The writer accepts only repository-root `AGENTS.md`, `CLAUDE.md`, and `.cursor/rules`.
+It preserves every byte outside the fenced block. Before a successful apply it writes an
+experiment-specific backup under `.cairn/backups/`; a previously missing target gets a
+missing-file backup marker so revert can remove only the file Cairn created.
+
+The checksum covers the complete managed body. If a user or another tool changes anything
+inside that body, the next apply or revert reports a conflict and leaves the file untouched.
+Resolve the conflicting block manually instead of asking Cairn to clobber it.
+
+Apply via UI (**Apply** button) or:
 
 ```bash
 cairn action experiment_apply --params-json '{"experiment_id":"…"}'
@@ -67,10 +89,33 @@ cairn action experiment_apply --params-json '{"experiment_id":"…"}'
 
 New sessions ingested after apply form the **holdout** set. When enough holdout sessions exist (`min_holdout`, default 8), Cairn runs causal measurement:
 
-- `server/improve/stats.py` — clustered effective *n*, CUPED-style effect estimates
+Every generated proposal is registered idempotently as an experiment card. Each card keeps the
+complete visible sequence **Proposed → Applied (date) → Measuring (effective n/target) →
+Verdict**, including the confidence interval. A measurement attempt below the holdout target
+persists `status=measuring` and `outcome_n_effective`; refreshing the page never loses progress.
+
+- `server/improve/stats.py` — clustered effective *n*, plain difference-in-means estimates,
+  and an anytime-valid confidence-sequence boundary
 - `server/improve/experiments.py` — transitions experiment to `measuring` then `verdict`
 
 Trigger measurement manually with `experiment_measure` or wait for post-sync evaluation.
+
+Sessions in the before and after windows are independent; Cairn does not pair them by list
+position and does not synthesize CUPED covariates. The effect is `mean(after) - mean(before)`.
+The confidence-sequence scale is the root-sum-square of the two windows' sample standard
+deviations and uses the smaller window size. This is deliberately conservative when window
+sizes differ. The stored `test_method` is `difference_in_means+anytime_valid_cs`.
+
+Repeated sessions from the same cluster do not count as independent evidence. Cairn computes
+clustered effective sample size before measurement, uses it for the holdout gate, and passes
+that same effective *n* into the confidence-sequence radius. The effective value is capped by
+the smaller raw window; raw session count is never substituted when producing a verdict.
+
+Before producing a verdict, Cairn compares model distribution, project/task distribution,
+spans-per-session buckets, tool-call mix, and ingest parser-version mix between windows. Any
+material shift returns `confounded` instead of attributing the change to the rule. The stored
+data notes name each triggered guard, including agent/schema-version changes inferred from
+parser metadata.
 
 ## 6. Verdict
 
@@ -85,10 +130,13 @@ Rules that repeatedly fail holdout are candidates for hard prune via Thompson sa
 ## Revert
 
 ```bash
+cairn optimize revert EXPERIMENT_ID
 cairn experiments revert EXPERIMENT_ID
 ```
 
-Or **Revert** on the Optimize page. Restores the target file from `.cairn/backups/`.
+Or **Revert** on the Optimize page. Revert selects the backup for that exact experiment and
+restores only Cairn's managed block, preserving user edits made elsewhere after apply. The
+`cairn experiments revert` spelling remains as a compatibility alias.
 
 ## Optional LLM reflector
 
@@ -113,20 +161,18 @@ Without LLM config, Cairn uses templated rewrites from evidence.
 
 ## Appendix — statistics formulas
 
-Cairn uses **anytime-valid confidence sequences** (CS) on CUPED-adjusted holdout effects instead of fixed-*z* sequential tests.
+Cairn uses **anytime-valid confidence sequences** (CS) on plain holdout mean differences
+instead of fixed-*z* sequential tests. Sessions in different windows are not paired.
 
-### CUPED adjustment
+### Difference in means
 
-Given post-period outcomes \(Y_i\) and pre-period covariates \(X_i\):
+Given pre-period outcomes \(X_i\) and post-period outcomes \(Y_i\):
 
 \[
-\theta = \frac{\mathrm{Cov}(Y, X)}{\mathrm{Var}(X)}, \quad
-\tilde{Y}_i = Y_i - \theta (X_i - \bar{X}), \quad
-\hat{\mu} = \bar{\tilde{Y}}, \quad
-\mathrm{SE} = \sqrt{\mathrm{Var}(\tilde{Y}) / n}
+\hat{\delta} = \bar{Y} - \bar{X}, \quad
+\sigma = \sqrt{s_X^2 + s_Y^2}, \quad
+n = \min(n_{\mathrm{pre}}, n_{\mathrm{post}}, n_{\mathrm{clustered}})
 \]
-
-Effect estimate: \(\hat{\delta} = \hat{\mu}_{\text{post}} - \bar{Y}_{\text{pre}}\).
 
 ### Anytime-valid CS radius
 
@@ -176,3 +222,19 @@ From trailing 14-day traffic:
 \]
 
 Shown as “unknown” when traffic is below 5 traces/week.
+
+## Local rule-effect export
+
+`cairn optimize export-effects` writes a versioned JSON file under `.cairn/exports/`; `--output`
+chooses another local path. Cairn never uploads it. The user must inspect the file and explicitly
+choose whether and how to share it.
+
+Only experiments with a reached verdict and complete effect metadata are included. Every effect
+contains exactly `{rule_text, effect_metric, effect_size, ci, n_sessions, agent_type, verdict}`.
+`n_sessions` is the stored raw post-period count; clustered effective sample size remains in the
+local experiment record and is not mislabeled as a raw count.
+
+The allowlist scrubber removes paths, repository names and identifiers, URLs, git IDs, fenced or
+inline code, and code-shaped lines from rule text. It emits no workspace, trace, evidence, prompt,
+or target-file fields. The envelope is validated with `extra="forbid"`. See the future, still
+network-free [registry roadmap](roadmap.md).

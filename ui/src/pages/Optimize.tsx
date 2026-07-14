@@ -12,6 +12,49 @@ import type { VerdictPreviewData } from "@/lib/types";
 
 const STATIONS = ["proposed", "applied", "measuring", "verdict"] as const;
 
+export function ExperimentLifecycle({
+  status,
+  appliedAt,
+  nEffective,
+  target,
+  verdict,
+  ciLow,
+  ciHigh,
+}: {
+  status: string;
+  appliedAt: string | null;
+  nEffective: number | null;
+  target: number;
+  verdict: string | null;
+  ciLow: number | null;
+  ciHigh: number | null;
+}) {
+  const rank = Math.max(0, STATIONS.indexOf(status as (typeof STATIONS)[number]));
+  const labels = [
+    "Proposed",
+    appliedAt ? `Applied ${new Date(appliedAt).toLocaleDateString()}` : "Applied",
+    `Measuring n=${(nEffective ?? 0).toFixed(1)}/${target}`,
+    verdict
+      ? `Verdict ${verdict}${ciLow != null && ciHigh != null ? ` · CI ${(ciLow * 100).toFixed(1)}% to ${(ciHigh * 100).toFixed(1)}%` : ""}`
+      : "Verdict",
+  ];
+  return (
+    <ol className="mt-4 grid gap-2 sm:grid-cols-4" aria-label="Experiment lifecycle">
+      {labels.map((label, index) => (
+        <li
+          key={STATIONS[index]}
+          className={`rounded-sm border px-2 py-2 font-mono text-[10px] ${
+            index <= rank ? "border-copper/50 bg-copper/10 text-bone" : "border-quartz-vein text-ash"
+          }`}
+        >
+          <span className="mr-1 text-copper">{index < rank ? "✓" : index === rank ? "●" : "○"}</span>
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function ExperimentCard({
   experimentId,
   status,
@@ -19,9 +62,15 @@ function ExperimentCard({
   verdict,
   liftPct,
   createdAt,
+  appliedAt,
+  minHoldout,
+  outcomeNEffective,
+  effectCiLow,
+  effectCiHigh,
   preview,
   onApply,
   onRevert,
+  onMeasure,
 }: {
   experimentId: string;
   status: string;
@@ -29,9 +78,15 @@ function ExperimentCard({
   verdict: string | null;
   liftPct: number | null;
   createdAt: string;
+  appliedAt: string | null;
+  minHoldout: number;
+  outcomeNEffective: number | null;
+  effectCiLow: number | null;
+  effectCiHigh: number | null;
   preview?: VerdictPreviewData | null;
   onApply: () => void;
   onRevert: () => void;
+  onMeasure: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const detailQ = useQuery({
@@ -44,8 +99,8 @@ function ExperimentCard({
   const detailPreview = detailQ.data?.preview as VerdictPreviewData | null | undefined;
   const cardPreview = preview ?? detailPreview;
   const content = typeof exp?.content === "string" ? exp.content : null;
-  const liftCiLow = exp?.effect_ci_low != null ? Number(exp.effect_ci_low) : null;
-  const liftCiHigh = exp?.effect_ci_high != null ? Number(exp.effect_ci_high) : null;
+  const liftCiLow = effectCiLow ?? (exp?.effect_ci_low != null ? Number(exp.effect_ci_low) : null);
+  const liftCiHigh = effectCiHigh ?? (exp?.effect_ci_high != null ? Number(exp.effect_ci_high) : null);
   const liftEstimate = liftPct ?? (exp?.effect_estimate != null ? Number(exp.effect_estimate) : null);
 
   return (
@@ -58,6 +113,15 @@ function ExperimentCard({
       <p className="mt-2 font-mono text-xs text-cinder">
         {experimentId.slice(0, 12)}… · {formatRelative(createdAt)}
       </p>
+      <ExperimentLifecycle
+        status={status}
+        appliedAt={appliedAt}
+        nEffective={outcomeNEffective}
+        target={minHoldout}
+        verdict={verdict}
+        ciLow={liftCiLow}
+        ciHigh={liftCiHigh}
+      />
       {status === "proposed" && cardPreview ? <VerdictPreview preview={cardPreview} /> : null}
       {liftEstimate != null ? (
         <p className="mt-1 font-mono text-sm text-bone">
@@ -106,13 +170,22 @@ function ExperimentCard({
           </button>
         ) : null}
         {status === "applied" || status === "measuring" ? (
-          <button
-            type="button"
-            className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone"
-            onClick={onRevert}
-          >
-            Revert
-          </button>
+          <>
+            <button
+              type="button"
+              className="rounded-sm bg-copper px-3 py-1.5 font-mono text-xs text-anthracite"
+              onClick={onMeasure}
+            >
+              Measure now
+            </button>
+            <button
+              type="button"
+              className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone"
+              onClick={onRevert}
+            >
+              Revert
+            </button>
+          </>
         ) : null}
       </div>
     </div>
@@ -133,6 +206,7 @@ export function OptimizePage() {
       showToast("Experiment applied");
       queryClient.invalidateQueries({ queryKey: ["experiments"] });
     },
+    onError: () => showToast("Apply failed", undefined, "error"),
   });
 
   const revertMut = useMutation({
@@ -141,11 +215,30 @@ export function OptimizePage() {
       showToast("Experiment reverted", () => undefined);
       queryClient.invalidateQueries({ queryKey: ["experiments"] });
     },
+    onError: () => showToast("Revert failed", undefined, "error"),
+  });
+
+  const measureMut = useMutation({
+    mutationFn: (id: string) => runAction("experiment_measure", { experiment_id: id }),
+    onSuccess: () => {
+      showToast("Experiment measured");
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+    onError: () => showToast("Measurement failed", undefined, "error"),
+  });
+
+  const proposeMut = useMutation({
+    mutationFn: () => runAction("optimize_propose"),
+    onSuccess: () => {
+      showToast("Proposals generated");
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+    onError: () => showToast("Proposal generation failed", undefined, "error"),
   });
 
   if (isLoading) {
     return (
-      <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+      <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -153,7 +246,7 @@ export function OptimizePage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+      <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
         <ErrorCard />
       </PageShell>
     );
@@ -169,7 +262,7 @@ export function OptimizePage() {
 
   if (data.experiments.length === 0) {
     return (
-      <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+      <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
         <EmptyCard
           title="No proposals yet"
           detail="Cairn needs about a week of sessions to find leverage. Run sync and check Insights first."
@@ -177,7 +270,7 @@ export function OptimizePage() {
             <button
               type="button"
               className="rounded-sm bg-copper px-3 py-2 font-mono text-xs text-anthracite"
-              onClick={() => runAction("optimize_propose")}
+              onClick={() => proposeMut.mutate()}
             >
               Generate proposals
             </button>
@@ -188,7 +281,7 @@ export function OptimizePage() {
   }
 
   return (
-    <PageShell title="Optimize" question="Close the loop: propose → apply → measure → verdict.">
+    <PageShell title="Optimize" question="Turn evidence into controlled instruction changes, then prove whether they worked.">
       <div className="space-y-6">
         <div className="card p-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -231,8 +324,14 @@ export function OptimizePage() {
               verdict={exp.verdict}
               liftPct={exp.lift_pct}
               createdAt={exp.created_at}
+              appliedAt={exp.applied_at}
+              minHoldout={exp.min_holdout}
+              outcomeNEffective={exp.outcome_n_effective}
+              effectCiLow={exp.effect_ci_low}
+              effectCiHigh={exp.effect_ci_high}
               onApply={() => applyMut.mutate(exp.experiment_id)}
               onRevert={() => revertMut.mutate(exp.experiment_id)}
+              onMeasure={() => measureMut.mutate(exp.experiment_id)}
             />
           ))}
         </div>
@@ -240,7 +339,7 @@ export function OptimizePage() {
         <button
           type="button"
           className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone hover:bg-granite"
-          onClick={() => runAction("optimize_propose")}
+          onClick={() => proposeMut.mutate()}
         >
           Generate proposals
         </button>

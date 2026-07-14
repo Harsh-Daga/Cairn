@@ -52,6 +52,15 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "cairn_before_you_read",
+        "description": "Return a cached compact summary when a previously read file is unchanged.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
+        },
+    },
+    {
         "name": "cairn_my_recurring_waste",
         "description": "Top recurring waste patterns for this workspace.",
         "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer"}}},
@@ -90,8 +99,11 @@ def list_tools() -> list[dict[str, Any]]:
 
 
 def call_tool(ctx: ToolsContext, name: str, args: dict[str, Any]) -> dict[str, Any]:
+    from server.mcp.consultations import record_consultation
+
     dispatch = {
         "cairn_have_i_read": _have_i_read,
+        "cairn_before_you_read": _before_you_read,
         "cairn_my_recurring_waste": _my_recurring_waste,
         "cairn_project_primer": _project_primer,
         "cairn_session_so_far": _session_so_far,
@@ -102,9 +114,11 @@ def call_tool(ctx: ToolsContext, name: str, args: dict[str, Any]) -> dict[str, A
     if fn is None:
         return {"error": f"unknown tool: {name}"}
     try:
-        return fn(ctx, args)
+        result = fn(ctx, args)
     except Exception as exc:
-        return {"error": f"{type(exc).__name__}: {exc}"}
+        result = {"error": f"{type(exc).__name__}: {exc}"}
+    record_consultation(ctx, name)
+    return result
 
 
 def _have_i_read(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
@@ -146,6 +160,75 @@ def _have_i_read(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
         "path": rel,
         "times": len(rows),
         "last": {"turn": int(rows[-1]["seq"]), "ts": rows[-1]["started_at"]},
+    }
+
+
+def _before_you_read(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    from server.analyze.file_summaries import hash_file
+
+    path = str(args.get("path") or "")
+    if not path:
+        return {"should_read": True, "reason": "no path provided"}
+    rel = _rel_path(ctx.workspace_root, path)
+    target = _workspace_target(ctx.workspace_root, rel)
+    if target is None:
+        return {
+            "should_read": True,
+            "path": rel,
+            "reason": "path is outside the active workspace",
+        }
+    row = ctx.conn.execute(
+        """SELECT content_hash, file_mtime_ns, summary, summary_tokens,
+                  read_count, last_read_at
+           FROM file_read_cache
+           WHERE workspace_id IS ? AND path_rel = ?""",
+        (ctx.workspace_id, rel),
+    ).fetchone()
+    if row is None:
+        history = ctx.conn.execute(
+            """SELECT COUNT(*) AS reads, MAX(s.started_at) AS last_read_at
+               FROM spans s JOIN traces t ON t.trace_id = s.trace_id
+               WHERE t.workspace_id IS ? AND s.path_rel = ?
+                 AND (s.name IN ('read','search','grep','glob') OR s.name LIKE '%read%')""",
+            (ctx.workspace_id, rel),
+        ).fetchone()
+        reads = int(history["reads"] or 0) if history else 0
+        return {
+            "should_read": True,
+            "path": rel,
+            "read_count": reads,
+            "last_read_at": history["last_read_at"] if history else None,
+            "reason": "file has never been summarized" if reads else "file has not been read",
+        }
+    if not target.is_file():
+        return {
+            "should_read": True,
+            "path": rel,
+            "read_count": int(row["read_count"] or 0),
+            "reason": "file is missing or no longer a regular file",
+        }
+    current_hash = hash_file(target)
+    current_mtime = target.stat().st_mtime_ns
+    unchanged = current_hash == row["content_hash"] and current_mtime == row["file_mtime_ns"]
+    if not unchanged:
+        return {
+            "should_read": True,
+            "path": rel,
+            "read_count": int(row["read_count"] or 0),
+            "last_read_at": row["last_read_at"],
+            "reason": "file changed since Cairn cached it",
+        }
+    summary = str(row["summary"]) if row["summary"] else None
+    return {
+        "should_read": False,
+        "path": rel,
+        "unchanged": True,
+        "read_count": int(row["read_count"] or 0),
+        "last_read_at": row["last_read_at"],
+        "summary": summary,
+        "summary_tokens": int(row["summary_tokens"] or 0),
+        "mode": "deterministic_summary" if summary else "metadata_only",
+        "advice": "Reuse this compact summary; skip re-reading the unchanged file.",
     }
 
 
@@ -224,6 +307,8 @@ def _session_so_far(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _should_i_stop(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    from server.improve.detectors.registry import detect_live_stop_pattern
+
     del args
     ws = "WHERE workspace_id = ?" if ctx.workspace_id else ""
     params: list[Any] = [ctx.workspace_id] if ctx.workspace_id else []
@@ -235,19 +320,30 @@ def _should_i_stop(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
         return {"should_stop": False, "reason": "insufficient signal"}
     trace_id = str(trace["trace_id"])
     rows = ctx.conn.execute(
-        "SELECT kind, name, status FROM spans WHERE trace_id = ? ORDER BY seq DESC LIMIT 12",
+        """SELECT seq, kind, name, status, args_hash, text_hash
+           FROM spans WHERE trace_id = ? ORDER BY seq DESC LIMIT 50""",
         (trace_id,),
     ).fetchall()
-    errors = sum(1 for r in rows if r["status"] == "error")
-    names = [str(r["name"] or r["kind"]) for r in rows if r["kind"] == "tool_call"]
-    repeated = len(names) - len(set(names)) if names else 0
-    should_stop = errors >= 3 or repeated >= 4
+    ordered = [dict(row) for row in reversed(rows)]
+    detection = detect_live_stop_pattern(ordered)
+    if detection is None:
+        return {
+            "should_stop": False,
+            "trace_id": trace_id,
+            "pattern": None,
+            "count": 0,
+            "first_seen_seq": None,
+            "advice": (
+                "No retry loop, identical-call pattern, error streak, or failing command detected."
+            ),
+        }
     return {
-        "should_stop": should_stop,
+        "should_stop": True,
         "trace_id": trace_id,
-        "recent_errors": errors,
-        "repeated_tool_calls": repeated,
-        "suggestion": "Pause and inspect the failing tool pattern" if should_stop else None,
+        "pattern": detection.pattern,
+        "count": detection.count,
+        "first_seen_seq": detection.first_seen_seq,
+        "advice": detection.advice,
     }
 
 
@@ -283,6 +379,15 @@ def _rel_path(root: Path, path: str) -> str:
         except ValueError:
             return path
     return path
+
+
+def _workspace_target(root: Path, path_rel: str) -> Path | None:
+    target = (root / path_rel).resolve()
+    try:
+        target.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return target
 
 
 def _hotspot_paths(ctx: ToolsContext, project: str, *, limit: int) -> list[dict[str, Any]]:

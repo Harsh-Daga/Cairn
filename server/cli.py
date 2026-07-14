@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import webbrowser
 from collections.abc import Callable
 from pathlib import Path
@@ -22,6 +23,7 @@ from server.config import Settings
 from server.demo.seed import DEMO_ROOT
 from server.doctor import print_doctor
 from server.export.static import export_static_snapshot
+from server.update import render_command, upgrade_command
 
 app = typer.Typer(
     name="cairn",
@@ -48,6 +50,7 @@ def main_callback(
     if ctx.invoked_subcommand is not None or version:
         return
     _run_action("sync", {}, None)
+    _print_money_slide()
     ui()
 
 
@@ -76,6 +79,112 @@ def _run_action(name: str, params: dict[str, Any], root: Path | None = None) -> 
     ctx = _make_ctx(root)
     validated = action_def.params_model.model_validate(params)
     return action_def.handler(validated, ctx)
+
+
+def _render_money_slide(money: Any) -> str:
+    estimate = " ± est." if money.waste_estimated else ""
+    lines = [
+        f"Cairn · last {money.period_days} days",
+        f"Spend      ${money.total_spend_usd:,.2f}",
+        (
+            f"Waste      ${money.wasted_spend_usd:,.2f}{estimate} "
+            f"({money.wasted_spend_pct:.1f}%)"
+        ),
+    ]
+    if money.top_causes:
+        lines.append("Top causes")
+        for index, cause in enumerate(money.top_causes, 1):
+            label = cause.category.replace("_", " ")
+            lines.append(f"  {index}. ${cause.estimated_savings_usd:,.2f} · {label}")
+            lines.append(f"     Fix: {cause.fix}")
+    else:
+        lines.append("Top causes  waiting for priced waste data")
+    lines.append("Action      Review proposed fix → http://127.0.0.1:8787/optimize")
+    return "\n".join(lines)
+
+
+def _print_money_slide(workspace: Path | None = None) -> None:
+    from server.api.payloads import build_overview
+
+    action_ctx = _make_ctx(workspace)
+    overview = build_overview(
+        action_ctx.db.reader,
+        workspace_id=action_ctx.workspace_id,
+        days=30,
+    )
+    typer.echo(_render_money_slide(overview.money))
+
+
+def _render_recap(recap: Any) -> str:
+    lines = [
+        "CAIRN WEEKLY RECAP",
+        f"Spend  ${recap.money.total_spend_usd:,.2f}",
+        (
+            f"Waste  ${recap.money.wasted_spend_usd:,.2f} ± est. "
+            f"({recap.money.wasted_spend_pct:.1f}%)"
+        ),
+    ]
+    if recap.money.top_causes:
+        lines.append("Top causes")
+        for cause in recap.money.top_causes:
+            lines.append(
+                f"  ${cause.estimated_savings_usd:,.2f} · {cause.category.replace('_', ' ')}"
+            )
+            lines.append(f"  Fix: {cause.fix}")
+    trend = recap.quality_trend
+    if trend.current_mean is None:
+        lines.append("Quality  waiting for scored sessions")
+    elif trend.delta is None:
+        lines.append(f"Quality  {trend.current_mean:.1f} · no prior-week baseline")
+    else:
+        lines.append(f"Quality  {trend.current_mean:.1f} · {trend.delta:+.1f} vs prior week")
+    if recap.experiment_verdicts:
+        lines.append("Verdicts reached")
+        for verdict in recap.experiment_verdicts:
+            lines.append(f"  {verdict.verdict} · {verdict.experiment_id[:12]}")
+    else:
+        lines.append("Verdicts  none reached this week")
+    return "\n".join(lines)
+
+
+@app.command()
+def recap(
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    share: Annotated[bool, typer.Option("--share", help="Write a private PNG recap card")] = False,
+    show_repo: Annotated[
+        bool,
+        typer.Option("--show-repo", help="Include the workspace name on a shared card"),
+    ] = False,
+    output: Annotated[Path | None, typer.Option("--output", help="PNG output path")] = None,
+) -> None:
+    """Show a one-screen weekly spend, waste, quality, and experiment recap."""
+    from server.api.payloads import build_recap
+
+    action_ctx = _make_ctx(workspace)
+    if share:
+        from datetime import UTC, datetime
+
+        from server.recap_share import build_share_card_data, render_share_card
+        from server.store.repos.workspaces import WorkspaceRepo
+
+        workspace_row = WorkspaceRepo.get(action_ctx.db.reader, action_ctx.workspace_id)
+        repo_name = workspace_row.name if show_repo and workspace_row is not None else None
+        card = build_share_card_data(
+            action_ctx.db.reader,
+            workspace_id=action_ctx.workspace_id,
+            repo_name=repo_name,
+        )
+        target = output or (
+            action_ctx.workspace_root
+            / ".cairn"
+            / "recaps"
+            / f"agent-wrapped-{datetime.now(UTC).date().isoformat()}.png"
+        )
+        png_path, _svg_path = render_share_card(card, target)
+        typer.echo(str(png_path.resolve()))
+        return
+    payload = build_recap(action_ctx.db.reader, workspace_id=action_ctx.workspace_id)
+    typer.echo(_render_recap(payload))
 
 
 @app.command()
@@ -117,6 +226,30 @@ def stop(
     else:
         typer.echo(message, err=True)
         raise typer.Exit(code=1)
+
+
+@app.command()
+def upgrade(
+    check: Annotated[
+        bool,
+        typer.Option("--check", help="Print the update command without running it"),
+    ] = False,
+) -> None:
+    """Upgrade Cairn to the latest published release."""
+    method, command = upgrade_command()
+    rendered = render_command(command)
+    typer.echo(f"Updating Cairn via {method}: {rendered}")
+    if check:
+        return
+    try:
+        result = subprocess.run(command, check=False)
+    except OSError as exc:
+        typer.echo(f"Could not start updater: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if result.returncode:
+        typer.echo(f"Update failed (exit {result.returncode}). Run: {rendered}", err=True)
+        raise typer.Exit(code=result.returncode)
+    typer.echo("Updated. Restart Cairn to use the new version.")
 
 
 @app.command()
@@ -224,15 +357,48 @@ def insights(
         typer.echo(f"[{row.severity}/{row.state}] {row.title}")
 
 
-@app.command()
+optimize_app = typer.Typer(
+    help="Generate proposals and manage optimized instruction changes.",
+    invoke_without_command=True,
+)
+app.add_typer(optimize_app, name="optimize")
+
+
+@optimize_app.callback()
 def optimize(
+    ctx: typer.Context,
     llm: Annotated[bool, typer.Option("--llm")] = False,
     apply: Annotated[bool, typer.Option("--apply")] = False,
     workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
 ) -> None:
-    """Generate optimization proposals."""
+    """Generate optimization proposals when no subcommand is given."""
+    if ctx.invoked_subcommand is not None:
+        return
     result = _run_action("optimize_propose", {"llm": llm, "apply": apply}, workspace)
     typer.echo(json.dumps(result, indent=2))
+
+
+@optimize_app.command("revert")
+def optimize_revert(
+    experiment_id: str,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+) -> None:
+    """Revert one applied optimization from its exact backup."""
+    result = _run_action("experiment_revert", {"experiment_id": experiment_id}, workspace)
+    typer.echo(json.dumps(result, indent=2))
+
+
+@optimize_app.command("export-effects")
+def optimize_export_effects(
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Write a scrubbed local JSON of measured rule effects."""
+    from server.export.rule_effects import export_rule_effects
+
+    ctx = _make_ctx(workspace)
+    destination = export_rule_effects(ctx.db.reader, ctx.workspace_root, output)
+    typer.echo(str(destination))
 
 
 experiments_app = typer.Typer(help="Manage improvement experiments.")
@@ -392,6 +558,24 @@ def adapter_new(
         'Next: add to pyproject.toml [project.entry-points."cairn.adapters"] '
         f"or server/ingest/registry.py:\n  {entry_point_snippet(name, class_name)}"
     )
+
+
+@adapter_app.command("doctor")
+def adapter_doctor(
+    adapter_id: str,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    sample: Annotated[
+        Path | None, typer.Option("--sample", help="Specific live log sample")
+    ] = None,
+    json_out: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Compare a live log sample with an adapter's expected shape."""
+    from server.ingest.adapter_doctor import format_adapter_doctor, run_adapter_doctor
+
+    result = run_adapter_doctor(adapter_id, workspace or Path.cwd(), sample_path=sample)
+    typer.echo(json.dumps(result, indent=2) if json_out else format_adapter_doctor(result))
+    if not result["ok"]:
+        raise typer.Exit(code=1)
 
 
 def _register_action_commands() -> None:

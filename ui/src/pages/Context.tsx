@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { fetchRegions, fetchUsage, fetchWaste, timeRangeDays } from "@/lib/api";
-import { formatCost, formatTokens } from "@/lib/format";
+import { formatTokens } from "@/lib/format";
 import { useUiStore } from "@/state/ui";
 import type { UsageSeriesRow } from "@/lib/types";
 import { PageShell } from "@/components/common/PageShell";
@@ -37,7 +36,7 @@ export function ContextPage() {
 
   if (regionsQ.isLoading || wasteQ.isLoading) {
     return (
-      <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+      <PageShell title="Context" question="See what filled the context window, what was repeated, and where to cut waste.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -45,7 +44,7 @@ export function ContextPage() {
 
   if (regionsQ.isError || wasteQ.isError) {
     return (
-      <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+      <PageShell title="Context" question="See what filled the context window, what was repeated, and where to cut waste.">
         <ErrorCard />
       </PageShell>
     );
@@ -61,7 +60,7 @@ export function ContextPage() {
 
   if (regions.length === 0) {
     return (
-      <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+      <PageShell title="Context" question="See what filled the context window, what was repeated, and where to cut waste.">
         <EmptyCard
           title="No region data yet"
           detail="Sessions from this source don't expose context internals — check data notes after sync."
@@ -94,7 +93,7 @@ export function ContextPage() {
         }));
 
   return (
-    <PageShell title="Context" question="Where does every token go, and what's re-billed?">
+    <PageShell title="Context" question="See what filled the context window, what was repeated, and where to cut waste.">
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="card p-4">
@@ -103,18 +102,16 @@ export function ContextPage() {
             <p className="mt-1 text-sm text-cinder">Your context is {toolPct}% tool results on average.</p>
           </div>
           <div className="card p-4">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Re-billed waste</p>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Avoidable context</p>
             <p className="mt-1 font-display text-2xl text-bone">
               {formatTokens(waste?.total_waste_tokens ?? 0)}
             </p>
             <p className="mt-1 text-sm text-cinder">Tokens flagged as waste this period.</p>
           </div>
           <div className="card p-4">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Total context</p>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Mapped context</p>
             <p className="mt-1 font-display text-2xl text-bone">{formatTokens(totalTokens)}</p>
-            <Link to="/sessions" className="mt-1 inline-block text-sm text-copper hover:underline">
-              View sessions →
-            </Link>
+            <p className="mt-1 text-sm text-cinder">Regions exposed by connected adapters.</p>
           </div>
         </div>
 
@@ -174,7 +171,7 @@ export function ContextPage() {
           )}
         </ChartFrame>
 
-        <ChartFrame title="Waste ledger" subtitle="Re-billing categories">
+        <ChartFrame title="Waste ledger" subtitle="Detected categories; uncategorized estimates remain explicit">
           {(waste?.categories ?? []).length > 0 ? (
             <HorizontalBars
               items={(waste?.categories ?? []).map((c) => ({
@@ -188,7 +185,8 @@ export function ContextPage() {
           )}
           {waste && waste.total_waste_tokens > 0 ? (
             <p className="mt-4 text-sm text-cinder">
-              Estimated re-billing cost: {formatCost(waste.total_waste_tokens * 0.000003)}
+              Waste is a subset of input tokens, not an additional token charge. Cost impact uses
+              each session&apos;s measured or estimated model price on Overview.
             </p>
           ) : null}
         </ChartFrame>

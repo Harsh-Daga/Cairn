@@ -19,7 +19,7 @@ export function AgentsPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+      <PageShell title="Agents" question="Understand ownership, collaboration, cost, and handoffs across your agent fleet.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -27,7 +27,7 @@ export function AgentsPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+      <PageShell title="Agents" question="Understand ownership, collaboration, cost, and handoffs across your agent fleet.">
         <ErrorCard />
       </PageShell>
     );
@@ -38,7 +38,7 @@ export function AgentsPage() {
 
   if (data.agents.length === 0) {
     return (
-      <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+      <PageShell title="Agents" question="Understand ownership, collaboration, cost, and handoffs across your agent fleet.">
         <EmptyCard
           title="No agent activity"
           detail="Run cairn sync to ingest multi-agent sessions."
@@ -48,7 +48,7 @@ export function AgentsPage() {
   }
 
   return (
-    <PageShell title="Agents" question="Who's doing what, and how do they handoff?">
+    <PageShell title="Agents" question="Understand ownership, collaboration, cost, and handoffs across your agent fleet.">
       <div className="space-y-6">
         {uniqueAgents <= 1 ? (
           <div className="card p-4 text-sm text-cinder">
@@ -62,7 +62,11 @@ export function AgentsPage() {
             <div key={`${agent.agent_id}-${agent.actor_id}-${i}`} className="card p-4">
               <div className="flex items-center gap-2">
                 <Chip label={agent.agent_id ?? "default"} tone="patina" />
-                {agent.actor_id ? <Chip label={agent.actor_id.slice(0, 8)} /> : null}
+                {agent.actor_name ? (
+                  <Chip label={agent.actor_name} />
+                ) : agent.actor_id ? (
+                  <Chip label={agent.actor_id.slice(0, 8)} />
+                ) : null}
               </div>
               <dl className="mt-3 space-y-1 font-mono text-xs text-cinder">
                 <div className="flex justify-between">

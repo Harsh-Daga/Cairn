@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import sqlite3
+from datetime import UTC, datetime, timedelta
+
 from fastapi.testclient import TestClient
 
 
@@ -13,7 +16,89 @@ def test_overview_shape(api_client: TestClient) -> None:
     assert "narrative" in body
     assert "tail_risk" in body
     assert "data_notes" in body
+    assert body["money"]["period_days"] == 90
+    assert body["money"]["primary_action"] == "/optimize"
     assert body["kpis"]["traces"] >= 1
+
+
+def test_overview_money_allocates_waste_cost_and_ranks_causes(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """UPDATE traces SET input_tokens = 800, output_tokens = 200,
+               cost = 10, cost_source = 'priced', waste_tokens = 250
+               WHERE trace_id = ?""",
+            (trace_id,),
+        )
+        conn.execute(
+            "UPDATE spans SET waste_category = NULL, waste_tokens = 0 WHERE trace_id = ?",
+            (trace_id,),
+        )
+        conn.execute(
+            """UPDATE spans SET waste_category = 'retry_loop', waste_tokens = 200
+               WHERE trace_id = ? AND seq = 1""",
+            (trace_id,),
+        )
+    money = api_client.get("/api/overview?days=90").json()["money"]
+    assert money["total_spend_usd"] == 10
+    assert money["spend_estimated"] is True
+    assert money["wasted_spend_usd"] == 2.5
+    assert money["wasted_spend_pct"] == 25
+    assert money["waste_estimated"] is True
+    assert money["top_causes"][0]["category"] == "retry_loop"
+    assert money["top_causes"][0]["estimated_savings_usd"] == 2
+    assert money["top_causes"][0]["fix"]
+
+
+def test_weekly_recap_includes_quality_trend_and_reached_verdicts(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, ws_id, trace_id = api_workspace
+    now = datetime.now(UTC)
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """UPDATE traces SET started_at = ?, cost = 4, cost_source = 'observed'
+               WHERE trace_id = ?""",
+            (now.isoformat(), trace_id),
+        )
+        conn.execute("UPDATE outcomes SET quality_score = 80 WHERE trace_id = ?", (trace_id,))
+        conn.execute(
+            """INSERT INTO traces (
+                 trace_id, workspace_id, source, external_id, started_at, status
+               ) VALUES ('recap-previous', ?, 'codex', 'recap-previous', ?, 'completed')""",
+            (ws_id, (now - timedelta(days=10)).isoformat()),
+        )
+        conn.execute(
+            "INSERT INTO outcomes (trace_id, quality_score) VALUES ('recap-previous', 60)"
+        )
+        conn.execute(
+            """INSERT INTO evidence (
+                 evidence_id, producer, produced_at, trace_ids_json, metrics_json
+               ) VALUES ('recap-evidence', 'test', ?, '[]', '{}')""",
+            (now.isoformat(),),
+        )
+        conn.execute(
+            """INSERT INTO experiments (
+                 experiment_id, created_at, target_file, block_key, kind, content,
+                 evidence_id, status, verdict, effect_estimate, effect_ci_low,
+                 effect_ci_high, measured_at
+               ) VALUES (
+                 'recap-experiment', ?, 'AGENTS.md', 'rule/test', 'instruction', 'test',
+                 'recap-evidence', 'verdict', 'improved', 0.2, 0.1, 0.3, ?
+               )""",
+            (now.isoformat(), now.isoformat()),
+        )
+    recap = api_client.get("/api/recap")
+    assert recap.status_code == 200
+    body = recap.json()
+    assert body["period_days"] == 7
+    assert body["money"]["total_spend_usd"] == 4
+    assert body["quality_trend"]["current_mean"] == 80
+    assert body["quality_trend"]["previous_mean"] == 60
+    assert body["quality_trend"]["delta"] == 20
+    assert body["experiment_verdicts"][0]["verdict"] == "improved"
 
 
 def test_traces_list_shape(api_client: TestClient) -> None:
@@ -23,6 +108,25 @@ def test_traces_list_shape(api_client: TestClient) -> None:
     assert "traces" in body
     assert body["total"] >= 1
     assert body["traces"][0]["trace_id"]
+
+
+def test_traces_search_total_matches_filtered_results(api_client: TestClient) -> None:
+    body = api_client.get("/api/traces?q=definitely-not-a-real-session").json()
+    assert body["traces"] == []
+    assert body["total"] == 0
+
+
+def test_traces_agent_filter_runs_in_database(api_client: TestClient, api_workspace: tuple) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            "UPDATE spans SET agent_id = 'agent-main' WHERE trace_id = ? AND seq = 1",
+            (trace_id,),
+        )
+    matching = api_client.get("/api/traces?agent=agent-main").json()
+    assert matching["total"] == 1
+    missing = api_client.get("/api/traces?agent=not-a-real-agent").json()
+    assert missing["total"] == 0
 
 
 def test_trace_detail_shape(api_client: TestClient, api_workspace: tuple) -> None:
@@ -35,6 +139,51 @@ def test_trace_detail_shape(api_client: TestClient, api_workspace: tuple) -> Non
     assert "tree" in body
     assert "links" in body
     assert len(body["spans"]) > 0
+    assert "outcome" in body
+    assert body["mcp_consultations"] == []
+
+
+def test_trace_detail_includes_mcp_consultations(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, ws_id, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """INSERT INTO mcp_consultations (
+                 event_id, workspace_id, trace_id, after_seq, tool_name, called_at, imported_at
+               ) VALUES ('event-1', ?, ?, 3, 'cairn_should_i_stop',
+                         '2026-01-01T00:03:00Z', '2026-01-01T00:04:00Z')""",
+            (ws_id, trace_id),
+        )
+    body = api_client.get(f"/api/traces/{trace_id}").json()
+    assert body["mcp_consultations"] == [
+        {
+            "event_id": "event-1",
+            "trace_id": trace_id,
+            "after_seq": 3,
+            "tool_name": "cairn_should_i_stop",
+            "called_at": "2026-01-01T00:03:00Z",
+        }
+    ]
+
+
+def test_human_label_persists_and_updates_agreement(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute("UPDATE outcomes SET quality_score = 80 WHERE trace_id = ?", (trace_id,))
+    response = api_client.put(
+        f"/api/traces/{trace_id}/human-label",
+        json={"label": "up", "note": "The change shipped cleanly."},
+    )
+    assert response.status_code == 200
+    assert response.json()["label"] == "up"
+    detail = api_client.get(f"/api/traces/{trace_id}").json()
+    assert detail["outcome"]["human_label"] == "up"
+    assert detail["outcome"]["human_note"] == "The change shipped cleanly."
+    agreement = api_client.get("/api/workspace").json()["health"]["human_label_agreement"]
+    assert agreement == {"labeled_sessions": 1, "agreements": 1, "rate": 1.0}
 
 
 def test_trace_replay_shape(api_client: TestClient, api_workspace: tuple) -> None:
@@ -57,6 +206,17 @@ def test_trace_replay_checkpoints_shape(api_client: TestClient, api_workspace: t
     assert len(body["checkpoints"]) >= 1
 
 
+def test_trace_replay_cost_is_cumulative(api_client: TestClient, api_workspace: tuple) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute("UPDATE traces SET cost = 8.0 WHERE trace_id = ?", (trace_id,))
+    checkpoints = api_client.get(f"/api/traces/{trace_id}/replay").json()["checkpoints"]
+    assert checkpoints[0]["summary"]["cost"] < 8.0
+    assert checkpoints[0]["summary"]["cost_estimated"] is True
+    assert checkpoints[-1]["summary"]["cost"] == 8.0
+    assert checkpoints[-1]["summary"]["cost_estimated"] is False
+
+
 def test_trace_diff_shape(api_client: TestClient, api_workspace: tuple) -> None:
     _root, _ws, trace_id = api_workspace
     resp = api_client.get(f"/api/traces/diff?a={trace_id}&b={trace_id}")
@@ -68,12 +228,16 @@ def test_trace_diff_shape(api_client: TestClient, api_workspace: tuple) -> None:
     assert "turns" in body
 
 
-def test_agents_shape(api_client: TestClient) -> None:
+def test_agents_shape(api_client: TestClient, api_workspace: tuple) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute("UPDATE traces SET cost = 7.5 WHERE trace_id = ?", (trace_id,))
     resp = api_client.get("/api/agents?days=90")
     assert resp.status_code == 200
     body = resp.json()
     assert "agents" in body
     assert "handoff_matrix" in body
+    assert sum(agent["cost"] for agent in body["agents"]) == 7.5
 
 
 def test_behavior_shape(api_client: TestClient) -> None:
@@ -100,6 +264,7 @@ def test_analytics_usage_shape(api_client: TestClient) -> None:
     body = resp.json()
     assert body["group_by"] == "day"
     assert "series" in body
+    assert all("waste_tokens" in row for row in body["series"])
 
 
 def test_analytics_regions_shape(api_client: TestClient) -> None:
@@ -114,6 +279,10 @@ def test_analytics_waste_shape(api_client: TestClient) -> None:
     body = resp.json()
     assert "categories" in body
     assert "total_waste_tokens" in body
+    assert all(category["events"] > 0 for category in body["categories"])
+    overview = api_client.get("/api/overview?days=30").json()
+    assert body["total_waste_tokens"] == overview["kpis"]["waste_tokens"]
+    assert sum(category["tokens"] for category in body["categories"]) == body["total_waste_tokens"]
 
 
 def test_analytics_tail_shape(api_client: TestClient) -> None:
@@ -132,10 +301,62 @@ def test_insights_shape(api_client: TestClient) -> None:
     assert "total" in body
 
 
+def test_insights_expose_savings_reason_fix_and_diagnostic_classification(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            "UPDATE traces SET peak_context_pct = 90, started_at = ? WHERE trace_id = ?",
+            (datetime.now(UTC).isoformat(), trace_id),
+        )
+    response = api_client.post("/api/actions/optimize_propose", json={})
+    assert response.status_code == 200
+    rows = api_client.get("/api/insights").json()["insights"]
+    assert rows
+    assert all(row["fix"]["value"] for row in rows)
+    assert all(
+        row["savings_estimate"] is not None or row["savings_unavailable_reason"] for row in rows
+    )
+    assert all("diagnostic" in row for row in rows)
+
+
 def test_experiments_shape(api_client: TestClient) -> None:
     resp = api_client.get("/api/experiments")
     assert resp.status_code == 200
     assert "experiments" in resp.json()
+
+
+def test_optimize_proposals_create_idempotent_experiment_cards(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, _ws, trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            "UPDATE traces SET peak_context_pct = 90, started_at = ? WHERE trace_id = ?",
+            (datetime.now(UTC).isoformat(), trace_id),
+        )
+    first = api_client.post("/api/actions/optimize_propose", json={})
+    second = api_client.post("/api/actions/optimize_propose", json={})
+    assert first.status_code == second.status_code == 200
+    first_id = first.json()["result"]["proposals"][0]["experiment_id"]
+    assert second.json()["result"]["proposals"][0]["experiment_id"] == first_id
+    experiments = api_client.get("/api/experiments").json()["experiments"]
+    assert len(experiments) == 1
+    assert experiments[0] == {
+        "experiment_id": first_id,
+        "status": "proposed",
+        "target_file": "AGENTS.md",
+        "created_at": experiments[0]["created_at"],
+        "applied_at": None,
+        "min_holdout": 8,
+        "outcome_n_effective": None,
+        "verdict": None,
+        "lift_pct": None,
+        "effect_ci_low": None,
+        "effect_ci_high": None,
+        "measured_at": None,
+    }
 
 
 def test_search_shape(api_client: TestClient) -> None:
@@ -144,6 +365,18 @@ def test_search_shape(api_client: TestClient) -> None:
     body = resp.json()
     assert body["q"] == "user"
     assert "hits" in body
+
+
+def test_search_operators_filter_real_fields(api_client: TestClient) -> None:
+    by_tool = api_client.get("/api/search", params={"q": "tool:grep"}).json()
+    assert by_tool["total"] > 0
+    assert all(hit["kind"] == "span" for hit in by_tool["hits"])
+
+    by_source = api_client.get("/api/search", params={"q": "source:claude_code"}).json()
+    assert by_source["total"] > 0
+
+    by_error = api_client.get("/api/search", params={"q": "is:error"}).json()
+    assert by_error["total"] > 0
 
 
 def test_workspace_shape(api_client: TestClient, api_workspace: tuple) -> None:
@@ -155,6 +388,27 @@ def test_workspace_shape(api_client: TestClient, api_workspace: tuple) -> None:
     assert body["root_path"] == str(root)
     assert "adapters" in body
     assert body["health"]["trace_count"] >= 1
+    assert body["adapters"][0]["parse_coverage"] == 1.0
+    assert body["health"]["adapter_warnings"] == []
+
+
+def test_workspace_warns_when_adapter_format_may_have_changed(
+    api_client: TestClient, api_workspace: tuple
+) -> None:
+    root, ws_id, _trace_id = api_workspace
+    with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
+        conn.execute(
+            """UPDATE adapter_parse_health
+               SET fully_parsed = 0, degraded = 1,
+                   recent_unknown_fields_json = '{"future_field": 8}'
+               WHERE workspace_id = ? AND adapter_id = 'claude_code'""",
+            (ws_id,),
+        )
+    body = api_client.get("/api/workspace").json()
+    warning = body["health"]["adapter_warnings"][0]
+    assert warning["adapter_id"] == "claude_code"
+    assert "numbers may be incomplete" in warning["message"]
+    assert "github.com/Harsh-Daga/Cairn/issues/new" in warning["issue_url"]
 
 
 def test_actions_manifest_shape(api_client: TestClient) -> None:

@@ -7,8 +7,17 @@ interface PageShellProps {
 export function PageShell({ title, question, children }: PageShellProps) {
   return (
     <div>
-      <h1 className="page-title">{title}</h1>
-      <p className="page-question">{question}</p>
+      <header className="page-header">
+        <div>
+          <p className="page-kicker">Cairn / field intelligence</p>
+          <h1 className="page-title">{title}</h1>
+          <p className="page-question">{question}</p>
+        </div>
+        <span className="page-status">
+          <span className="mr-2 h-1.5 w-1.5 rounded-full bg-patina" aria-hidden="true" />
+          Data stays on this device
+        </span>
+      </header>
       {children ?? (
         <div className="card empty-state">
           <h2>Nothing here yet</h2>

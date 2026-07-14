@@ -6,10 +6,33 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 
 **Question:** *What happened, and what should I look at?*
 
+- The first card is a fixed 30-day money summary: total spend, estimated wasted spend in
+  dollars and percent, and the three largest waste causes. Waste dollars are estimated by
+  allocating each session's cost in proportion to its flagged waste tokens; the UI keeps the
+  `± estimated` marker on those values.
+- Every ranked cause pairs its dollar estimate with a plain-language cause and concrete fix.
+  **Review proposed fix** opens Optimize as the single primary action.
 - Narrative sentences summarize recent activity; click a sentence to jump to filtered Sessions.
 - KPI cards: sessions, spend, input tokens, waste tokens.
 - Quick links to Insights, Optimize, and high-waste sessions.
 - Empty state prompts `cairn sync`.
+
+Running bare `cairn` performs a sync, prints this same 30-day money summary in the terminal,
+then opens the local UI. Sessions without reliable cost data remain excluded from dollar
+allocation and are called out in the existing data notes.
+
+Once seven days have passed since the recap was last dismissed, Overview shows a local weekly
+recap banner with spend, estimated waste, the top cause, quality movement, and experiment
+verdict count. The last-view timestamp lives only in browser storage. The same one-screen
+summary is available at any time with `cairn recap`; it reads the local ledger and makes no
+network call.
+
+`cairn recap --share` writes a 1200×630 “Agent Wrapped” SVG and PNG under
+`.cairn/recaps/` (or `--output`). The default card includes aggregate spend, estimated waste,
+a privacy-safe file-type label for the most re-read file, a generalized repeat-failure joke,
+and an archetype derived from fingerprint ratios. Raw paths, commands, code, and repository
+names never enter the default render payload. `--show-repo` opts in only the workspace display
+name; rendering and file writes remain entirely local.
 
 ## 2. Sessions (`/sessions`)
 
@@ -31,16 +54,19 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 **Question:** *What happened turn by turn?*
 
 - **Waterfall** — span tree with subagent swimlanes (dagre layout).
+- **MCP consultations** — privacy-safe “agent consulted Cairn here” markers show where a live
+  agent used Cairn; no MCP arguments, paths, prompts, code, or results are stored.
 - **Replay scrubber** — step through turns via `?seq=`; fetches `/api/traces/{id}/replay`.
 - **Span inspector** — select a span for payload, regions, and waste tags.
 - **Context timeline** — region fill over the session.
 
 ## 5. Context (`/context`)
 
-**Question:** *Where does every token go, and what's re-billed?*
+**Question:** *What filled the context window, what repeated, and where can waste be cut?*
 
 - Stacked region breakdown (system, tool schema, tool results, retrieved, user, history).
-- Waste analytics with taxonomy chips and links to affected sessions.
+- Waste analytics with categorized span events plus an explicit uncategorized remainder, reconciled
+  to the session-level waste total.
 - Data from `/api/analytics/regions` and `/api/analytics/waste`.
 
 ## 6. Agents (`/agents`)
@@ -56,14 +82,21 @@ The Cairn **field notebook** UI lives in `ui/` and is served by `cairn ui` at `h
 **Question:** *Has my agent changed?*
 
 - Fingerprint radar and control chart over the selected window.
-- Drift alerts when AMDM detects behavioral change.
-- Needs ~10 fingerprinted sessions; empty state explains the threshold.
+- Drift alerts when the experimental joint-shock or gradual EWMA path detects change.
+- Joint-shock detection requires 20 baseline sessions for the same project/model pair and
+  shows `n/20` progress until ready. It uses Ledoit-Wolf shrinkage after PCA.
+- Gradual per-axis EWMA remains available at lower sample sizes; an incomplete joint baseline
+  is never presented as “no drift.”
 
 ## 8. Quality (`/quality`)
 
 **Question:** *Is the work actually good, and what does success cost?*
 
-- Outcome scores, lucky-pass flags, cost-per-success bars.
+- Expandable outcome scores show every component and weight; same-file revert/fixup signals
+  reduce the graded success component.
+- Session detail provides thumbs up/down plus an optional local note. Settings → Quality
+  diagnostics shows agreement between human labels and Cairn's ≥50 score classification.
+- Lucky-pass flags and cost-per-success bars.
 - Enable outcome capture from Settings or `config_set` when no outcomes exist.
 - Data from `/api/quality`.
 

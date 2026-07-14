@@ -180,6 +180,7 @@ export function Waterfall({
           const linked = highlightedSpanIds.has(span.span_id);
           const estimated = span.input_estimated > 0 || span.output_estimated > 0;
           const wasted = blameMode && (span.waste_tokens > 0 || span.waste_category != null);
+          const consultation = span.name?.startsWith("agent consulted Cairn here") ?? false;
 
           return (
             <button
@@ -190,7 +191,9 @@ export function Waterfall({
                 selected ? "border-l-2 border-l-copper bg-shale/80" : ""
               } ${linked ? "bg-patina/10 ring-1 ring-inset ring-patina/30" : ""} ${
                 wasted ? "bg-ochre/10 ring-1 ring-inset ring-ochre/40" : ""
-              } ${span.status === "error" ? "text-cinnabar" : "text-bone"}`}
+              } ${consultation ? "bg-patina/10 text-patina" : ""} ${
+                span.status === "error" ? "text-cinnabar" : "text-bone"
+              }`}
               style={{
                 height: item.size,
                 transform: `translateY(${item.start}px)`,
@@ -200,7 +203,7 @@ export function Waterfall({
               onDoubleClick={() => onZoomSpan?.(span)}
             >
               <span className="w-[45%] truncate font-mono text-[11px]">
-                {span.kind} · {span.name ?? "—"}
+                {consultation ? span.name : `${span.kind} · ${span.name ?? "—"}`}
               </span>
               <span className="relative w-[30%] px-2">
                 <span

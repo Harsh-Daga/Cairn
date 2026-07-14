@@ -5,26 +5,40 @@ import { fetchExperiments, fetchInsights, fetchWorkspace } from "@/lib/api";
 import { formatTokens } from "@/lib/format";
 import { CairnGlyph } from "./CairnGlyph";
 import { Gauge } from "@/components/charts/Gauge";
+import {
+  Activity,
+  BrainCircuit,
+  Bot,
+  Command,
+  GitCompareArrows,
+  Lightbulb,
+  Radar,
+  Search,
+  Settings,
+  SlidersHorizontal,
+  Waves,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
   to: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   badge?: number | "dot" | "pulse";
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Overview", icon: "⛰" },
-  { to: "/sessions", label: "Sessions", icon: "◎" },
-  { to: "/sessions/diff", label: "Session diff", icon: "⇄" },
-  { to: "/context", label: "Context", icon: "▤" },
-  { to: "/agents", label: "Agents", icon: "⬡" },
-  { to: "/behavior", label: "Behavior", icon: "〜" },
-  { to: "/quality", label: "Quality", icon: "✦" },
-  { to: "/insights", label: "Insights", icon: "◈" },
-  { to: "/optimize", label: "Optimize", icon: "↻" },
-  { to: "/live", label: "Live", icon: "●" },
-  { to: "/search", label: "Search", icon: "⌕" },
+  { to: "/", label: "Overview", icon: Activity },
+  { to: "/sessions", label: "Sessions", icon: Waves },
+  { to: "/sessions/diff", label: "Session diff", icon: GitCompareArrows },
+  { to: "/context", label: "Context", icon: SlidersHorizontal },
+  { to: "/agents", label: "Agents", icon: Bot },
+  { to: "/behavior", label: "Behavior", icon: Radar },
+  { to: "/quality", label: "Quality", icon: BrainCircuit },
+  { to: "/insights", label: "Insights", icon: Lightbulb },
+  { to: "/optimize", label: "Optimize", icon: Command },
+  { to: "/live", label: "Live", icon: Activity },
+  { to: "/search", label: "Search", icon: Search },
 ];
 
 function NavBadge({ badge }: { badge: number | "dot" | "pulse" }) {
@@ -92,7 +106,7 @@ export function WaypointRail() {
 
   return (
     <aside
-      className={`flex flex-col border-r border-quartz-vein bg-slate transition-all duration-150 ${
+      className={`waypoint-rail flex flex-col border-r border-quartz-vein/80 bg-slate/95 shadow-[12px_0_36px_rgba(0,0,0,0.12)] transition-all duration-200 ${
         collapsed ? "w-[72px]" : "w-[240px]"
       }`}
       aria-label="Main navigation"
@@ -105,8 +119,8 @@ export function WaypointRail() {
         <CairnGlyph />
         {!collapsed && (
           <div>
-            <div className="display text-base tracking-widest text-bone">CAIRN</div>
-            <div className="mono text-[10px] text-cinder">field notebook</div>
+            <div className="display text-[15px] font-bold tracking-[0.18em] text-bone">CAIRN</div>
+            <div className="mono mt-0.5 text-[9px] text-ash">agent intelligence</div>
           </div>
         )}
       </div>
@@ -118,16 +132,14 @@ export function WaypointRail() {
             to={item.to}
             end={item.to === "/"}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-[13px] font-medium transition-colors ${
+              `flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-[13px] font-medium transition-all ${
                 isActive
-                  ? "bg-granite text-bone shadow-[inset_2px_0_0_0_var(--copper)]"
+                  ? "bg-granite/90 text-bone shadow-[inset_2px_0_0_0_var(--copper),0_5px_18px_rgba(0,0,0,0.12)]"
                   : "text-cinder hover:bg-shale hover:text-bone"
               } ${collapsed ? "justify-center" : ""}`
             }
           >
-            <span className="text-sm" aria-hidden="true">
-              {item.icon}
-            </span>
+            <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
             {!collapsed && <span className="flex-1">{item.label}</span>}
             {!collapsed && item.badge !== undefined ? <NavBadge badge={item.badge} /> : null}
           </NavLink>
@@ -144,7 +156,7 @@ export function WaypointRail() {
             } ${collapsed ? "justify-center" : ""}`
           }
         >
-          <span aria-hidden="true">⚙</span>
+          <Settings className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
           {!collapsed && <span>Settings</span>}
         </NavLink>
       </nav>

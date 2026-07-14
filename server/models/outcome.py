@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict
 
 from server.models._row import (
     dump_json,
+    parse_json_dict,
     parse_str_list,
     row_bool_int,
     row_float,
@@ -16,6 +17,16 @@ from server.models._row import (
     row_required_text,
     row_text,
 )
+
+
+def _float_dict(values: dict[str, object] | None) -> dict[str, float] | None:
+    if values is None:
+        return None
+    return {
+        str(key): float(value)
+        for key, value in values.items()
+        if isinstance(value, (int, float))
+    }
 
 
 class Outcome(BaseModel):
@@ -32,9 +43,16 @@ class Outcome(BaseModel):
     tests_failed: int | None = None
     build_status: str | None = None
     quality_score: float | None = None
+    quality_components: dict[str, float] | None = None
+    quality_weights: dict[str, float] | None = None
     cost_per_success: float | None = None
+    reverted_within_window: bool = False
+    fixup_within_window: bool = False
     outcome_label: str | None = None
     label_source: str | None = None
+    human_label: str | None = None
+    human_note: str | None = None
+    human_labeled_at: str | None = None
     captured_at: str | None = None
 
     INSERT_FIELDS: ClassVar[tuple[str, ...]] = (
@@ -47,9 +65,16 @@ class Outcome(BaseModel):
         "tests_failed",
         "build_status",
         "quality_score",
+        "quality_components_json",
+        "quality_weights_json",
         "cost_per_success",
+        "reverted_within_window",
+        "fixup_within_window",
         "outcome_label",
         "label_source",
+        "human_label",
+        "human_note",
+        "human_labeled_at",
         "captured_at",
     )
 
@@ -57,6 +82,10 @@ class Outcome(BaseModel):
     def from_row(cls, row: sqlite3.Row) -> Outcome:
         files_raw = row["files_changed_json"]
         files_changed = parse_str_list(files_raw) if files_raw is not None else None
+        components_raw = row["quality_components_json"]
+        weights_raw = row["quality_weights_json"]
+        components = parse_json_dict(components_raw) if components_raw is not None else None
+        weights = parse_json_dict(weights_raw) if weights_raw is not None else None
         return cls(
             trace_id=row_required_text(row, "trace_id"),
             commit_sha=row_text(row, "commit_sha"),
@@ -67,9 +96,16 @@ class Outcome(BaseModel):
             tests_failed=row_int(row, "tests_failed"),
             build_status=row_text(row, "build_status"),
             quality_score=row_float(row, "quality_score"),
+            quality_components=_float_dict(components),
+            quality_weights=_float_dict(weights),
             cost_per_success=row_float(row, "cost_per_success"),
+            reverted_within_window=row_bool_int(row, "reverted_within_window"),
+            fixup_within_window=row_bool_int(row, "fixup_within_window"),
             outcome_label=row_text(row, "outcome_label"),
             label_source=row_text(row, "label_source"),
+            human_label=row_text(row, "human_label"),
+            human_note=row_text(row, "human_note"),
+            human_labeled_at=row_text(row, "human_labeled_at"),
             captured_at=row_text(row, "captured_at"),
         )
 
@@ -84,9 +120,16 @@ class Outcome(BaseModel):
             self.tests_failed,
             self.build_status,
             self.quality_score,
+            dump_json(self.quality_components),
+            dump_json(self.quality_weights),
             self.cost_per_success,
+            int(self.reverted_within_window),
+            int(self.fixup_within_window),
             self.outcome_label,
             self.label_source,
+            self.human_label,
+            self.human_note,
+            self.human_labeled_at,
             self.captured_at,
         )
 

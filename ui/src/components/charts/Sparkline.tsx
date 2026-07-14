@@ -1,7 +1,8 @@
-import { LinePath } from "@visx/shape";
+import { AreaClosed, LinePath } from "@visx/shape";
 import { scaleLinear } from "@visx/scale";
 import { curveMonotoneX } from "@visx/curve";
 import { chartColors } from "./chartTheme";
+import { useId } from "react";
 
 export interface SparklineProps {
   data: number[];
@@ -20,6 +21,7 @@ export function Sparkline({
   strokeWidth = 1.5,
   className,
 }: SparklineProps) {
+  const gradientId = useId().replace(/:/g, "");
   if (data.length < 2) {
     return (
       <svg width={width} height={height} className={className} aria-hidden="true">
@@ -46,14 +48,30 @@ export function Sparkline({
   });
 
   return (
-    <svg width={width} height={height} className={className} aria-hidden="true">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.32" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <AreaClosed
+        data={data}
+        x={(_, i) => xScale(i) ?? 0}
+        y={(d) => yScale(d) ?? 0}
+        yScale={yScale}
+        curve={curveMonotoneX}
+        fill={`url(#${gradientId})`}
+      />
       <LinePath
         data={data}
         x={(_, i) => xScale(i) ?? 0}
         y={(d) => yScale(d) ?? 0}
         curve={curveMonotoneX}
         stroke={color}
-        strokeWidth={strokeWidth}
+        strokeWidth={strokeWidth + 0.25}
+        strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
       />
     </svg>

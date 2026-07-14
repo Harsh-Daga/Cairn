@@ -14,6 +14,7 @@ const AGENT_SETUP_URL = "https://github.com/Harsh-Daga/Cairn/blob/main/AGENT_SET
 export function SettingsPage() {
   const showToast = useToastStore((s) => s.show);
   const [copied, setCopied] = useState(false);
+  const [mcpClient, setMcpClient] = useState("cursor");
   const { data, isLoading, isError } = useQuery({
     queryKey: ["workspace"],
     queryFn: fetchWorkspace,
@@ -21,7 +22,7 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Settings" question="See what Cairn sees; change what it does.">
+      <PageShell title="Settings" question="Manage workspace sources, local data, integrations, and maintenance.">
         <div className="card h-32 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -29,7 +30,7 @@ export function SettingsPage() {
 
   if (isError || !data) {
     return (
-      <PageShell title="Settings" question="See what Cairn sees; change what it does.">
+      <PageShell title="Settings" question="Manage workspace sources, local data, integrations, and maintenance.">
         <ErrorCard />
       </PageShell>
     );
@@ -37,9 +38,24 @@ export function SettingsPage() {
 
   const traceCount = Number(data.health.trace_count ?? 0);
   const insightCount = Number(data.health.insight_count ?? 0);
+  const agreement = data.health.human_label_agreement as
+    | { labeled_sessions?: number; agreements?: number; rate?: number | null }
+    | undefined;
+  const handleAction = async (
+    name: string,
+    success: string,
+    params?: Record<string, unknown>,
+  ) => {
+    try {
+      await runAction(name, params);
+      showToast(success, undefined, "good");
+    } catch {
+      showToast(`${success.replace(/ started$/, "")} failed`, undefined, "error");
+    }
+  };
 
   return (
-    <PageShell title="Settings" question="See what Cairn sees; change what it does.">
+    <PageShell title="Settings" question="Manage workspace sources, local data, integrations, and maintenance.">
       <div className="mx-auto max-w-2xl space-y-6">
         <section className="card p-4">
           <h2 className="font-display text-sm text-bone">Workspace</h2>
@@ -63,6 +79,38 @@ export function SettingsPage() {
           </dl>
         </section>
 
+        <section className="card p-4">
+          <h2 className="font-display text-sm text-bone">Quality diagnostics</h2>
+          <p className="mt-2 text-sm text-cinder">
+            Agreement compares Cairn scores of 50 or higher with human thumbs-up labels.
+          </p>
+          <div className="mt-3 flex items-end justify-between gap-4">
+            <div>
+              <p className="font-display text-2xl text-bone">
+                {agreement?.rate != null ? `${(agreement.rate * 100).toFixed(0)}%` : "—"}
+              </p>
+              <p className="font-mono text-[10px] text-cinder">score ↔ human agreement</p>
+            </div>
+            <p className="font-mono text-xs text-cinder">
+              {agreement?.labeled_sessions ?? 0} labeled sessions
+            </p>
+          </div>
+        </section>
+
+        <section className="card p-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="page-kicker">Maintenance</p>
+              <h2 className="font-display text-lg text-bone">Keep Cairn current</h2>
+              <p className="mt-1 text-sm text-cinder">
+                Update your local CLI and restart the dashboard. Your workspace data stays in place.
+              </p>
+            </div>
+            <span className="rounded-chip border border-patina/40 px-2 py-1 font-mono text-[10px] text-patina">safe local update</span>
+          </div>
+          <pre className="mt-4 overflow-x-auto rounded-sm border border-quartz-vein/60 bg-anthracite/40 p-3 font-mono text-[11px] text-bone">cairn upgrade</pre>
+        </section>
+
         <section className="card overflow-hidden">
           <div className="border-b border-quartz-vein px-4 py-3">
             <h2 className="font-display text-sm text-bone">Adapters</h2>
@@ -73,6 +121,7 @@ export function SettingsPage() {
                 <tr>
                   <th className="px-4 py-2">Source</th>
                   <th className="px-4 py-2">Streams</th>
+                  <th className="px-4 py-2">Parse coverage</th>
                   <th className="px-4 py-2">Last ingest</th>
                 </tr>
               </thead>
@@ -83,8 +132,16 @@ export function SettingsPage() {
                       <Chip label={a.source} />
                     </td>
                     <td className="px-4 py-2 font-mono text-xs text-bone">{a.streams}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-bone">
+                      {a.parse_coverage != null ? `${(a.parse_coverage * 100).toFixed(0)}%` : "—"}
+                      {a.warning ? <Chip label="format warning" tone="cinnabar" /> : null}
+                    </td>
                     <td className="px-4 py-2 font-mono text-xs text-cinder">
-                      {a.cursor_updated_at ? formatRelative(a.cursor_updated_at) : "never"}
+                      {a.last_success_at
+                        ? formatRelative(a.last_success_at)
+                        : a.cursor_updated_at
+                          ? formatRelative(a.cursor_updated_at)
+                          : "never"}
                     </td>
                   </tr>
                 ))}
@@ -102,9 +159,7 @@ export function SettingsPage() {
             <button
               type="button"
               className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-bone hover:bg-granite"
-              onClick={() =>
-                runAction("workspace_scan").then(() => showToast("Workspace scan started"))
-              }
+              onClick={() => void handleAction("workspace_scan", "Workspace scan started")}
             >
               Rescan adapters
             </button>
@@ -117,14 +172,14 @@ export function SettingsPage() {
             <button
               type="button"
               className="rounded-sm bg-copper px-3 py-2 font-mono text-xs text-anthracite"
-              onClick={() => runAction("sync").then(() => showToast("Sync started"))}
+              onClick={() => void handleAction("sync", "Sync started")}
             >
               Sync now
             </button>
             <button
               type="button"
               className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
-              onClick={() => runAction("export_bundle").then(() => showToast("Export started"))}
+              onClick={() => void handleAction("export_bundle", "Export started")}
             >
               Export scrubbed bundle
             </button>
@@ -134,9 +189,7 @@ export function SettingsPage() {
               onClick={() => {
                 const word = window.prompt('Type "rebuild" to rebuild all views');
                 if (word === "rebuild") {
-                  runAction("rebuild_view", { view: "all" }).then(() =>
-                    showToast("Rebuild started"),
-                  );
+                  void handleAction("rebuild_view", "Rebuild started", { view: "all" });
                 }
               }}
             >
@@ -184,13 +237,29 @@ export function SettingsPage() {
           <p className="mt-2 text-sm text-cinder">
             Install Cairn MCP tools for Claude Code, Cursor, and Codex.
           </p>
-          <button
-            type="button"
-            className="mt-3 rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
-            onClick={() => runAction("mcp_install").then(() => showToast("MCP install started"))}
-          >
-            Install MCP config
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <select
+              value={mcpClient}
+              onChange={(event) => setMcpClient(event.target.value)}
+              aria-label="MCP client"
+              className="rounded-sm border border-quartz-vein bg-slate px-3 py-2 font-mono text-xs text-bone"
+            >
+              <option value="cursor">Cursor</option>
+              <option value="claude-code">Claude Code</option>
+              <option value="codex">Codex</option>
+            </select>
+            <button
+              type="button"
+              className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
+              onClick={() =>
+                void handleAction("mcp_install", "MCP config installed", {
+                  client: mcpClient,
+                })
+              }
+            >
+              Install MCP config
+            </button>
+          </div>
         </section>
       </div>
     </PageShell>

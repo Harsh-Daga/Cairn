@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchTraces, timeRangeDays } from "@/lib/api";
 import { formatCost, formatRelative, formatTokens } from "@/lib/format";
 import {
@@ -15,7 +15,8 @@ import { useUiStore } from "@/state/ui";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
 
-const SOURCES = ["claude_code", "cursor", "codex"] as const;
+const SOURCES = ["claude_code", "cursor", "codex", "cline"] as const;
+const PAGE_SIZE = 50;
 
 export function SessionsPage() {
   const navigate = useNavigate();
@@ -32,24 +33,25 @@ export function SessionsPage() {
   const source = params.get("source") ?? undefined;
   const agent = params.get("agent") ?? undefined;
   const sort = params.get("sort") ?? "recent";
+  const page = Math.max(1, Number(params.get("page")) || 1);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["traces", days, q, source, agent],
-    queryFn: () => fetchTraces({ days, q, source, limit: 100 }),
+    queryKey: ["traces", days, q, source, agent, sort, page],
+    queryFn: () =>
+      fetchTraces({
+        days,
+        q,
+        source,
+        agent,
+        sort: sort as "recent" | "waste" | "cost",
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      }),
   });
 
-  const traces = useMemo(() => {
-    let rows = data?.traces ?? [];
-    if (agent) {
-      rows = rows.filter((t) => t.actor_id === agent || t.title?.includes(agent));
-    }
-    if (sort === "waste") {
-      rows = [...rows].sort((a, b) => b.waste_tokens - a.waste_tokens);
-    } else if (sort === "cost") {
-      rows = [...rows].sort((a, b) => b.cost - a.cost);
-    }
-    return rows;
-  }, [agent, data?.traces, sort]);
+  const traces = data?.traces ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
     setSelectedIndex((index) => Math.min(index, Math.max(traces.length - 1, 0)));
@@ -87,6 +89,7 @@ export function SessionsPage() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
+    next.delete("page");
     setParams(next);
     setActiveViewId("");
   };
@@ -125,7 +128,7 @@ export function SessionsPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Sessions" question="Find the session that matters.">
+      <PageShell title="Sessions" question="Filter, compare, and investigate the runs behind your workspace signals.">
         <div className="card h-48 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -133,14 +136,14 @@ export function SessionsPage() {
 
   if (isError) {
     return (
-      <PageShell title="Sessions" question="Find the session that matters.">
+      <PageShell title="Sessions" question="Filter, compare, and investigate the runs behind your workspace signals.">
         <div className="card p-6 text-cinnabar">Failed to load sessions.</div>
       </PageShell>
     );
   }
 
   return (
-    <PageShell title="Sessions" question="Find the session that matters.">
+    <PageShell title="Sessions" question="Filter, compare, and investigate the runs behind your workspace signals.">
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {views.map((view) => (
           <div key={view.id} className="flex items-center gap-1">
@@ -261,18 +264,18 @@ export function SessionsPage() {
       ) : (
         <div className="card overflow-hidden">
           <div className="border-b border-quartz-vein px-4 py-2 font-mono text-[10px] text-cinder">
-            {traces.length} session{traces.length === 1 ? "" : "s"} · last {days} days · j/k navigate · Enter open
+            {total} session{total === 1 ? "" : "s"} · page {page} of {totalPages} · last {days} days · j/k navigate · Enter open
           </div>
           <table className="w-full text-left text-sm">
             <thead className="border-b border-quartz-vein bg-slate font-mono text-[10px] uppercase tracking-wide text-cinder">
               <tr>
                 <th className="px-4 py-3">Compare</th>
                 <th className="px-4 py-3">Session</th>
-                <th className="px-4 py-3">Source</th>
-                <th className="px-4 py-3 text-right">Tokens</th>
-                <th className="px-4 py-3 text-right">Waste</th>
-                <th className="px-4 py-3 text-right">Cost</th>
-                <th className="px-4 py-3 text-right">When</th>
+                <th className="hidden px-4 py-3 sm:table-cell">Source</th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell">Tokens</th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell">Waste</th>
+                <th className="hidden px-4 py-3 text-right md:table-cell">Cost</th>
+                <th className="hidden px-4 py-3 text-right xl:table-cell">When</th>
               </tr>
             </thead>
             <tbody>
@@ -303,20 +306,23 @@ export function SessionsPage() {
                         {trace.title ?? trace.trace_id.slice(0, 12)}
                       </Link>
                       <p className="mt-0.5 font-mono text-[10px] text-cinder">{trace.trace_id}</p>
+                      <span className="mt-2 inline-block sm:hidden">
+                        <Chip label={trace.source} tone="patina" />
+                      </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 sm:table-cell">
                       <Chip label={trace.source} tone="patina" />
                     </td>
-                    <td className={`px-4 py-3 text-right font-mono text-xs ${estimated ? "estimated-chip" : ""}`}>
+                    <td className={`hidden px-4 py-3 text-right font-mono text-xs lg:table-cell ${estimated ? "estimated-chip" : ""}`}>
                       {formatTokens(trace.input_tokens + trace.output_tokens)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs text-ochre">
+                    <td className="hidden px-4 py-3 text-right font-mono text-xs text-ochre lg:table-cell">
                       {trace.waste_tokens > 0 ? formatTokens(trace.waste_tokens) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs">
+                    <td className="hidden px-4 py-3 text-right font-mono text-xs md:table-cell">
                       {formatCost(trace.cost)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[10px] text-cinder">
+                    <td className="hidden px-4 py-3 text-right font-mono text-[10px] text-cinder xl:table-cell">
                       {trace.started_at ? formatRelative(trace.started_at) : "—"}
                     </td>
                   </tr>
@@ -326,6 +332,29 @@ export function SessionsPage() {
           </table>
         </div>
       )}
+      {totalPages > 1 ? (
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            type="button"
+            disabled={page <= 1}
+            className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone disabled:opacity-40"
+            onClick={() => setFilter("page", String(page - 1))}
+          >
+            ← Previous
+          </button>
+          <span className="font-mono text-xs text-cinder">
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+          </span>
+          <button
+            type="button"
+            disabled={page >= totalPages}
+            className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone disabled:opacity-40"
+            onClick={() => setFilter("page", String(page + 1))}
+          >
+            Next →
+          </button>
+        </div>
+      ) : null}
     </PageShell>
   );
 }

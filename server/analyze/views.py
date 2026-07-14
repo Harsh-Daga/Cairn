@@ -16,6 +16,7 @@ VIEW_ORDER: list[str] = [
     "regions",
     "waste",
     "fingerprint",
+    "file_summaries",
     "difficulty",
     "diagnose",
     "outcomes",

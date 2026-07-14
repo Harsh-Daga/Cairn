@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends
 
 from server.api.bootstrap import AppRuntime
 from server.api.deps import get_runtime, get_workspace_id
-from server.api.payloads import build_overview
-from server.api.schemas import OverviewResponse
+from server.api.payloads import build_overview, build_recap
+from server.api.schemas import OverviewResponse, RecapResponse
 
 router = APIRouter(tags=["overview"])
 
@@ -21,3 +21,11 @@ def overview(
     days: int = 30,
 ) -> OverviewResponse:
     return build_overview(runtime.database.reader, workspace_id=workspace_id, days=days)
+
+
+@router.get("/recap", response_model=RecapResponse)
+def recap(
+    runtime: Annotated[AppRuntime, Depends(get_runtime)],
+    workspace_id: Annotated[str, Depends(get_workspace_id)],
+) -> RecapResponse:
+    return build_recap(runtime.database.reader, workspace_id=workspace_id)

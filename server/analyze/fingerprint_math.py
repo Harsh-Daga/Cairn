@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 VECTOR_DIM = 24
+MIN_JOINT_BASELINE = 20
 
 # χ² critical values at p=0.99 for df 1..8.
 _CHI2_99 = {1: 6.635, 2: 9.210, 3: 11.345, 4: 13.277, 5: 15.086, 6: 16.812, 7: 18.475, 8: 20.090}
@@ -58,9 +59,36 @@ def mahalanobis_distance(x: np.ndarray, mean: np.ndarray, cov_inv: np.ndarray) -
     return float(np.asarray(value).ravel()[0])
 
 
+def ledoit_wolf_covariance(matrix: np.ndarray) -> tuple[np.ndarray, float]:
+    """Estimate covariance with Ledoit-Wolf shrinkage toward a scaled identity.
+
+    The empirical covariance uses the maximum-likelihood ``1/n`` divisor. Shrinkage
+    intensity is the estimated covariance noise divided by its squared distance from
+    the constant-variance target, clipped to ``[0, 1]``.
+    """
+    if matrix.ndim != 2 or matrix.shape[0] < 2 or matrix.shape[1] == 0:
+        return np.zeros((0, 0)), 1.0
+    centered = matrix - matrix.mean(axis=0)
+    n_samples, n_features = centered.shape
+    empirical = (centered.T @ centered) / n_samples
+    mean_variance = float(np.trace(empirical)) / n_features
+    target = np.eye(n_features) * mean_variance
+    target_distance = float(np.sum((empirical - target) ** 2))
+    if target_distance <= 1e-18:
+        return target, 1.0
+    noise = 0.0
+    for row in centered:
+        deviation = np.outer(row, row) - empirical
+        noise += float(np.sum(deviation * deviation))
+    noise /= n_samples * n_samples
+    shrinkage = min(1.0, max(0.0, noise / target_distance))
+    covariance = (1.0 - shrinkage) * empirical + shrinkage * target
+    return covariance, shrinkage
+
+
 def detect_drift(current: list[float], baseline: list[list[float]]) -> DriftResult:
-    """Joint-shock drift: Mahalanobis D² vs χ² threshold in PCA space."""
-    if len(baseline) < 4:
+    """Joint-shock drift using a 20-session, shrinkage-covariance baseline."""
+    if len(baseline) < MIN_JOINT_BASELINE:
         return DriftResult(
             drift=False,
             d_squared=None,
@@ -69,7 +97,7 @@ def detect_drift(current: list[float], baseline: list[list[float]]) -> DriftResu
             per_dim_deltas=[],
             distance=None,
             kind="insufficient_baseline",
-            data_notes=[f"baseline has {len(baseline)} sessions; need >=4 for AMDM"],
+            data_notes=[f"{len(baseline)}/{MIN_JOINT_BASELINE} sessions collected"],
         )
     mean_full, components, d_eff = pca_reduce(baseline)
     if d_eff < 3 or components.shape[0] == 0:
@@ -85,9 +113,9 @@ def detect_drift(current: list[float], baseline: list[list[float]]) -> DriftResu
         )
     matrix = np.array(baseline, dtype=float)
     reduced = (matrix - mean_full) @ components.T
-    cov = np.cov(reduced, rowvar=False)
+    cov, shrinkage = ledoit_wolf_covariance(reduced)
     try:
-        cov_inv = np.linalg.pinv(cov)
+        cov_inv = np.linalg.inv(cov)
     except np.linalg.LinAlgError:
         return DriftResult(
             drift=False,
@@ -97,7 +125,7 @@ def detect_drift(current: list[float], baseline: list[list[float]]) -> DriftResu
             per_dim_deltas=[],
             distance=None,
             kind="insufficient_baseline",
-            data_notes=["covariance not invertible"],
+            data_notes=["shrinkage covariance not invertible"],
         )
     x_reduced = (np.array(current, dtype=float) - mean_full) @ components.T
     d_squared = mahalanobis_distance(x_reduced, np.zeros(d_eff), cov_inv)
@@ -113,6 +141,7 @@ def detect_drift(current: list[float], baseline: list[list[float]]) -> DriftResu
         per_dim_deltas=[round(z, 3) for z in per_dim],
         distance=round(math.sqrt(max(0.0, d_squared)), 4),
         kind="joint_shock" if drift else "none",
+        data_notes=[f"Ledoit-Wolf shrinkage={shrinkage:.3f}"],
     )
 
 
