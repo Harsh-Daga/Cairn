@@ -146,10 +146,25 @@ def measure_experiment(
     post_values = [metric_fn(tid) for tid in post_trace_ids]  # type: ignore[operator]
     cluster_keys = clusters or [str(i) for i in range(len(post_trace_ids))]
     n_eff = clustered_effective_n(post_values, cluster_keys)
+    source_rows: list[sqlite3.Row] = []
+    if post_trace_ids:
+        placeholders = ",".join("?" for _ in post_trace_ids)
+        source_rows = conn.execute(
+            f"SELECT DISTINCT source FROM traces WHERE trace_id IN ({placeholders})",
+            post_trace_ids,
+        ).fetchall()
+    sources = sorted(str(row["source"]) for row in source_rows)
+    agent_type = sources[0] if len(sources) == 1 else "mixed"
     gated = n_eff < float(experiment.min_holdout)
     if gated:
         updated = experiment.model_copy(
-            update={"status": "measuring", "outcome_n_effective": n_eff}
+            update={
+                "status": "measuring",
+                "baseline_n_raw": len(pre_trace_ids),
+                "outcome_n_raw": len(post_trace_ids),
+                "outcome_n_effective": n_eff,
+                "agent_type": agent_type,
+            }
         )
         ExperimentRepo.update(conn, updated)
         return MeasureResult(
@@ -171,6 +186,8 @@ def measure_experiment(
         update={
             "status": "verdict",
             "outcome_n_effective": n_eff,
+            "baseline_n_raw": len(pre_trace_ids),
+            "outcome_n_raw": len(post_trace_ids),
             "effect_estimate": causal.effect_estimate,
             "effect_ci_low": causal.effect_ci_low,
             "effect_ci_high": causal.effect_ci_high,
@@ -178,6 +195,7 @@ def measure_experiment(
             "verdict": causal.verdict,
             "confound_flag": causal.confound_flag,
             "measured_at": now,
+            "agent_type": agent_type,
         }
     )
     ExperimentRepo.update(conn, updated)

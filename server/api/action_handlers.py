@@ -177,6 +177,8 @@ def _check_action(params: CheckParams, ctx: ActionCtx) -> dict[str, Any]:
 
 
 def _export_bundle_action(params: ExportBundleParams, ctx: ActionCtx) -> dict[str, Any]:
+    from server.export.scrub import scrub_export_value
+
     out_dir = ctx.workspace_root / ".cairn" / "exports"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
@@ -192,6 +194,8 @@ def _export_bundle_action(params: ExportBundleParams, ctx: ActionCtx) -> dict[st
             (ctx.workspace_id,),
         ).fetchall()
     trace_rows = [dict(r) for r in rows]
+    if params.scrub:
+        trace_rows = [scrub_export_value(row, ctx.workspace_root) for row in trace_rows]
     payload: dict[str, Any] = {"traces": trace_rows, "scrubbed": params.scrub}
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return {"path": str(out_path), "count": len(trace_rows)}

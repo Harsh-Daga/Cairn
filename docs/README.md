@@ -15,6 +15,7 @@ Cairn is a local-first observability workspace for AI coding agents. It ingests 
 - [Adapters](adapters.md) — supported agents and how to add an adapter.
 - [OTLP ingest](otlp.md) — send OpenTelemetry traces to Cairn.
 - [Optimize loop](optimize.md) — propose, apply, measure, and evaluate instruction changes.
+- [Roadmap](roadmap.md) — future opt-in community concepts and their privacy constraints.
 - [CI gates](ci.md) — use Cairn quality and cost checks in automation.
 
 ## Integrate and operate

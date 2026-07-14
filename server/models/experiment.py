@@ -36,8 +36,10 @@ class Experiment(BaseModel):
     min_holdout: int = 8
     baseline_metric: float | None = None
     baseline_n_effective: float | None = None
+    baseline_n_raw: int | None = None
     outcome_metric: float | None = None
     outcome_n_effective: float | None = None
+    outcome_n_raw: int | None = None
     effect_estimate: float | None = None
     effect_ci_low: float | None = None
     effect_ci_high: float | None = None
@@ -45,6 +47,7 @@ class Experiment(BaseModel):
     verdict: str | None = None
     confound_flag: bool = False
     measured_at: str | None = None
+    agent_type: str | None = None
 
     INSERT_FIELDS: ClassVar[tuple[str, ...]] = (
         "experiment_id",
@@ -59,8 +62,10 @@ class Experiment(BaseModel):
         "min_holdout",
         "baseline_metric",
         "baseline_n_effective",
+        "baseline_n_raw",
         "outcome_metric",
         "outcome_n_effective",
+        "outcome_n_raw",
         "effect_estimate",
         "effect_ci_low",
         "effect_ci_high",
@@ -68,6 +73,7 @@ class Experiment(BaseModel):
         "verdict",
         "confound_flag",
         "measured_at",
+        "agent_type",
     )
 
     @classmethod
@@ -85,8 +91,10 @@ class Experiment(BaseModel):
             min_holdout=row_int(row, "min_holdout", default=8) or 8,
             baseline_metric=row_float(row, "baseline_metric"),
             baseline_n_effective=row_float(row, "baseline_n_effective"),
+            baseline_n_raw=row_int(row, "baseline_n_raw"),
             outcome_metric=row_float(row, "outcome_metric"),
             outcome_n_effective=row_float(row, "outcome_n_effective"),
+            outcome_n_raw=row_int(row, "outcome_n_raw"),
             effect_estimate=row_float(row, "effect_estimate"),
             effect_ci_low=row_float(row, "effect_ci_low"),
             effect_ci_high=row_float(row, "effect_ci_high"),
@@ -94,6 +102,7 @@ class Experiment(BaseModel):
             verdict=row_text(row, "verdict"),
             confound_flag=row_bool_int(row, "confound_flag"),
             measured_at=row_text(row, "measured_at"),
+            agent_type=row_text(row, "agent_type"),
         )
 
     def to_row(self) -> tuple[object, ...]:
@@ -110,8 +119,10 @@ class Experiment(BaseModel):
             self.min_holdout,
             self.baseline_metric,
             self.baseline_n_effective,
+            self.baseline_n_raw,
             self.outcome_metric,
             self.outcome_n_effective,
+            self.outcome_n_raw,
             self.effect_estimate,
             self.effect_ci_low,
             self.effect_ci_high,
@@ -119,4 +130,5 @@ class Experiment(BaseModel):
             self.verdict,
             int(self.confound_flag),
             self.measured_at,
+            self.agent_type,
         )

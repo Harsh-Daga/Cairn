@@ -36,6 +36,7 @@ Cairn CLI entry point: `server.cli:app`. Mutations are also available as `cairn 
 | `cairn insights` | List insights. |
 | `cairn mcp install` | Install Cairn MCP config for Claude Code, Cursor, or Codex. |
 | `cairn mcp` | Run the Cairn MCP stdio server. |
+| `cairn optimize export-effects` | Write a scrubbed local JSON of measured rule effects. |
 | `cairn optimize revert` | Revert one applied optimization from its exact backup. |
 | `cairn optimize` | Generate optimization proposals when no subcommand is given. |
 | `cairn rebuild` | Rebuild an incremental analyzer view. |

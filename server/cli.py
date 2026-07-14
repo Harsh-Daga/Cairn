@@ -388,6 +388,19 @@ def optimize_revert(
     typer.echo(json.dumps(result, indent=2))
 
 
+@optimize_app.command("export-effects")
+def optimize_export_effects(
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Write a scrubbed local JSON of measured rule effects."""
+    from server.export.rule_effects import export_rule_effects
+
+    ctx = _make_ctx(workspace)
+    destination = export_rule_effects(ctx.db.reader, ctx.workspace_root, output)
+    typer.echo(str(destination))
+
+
 experiments_app = typer.Typer(help="Manage improvement experiments.")
 app.add_typer(experiments_app, name="experiments")
 

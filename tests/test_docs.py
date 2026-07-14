@@ -42,6 +42,7 @@ DOCS_INDEX = [
     "docs/adapters.md",
     "docs/otlp.md",
     "docs/optimize.md",
+    "docs/roadmap.md",
     "docs/ci.md",
     "docs/configuration.md",
     "ACCURACY.md",

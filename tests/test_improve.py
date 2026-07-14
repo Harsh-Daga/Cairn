@@ -332,6 +332,9 @@ def test_measure_gated_until_holdout(db: Database) -> None:
     assert stored is not None
     assert stored.status == "measuring"
     assert stored.outcome_n_effective == pytest.approx(2.0)
+    assert stored.baseline_n_raw == 1
+    assert stored.outcome_n_raw == 2
+    assert stored.agent_type == "mixed"
 
 
 def test_clustered_ess_changes_improved_verdict_to_inconclusive(db: Database) -> None:

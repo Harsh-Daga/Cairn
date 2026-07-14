@@ -222,3 +222,19 @@ From trailing 14-day traffic:
 \]
 
 Shown as “unknown” when traffic is below 5 traces/week.
+
+## Local rule-effect export
+
+`cairn optimize export-effects` writes a versioned JSON file under `.cairn/exports/`; `--output`
+chooses another local path. Cairn never uploads it. The user must inspect the file and explicitly
+choose whether and how to share it.
+
+Only experiments with a reached verdict and complete effect metadata are included. Every effect
+contains exactly `{rule_text, effect_metric, effect_size, ci, n_sessions, agent_type, verdict}`.
+`n_sessions` is the stored raw post-period count; clustered effective sample size remains in the
+local experiment record and is not mislabeled as a raw count.
+
+The allowlist scrubber removes paths, repository names and identifiers, URLs, git IDs, fenced or
+inline code, and code-shaped lines from rule text. It emits no workspace, trace, evidence, prompt,
+or target-file fields. The envelope is validated with `extra="forbid"`. See the future, still
+network-free [registry roadmap](roadmap.md).
