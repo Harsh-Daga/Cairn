@@ -1,0 +1,41 @@
+server/mcp/tools.py
+  s_89f082b63228d7::t_45fb7208169f1e 163,206
+  s_89f082b63228d7::t_13e350d7388657 55-62,104,162,164-205,207-230,380-386
+  s_89f082b63228d7::t_b5e97737c45004 54
+  s_89f082b63228d7::t_aa195aeccaa35e 387-388
+docs/mcp.md
+  s_89f082b63228d7::t_13e350d7388657 21-33
+tests/test_file_summaries.py
+  s_89f082b63228d7::t_08da3f88192067 10
+  s_89f082b63228d7::t_d9c5feb96b6ee4 1-9,11-101
+server/analyze/registry.py
+  s_89f082b63228d7::t_b75f6df2ed3aca 7,23
+server/store/migrations/0003_file_read_cache.sql
+  s_89f082b63228d7::t_b75f6df2ed3aca 1-15
+server/analyze/dirty.py
+  s_89f082b63228d7::t_b75f6df2ed3aca 15
+server/analyze/views.py
+  s_89f082b63228d7::t_b75f6df2ed3aca 19
+tests/test_mcp.py
+  s_89f082b63228d7::t_d9c5feb96b6ee4 56-57
+server/analyze/file_summaries.py
+  s_89f082b63228d7::t_d9c5feb96b6ee4 119-121
+  s_89f082b63228d7::t_b75f6df2ed3aca 1-68,70-118,122-130
+  s_89f082b63228d7::t_45fb7208169f1e 69,131-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "9c26c2897c7514170eab9f0acde2b10bf67dacb8",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
