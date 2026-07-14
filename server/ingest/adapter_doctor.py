@@ -100,6 +100,7 @@ def _newest_path(refs: list[Any]) -> Path | None:
 
 def _token_accuracy(adapter_id: str) -> dict[str, Any] | None:
     rows = json.loads(_ACCURACY_DATA.read_text(encoding="utf-8"))
-    key = "gemini" if adapter_id == "gemini_cli" else adapter_id
-    value = rows.get(key)
+    value = rows.get(adapter_id)
+    if value is None and adapter_id == "gemini_cli":
+        value = rows.get("gemini")
     return dict(value) if isinstance(value, dict) else None

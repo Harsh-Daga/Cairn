@@ -20,11 +20,10 @@ def test_adapter_doctor_reports_shape_parse_and_accuracy(tmp_path: Path) -> None
     assert result["parsed"] is True
     assert result["normalized_events"] > 0
     assert result["unknown_fields"] == {}
-    assert result["token_accuracy"] == {
-        "method": "measured",
-        "mape_pct": 0.0,
-        "note": "assistant usage block",
-    }
+    assert result["token_accuracy"]["method"] == "measured"
+    assert result["token_accuracy"]["mape_pct"] == 0.0
+    assert result["token_accuracy"]["note"] == "assistant usage block"
+    assert result["token_accuracy"]["parse_coverage_pct"] == 100.0
     output = format_adapter_doctor(result)
     assert "recognized fields" in output
     assert "MAPE 0.00%" in output
