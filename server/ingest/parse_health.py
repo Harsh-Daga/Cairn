@@ -126,15 +126,33 @@ def adapter_issue_url(adapter_id: str) -> str:
 
 def inspect_unknown_fields(adapter_id: str, path: Path) -> dict[str, int]:
     """Count unknown top-level fields in a bounded live-log sample."""
+    unknown = inspect_stream_shape(adapter_id, path)["unknown_fields"]
+    return {str(key): int(value) for key, value in unknown.items()}
+
+
+def inspect_stream_shape(adapter_id: str, path: Path) -> dict[str, Any]:
+    """Describe recognized and unknown fields in a bounded sample."""
     shape = _SHAPE_ALIASES.get(adapter_id, adapter_id)
     expected = _EXPECTED_FIELDS.get(shape)
     if expected is None:
-        return {}
+        return {
+            "records_sampled": 0,
+            "recognized_fields": [],
+            "unknown_fields": {},
+            "expected_shape_available": False,
+        }
     records = _sample_records(path)
     unknown: Counter[str] = Counter()
+    recognized: set[str] = set()
     for record in records:
         unknown.update(str(key) for key in record if key not in expected)
-    return dict(sorted(unknown.items()))
+        recognized.update(str(key) for key in record if key in expected)
+    return {
+        "records_sampled": len(records),
+        "recognized_fields": sorted(recognized),
+        "unknown_fields": dict(sorted(unknown.items())),
+        "expected_shape_available": True,
+    }
 
 
 def record_parse_attempt(

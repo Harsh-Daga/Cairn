@@ -1,0 +1,17 @@
+{
+  "claude_code": {
+    "method": "measured",
+    "mape_pct": 0.0,
+    "note": "assistant usage block"
+  },
+  "codex": {
+    "method": "measured",
+    "mape_pct": 0.0,
+    "note": "task_complete usage payload"
+  },
+  "gemini": {
+    "method": "measured",
+    "mape_pct": 0.0,
+    "note": "assistant usage payload"
+  }
+}

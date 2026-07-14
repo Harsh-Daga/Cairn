@@ -547,6 +547,24 @@ def adapter_new(
     )
 
 
+@adapter_app.command("doctor")
+def adapter_doctor(
+    adapter_id: str,
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    sample: Annotated[
+        Path | None, typer.Option("--sample", help="Specific live log sample")
+    ] = None,
+    json_out: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Compare a live log sample with an adapter's expected shape."""
+    from server.ingest.adapter_doctor import format_adapter_doctor, run_adapter_doctor
+
+    result = run_adapter_doctor(adapter_id, workspace or Path.cwd(), sample_path=sample)
+    typer.echo(json.dumps(result, indent=2) if json_out else format_adapter_doctor(result))
+    if not result["ok"]:
+        raise typer.Exit(code=1)
+
+
 def _register_action_commands() -> None:
     for entry in build_manifest():
         action_name = entry.name

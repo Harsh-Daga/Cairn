@@ -94,3 +94,14 @@ Coverage below 90%, or at least three unknown fields in the latest sample, produ
 banner and a failing `cairn doctor` check: “&lt;agent&gt; log format may have changed; numbers may be
 incomplete.” The warning links to a prefilled adapter issue. No log content is sent anywhere;
 opening the issue is an explicit user action.
+
+For a field-level diagnosis against the newest detected stream (or an explicit bounded sample):
+
+```bash
+cairn adapter doctor claude_code
+cairn adapter doctor claude_code --sample /path/to/session.jsonl
+```
+
+The report names recognized and unknown top-level fields, whether normalization succeeded,
+normalized and dropped event counts, and the token method/MAPE published in `ACCURACY.md`.
+Adapters without an expected-token fixture report accuracy as “not measured.”
