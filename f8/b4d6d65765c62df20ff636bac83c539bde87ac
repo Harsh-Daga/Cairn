@@ -1,0 +1,28 @@
+docs/ui-tour.md
+  s_89f082b63228d7::t_75641cfbc0434e 30-36
+pyproject.toml
+  s_89f082b63228d7::t_98b81f79e9b437 25
+tests/test_recap_share.py
+  s_89f082b63228d7::t_75641cfbc0434e 1-74
+server/recap_share.py
+  s_89f082b63228d7::t_98b81f79e9b437 1-144,187-218
+  s_89f082b63228d7::t_dc93882d078a8c 145-186
+server/cli.py
+  s_89f082b63228d7::t_0a57e384033aa6 153-158,164-185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "f8b4d6d65765c62df20ff636bac83c539bde87ac",
+  "prompts": {},
+  "sessions": {
+    "s_89f082b63228d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5f89-f530-7a23-9930-04ab35b23d2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
