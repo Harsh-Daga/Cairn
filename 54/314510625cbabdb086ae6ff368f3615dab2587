@@ -1,0 +1,45 @@
+server/ingest/adapter_doctor.py
+  s_1b322965a76443::t_f0f436d1eded9e 30
+server/ingest/adapters/cursor.py
+  s_1b322965a76443::t_587d6b4097fd2f 1,3-16,19-25
+server/ingest/adapters/cursor_vscdb.py
+  s_1b322965a76443::t_5c309bd150788b 1-261
+server/ingest/project_paths.py
+  s_1b322965a76443::t_2355fa030336e8 13-34,373-434,533,544-545,555-559,567-571,579-583
+tests/fixtures/ingest/claude_estimation.jsonl
+  s_2f3774c9a58583::t_98a09bf96a8d6b 3
+tests/test_accuracy.py
+  s_1b322965a76443::t_e7350133d20e40 38
+tests/test_ingest_project_privacy.py
+  s_1b322965a76443::t_b4afa4c29e0dfd 1-125
+server/ingest/adapters/cursor_models.py
+  s_1b322965a76443::t_4b97f4759d7e84 1-48
+server/ingest/adapters/gemini_cli.py
+  s_1b322965a76443::t_b82bd894d42ee8 12,42,47-51
+server/ingest/adapters/openclaw.py
+  s_1b322965a76443::t_41d50990b4e404 15,37,44-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "54314510625cbabdb086ae6ff368f3615dab2587",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
