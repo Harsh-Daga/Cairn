@@ -1,0 +1,9 @@
+{"timestamp":"2026-06-01T10:00:00Z","type":"session_meta","payload":{"id":"codex-custom-tool","cwd":"/tmp/cairn-codex-fixture","originator":"codex-tui"}}
+{"timestamp":"2026-06-01T10:00:01Z","type":"turn_context","payload":{"model":"gpt-test","turn_id":"t1"}}
+{"timestamp":"2026-06-01T10:00:02Z","type":"event_msg","payload":{"type":"user_message","message":"Patch and run"}}
+{"timestamp":"2026-06-01T10:00:03Z","type":"response_item","payload":{"type":"custom_tool_call","name":"exec","call_id":"call_exec_1","status":"completed","input":"const r = await tools.exec_command({\"cmd\":\"echo hi\",\"workdir\":\"/tmp/cairn-codex-fixture\"});\ntext(r.output);\n"}}
+{"timestamp":"2026-06-01T10:00:04Z","type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"call_exec_1","output":[{"type":"input_text","text":"hi\n"}]}}
+{"timestamp":"2026-06-01T10:00:05Z","type":"response_item","payload":{"type":"custom_tool_call","name":"apply_patch","call_id":"call_patch_1","status":"completed","input":"*** Begin Patch\n*** Update File: /tmp/cairn-codex-fixture/src/app.py\n@@\n-before\n+after\n*** End Patch"}}
+{"timestamp":"2026-06-01T10:00:06Z","type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"call_patch_1","output":"{\"output\":\"Success\",\"metadata\":{\"exit_code\":0}}"}}
+{"timestamp":"2026-06-01T10:00:07Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call_fn_1","arguments":"{\"cmd\":\"pwd\"}"}}
+{"timestamp":"2026-06-01T10:00:08Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_fn_1","output":"/tmp\n"}}

@@ -15,6 +15,11 @@ from server.ingest.usage import UsageAccumulator, extract_usage_dict
 from server.util.hash import hash_bytes
 
 _PATCH_PATH_RE = re.compile(r"^\*\*\* (?:Update|Add|Delete) File: (.+)$", re.MULTILINE)
+# Codex wraps shell tools as ``tools.exec_command({...})`` inside custom_tool_call.input.
+_EXEC_COMMAND_RE = re.compile(
+    r"(?:tools\.)?exec_command\s*\(\s*(\{.*\})\s*\)",
+    re.DOTALL,
+)
 
 
 @dataclass
@@ -80,7 +85,7 @@ def extract_apply_patch_paths(patch: str) -> list[str]:
 def normalize_codex_tool_name(name: str) -> str:
     if name == "apply_patch":
         return "edit"
-    if name in ("shell", "exec_command"):
+    if name in ("shell", "exec_command", "exec"):
         return "bash"
     if name in ("read_file", "list_dir"):
         return "read"
@@ -276,9 +281,9 @@ class _ParserState:
                 "line_no": line_no,
             }
             self._events.append(event)
-        elif item_type == "function_call":
+        elif item_type in {"function_call", "custom_tool_call"}:
             self._emit_function_call(payload, line_no=line_no)
-        elif item_type == "function_call_output":
+        elif item_type in {"function_call_output", "custom_tool_call_output"}:
             self._emit_function_output(payload, line_no=line_no)
 
     def _emit_function_call(self, payload: dict[str, Any], *, line_no: int) -> None:
@@ -313,9 +318,11 @@ class _ParserState:
         call_id = payload.get("call_id")
         if not isinstance(call_id, str):
             return
-        output = payload.get("output")
-        text = output if isinstance(output, str) else json.dumps(output)
+        text = _tool_output_text(payload.get("output"))
         is_error = bool(payload.get("is_error"))
+        status = payload.get("status")
+        if isinstance(status, str) and status.lower() in {"failed", "error"}:
+            is_error = True
         self._next_seq_hint()
         self._events.append(
             {
@@ -407,16 +414,48 @@ def _message_content_text(content: Any) -> str:
 
 def _function_args(payload: dict[str, Any]) -> dict[str, Any]:
     raw = payload.get("arguments") or payload.get("args") or payload.get("input")
+    name = payload.get("name")
     if isinstance(raw, dict):
         return raw
     if isinstance(raw, str):
+        if isinstance(name, str) and name == "apply_patch" and (
+            raw.lstrip().startswith("***") or "*** Begin Patch" in raw[:80]
+        ):
+            return {"patch": raw, "input": raw}
         try:
             parsed = json.loads(raw)
             if isinstance(parsed, dict):
                 return parsed
         except json.JSONDecodeError:
-            return {"raw": raw}
+            pass
+        match = _EXEC_COMMAND_RE.search(raw)
+        if match:
+            try:
+                parsed = json.loads(match.group(1))
+                if isinstance(parsed, dict):
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+        return {"raw": raw}
     return {}
+
+
+def _tool_output_text(output: Any) -> str:
+    if isinstance(output, str):
+        return output
+    if isinstance(output, list):
+        parts: list[str] = []
+        for block in output:
+            if isinstance(block, dict):
+                text = block.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+            elif isinstance(block, str):
+                parts.append(block)
+        return "".join(parts)
+    if output is None:
+        return ""
+    return json.dumps(output)
 
 
 def _file_hash_if_exists(file_path: str, cwd: str | None) -> str | None:

@@ -35,6 +35,4 @@ def test_packaged_accuracy_data_matches_generator() -> None:
 
     assert set(packaged) == {str(row["adapter_id"]) for row in rows}
     for row in rows:
-        assert packaged[str(row["adapter_id"])]["parse_coverage_pct"] == row[
-            "parse_coverage_pct"
-        ]
+        assert packaged[str(row["adapter_id"])]["parse_coverage_pct"] == row["parse_coverage_pct"]

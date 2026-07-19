@@ -33,6 +33,20 @@ SAMPLE_OTLP = json.loads((FIXTURE_DIR / "sample_trace.json").read_text(encoding=
 SAMPLE_OTLP_PB = (FIXTURE_DIR / "sample_trace.pb").read_bytes()
 
 
+def test_otlp_rejects_declared_oversized_body(tmp_path: Path) -> None:
+    app = create_app()
+    app.router.lifespan_context = _noop_lifespan
+    app.state.runtime = None
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/traces",
+            content=b"{}",
+            headers={"content-length": str(16 * 1024 * 1024 + 1)},
+        )
+    assert response.status_code == 413
+    assert response.json()["error"]["code"] == "payload_too_large"
+
+
 @pytest.fixture
 def otlp_setup(tmp_path: Path) -> tuple[Database, str, EventBus]:
     db = Database(tmp_path / "cairn.db")

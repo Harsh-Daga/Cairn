@@ -9,6 +9,7 @@ from typing import Any
 
 from server.ingest.adapters.claude_code import ToolCallDraft
 from server.ingest.normalizer import args_payload, assign_seq, result_payload, text_payload
+from server.ingest.project_paths import structured_log_matches_project
 from server.ingest.usage import UsageAccumulator, extract_usage_dict
 
 
@@ -38,12 +39,16 @@ def gemini_roots() -> list[Path]:
     return roots
 
 
-def discover_gemini_sessions(_repo_root: Path) -> list[Path]:
+def discover_gemini_sessions(repo_root: Path) -> list[Path]:
     paths: list[Path] = []
     for root in gemini_roots():
         for pattern in ("**/*.jsonl", "**/*.json"):
             for path in root.glob(pattern):
-                if path.is_file() and _looks_like_session(path):
+                if (
+                    path.is_file()
+                    and _looks_like_session(path)
+                    and structured_log_matches_project(path, repo_root)
+                ):
                     paths.append(path)
     return sorted(set(paths))
 

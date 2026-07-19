@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
+
+# Pretty-printed JSON typically uses 2-space indent for top-level object keys.
+# Nested keys sit at 4+ spaces and must not be treated as top-level.
+_TOP_LEVEL_KEY_RE = re.compile(r'^  "([^\\"]+)"\s*:\s*', re.MULTILINE)
 
 PARSE_HEALTH_THRESHOLD = 0.90
 UNKNOWN_FIELD_SPIKE = 3
@@ -19,6 +24,7 @@ _EXPECTED_FIELDS: dict[str, frozenset[str]] = {
         {
             "type",
             "sessionId",
+            "session_id",
             "uuid",
             "parentUuid",
             "timestamp",
@@ -28,10 +34,72 @@ _EXPECTED_FIELDS: dict[str, frozenset[str]] = {
             "toolUseResult",
             "isSidechain",
             "requestId",
+            # Common Claude Code metadata / bookkeeping keys (not trajectory payload).
+            "userType",
+            "version",
+            "entrypoint",
+            "attachment",
+            "promptId",
+            "permissionMode",
+            "snapshot",
+            "isSnapshotUpdate",
+            "messageId",
+            "mode",
+            "leafUuid",
+            "isMeta",
+            "origin",
+            "promptSource",
+            "aiTitle",
+            "lastPrompt",
+            "content",
+            "subtype",
+            "level",
+            "error",
+            "apiErrorStatus",
+            "isApiErrorMessage",
+            "stopReason",
+            "durationMs",
+            "operation",
+            "queuePriority",
+            "sourceToolAssistantUUID",
+            "sourceToolUseID",
+            "toolUseID",
+            "hookAdditionalContext",
+            "hookCount",
+            "hookErrors",
+            "hookInfos",
+            "imagePasteIds",
+            "attributionMcpServer",
+            "attributionMcpTool",
+            "attributionPlugin",
+            "attributionSkill",
+            "hasOutput",
+            "messageCount",
+            "pendingBackgroundAgentCount",
+            "preventedContinuation",
+            "prNumber",
+            "prRepository",
+            "prUrl",
+            "agent_id",
+            "agentId",
+            "attributionAgent",
         }
     ),
     "codex": frozenset({"timestamp", "type", "payload"}),
-    "cursor": frozenset({"role", "message", "timestamp", "model", "usage", "cwd"}),
+    "cursor": frozenset(
+        {
+            "role",
+            "message",
+            "timestamp",
+            "model",
+            "usage",
+            "cwd",
+            # Agent-transcript turn markers (ignored for trajectory, expected shape).
+            "type",
+            "status",
+            "error",
+        }
+    ),
     "cline": frozenset(
         {
             "type",
@@ -84,7 +152,43 @@ _EXPECTED_FIELDS: dict[str, frozenset[str]] = {
         }
     ),
     "hermes": frozenset(
-        {"session_id", "messages", "model", "session_start", "last_updated", "usage"}
+        {
+            "session_id",
+            "messages",
+            "model",
+            "session_start",
+            "last_updated",
+            "usage",
+            "base_url",
+            "platform",
+            "system_prompt",
+            "tools",
+            "message_count",
+        }
+    ),
+    "opencode": frozenset(
+        {
+            # Cairn stream stubs for SQLite-backed OpenCode sessions.
+            "db",
+            "session_id",
+            "directory",
+            "title",
+            # Legacy JSONL fallback (agent_jsonl shape).
+            "timestamp",
+            "cwd",
+            "git_branch",
+            "type",
+            "content",
+            "model",
+            "usage",
+            "tool_name",
+            "tool_use_id",
+            "tool_id",
+            "name",
+            "input",
+            "result",
+            "is_error",
+        }
     ),
     "openclaw": frozenset(
         {
@@ -109,7 +213,6 @@ _EXPECTED_FIELDS: dict[str, frozenset[str]] = {
 _SHAPE_ALIASES = {
     "aider": "agent_jsonl",
     "goose": "agent_jsonl",
-    "opencode": "agent_jsonl",
     "roo": "cline",
     "kilo": "cline",
     "gemini_cli": "gemini",
@@ -128,6 +231,14 @@ def inspect_unknown_fields(adapter_id: str, path: Path) -> dict[str, int]:
     """Count unknown top-level fields in a bounded live-log sample."""
     unknown = inspect_stream_shape(adapter_id, path)["unknown_fields"]
     return {str(key): int(value) for key, value in unknown.items()}
+
+
+def unknown_field_spike(unknown_fields: dict[str, int] | None) -> bool:
+    """True when one unknown field repeats or many distinct unknowns appear."""
+    if not unknown_fields:
+        return False
+    counts = [int(value) for value in unknown_fields.values()]
+    return max(counts) >= UNKNOWN_FIELD_SPIKE or len(counts) >= UNKNOWN_FIELD_SPIKE
 
 
 def inspect_stream_shape(adapter_id: str, path: Path) -> dict[str, Any]:
@@ -153,6 +264,26 @@ def inspect_stream_shape(adapter_id: str, path: Path) -> dict[str, Any]:
         "unknown_fields": dict(sorted(unknown.items())),
         "expected_shape_available": True,
     }
+
+
+def reset_parse_health(
+    conn: sqlite3.Connection,
+    *,
+    workspace_id: str,
+    adapter_id: str | None = None,
+) -> int:
+    """Clear accumulated parse-health counters (used by force rescan)."""
+    if adapter_id is None:
+        cur = conn.execute(
+            "DELETE FROM adapter_parse_health WHERE workspace_id = ?",
+            (workspace_id,),
+        )
+    else:
+        cur = conn.execute(
+            "DELETE FROM adapter_parse_health WHERE workspace_id = ? AND adapter_id = ?",
+            (workspace_id, adapter_id),
+        )
+    return int(cur.rowcount or 0)
 
 
 def record_parse_attempt(
@@ -221,7 +352,7 @@ def health_payload(row: sqlite3.Row) -> dict[str, Any]:
         and (
             coverage is not None
             and coverage < PARSE_HEALTH_THRESHOLD
-            or sum(int(value) for value in recent.values()) >= UNKNOWN_FIELD_SPIKE
+            or unknown_field_spike(recent)
         )
     )
     return {
@@ -239,23 +370,70 @@ def health_payload(row: sqlite3.Row) -> dict[str, Any]:
 
 def _sample_records(path: Path) -> list[dict[str, Any]]:
     try:
-        text = path.read_bytes()[:_SAMPLE_BYTES].decode("utf-8", errors="replace")
+        raw = path.read_bytes()
     except OSError:
         return []
+    # Prefer a full parse when the file fits; otherwise sample the head and
+    # recover top-level object keys from truncated pretty-printed JSON.
+    if len(raw) <= _SAMPLE_BYTES:
+        try:
+            value = json.loads(raw.decode("utf-8", errors="replace"))
+        except json.JSONDecodeError:
+            value = None
+        else:
+            if isinstance(value, dict):
+                return [value]
+            if isinstance(value, list):
+                return [item for item in value[:100] if isinstance(item, dict)]
+    text = raw[:_SAMPLE_BYTES].decode("utf-8", errors="replace")
     try:
         value = json.loads(text)
     except json.JSONDecodeError:
         records: list[dict[str, Any]] = []
         for line in text.splitlines()[:100]:
+            stripped = line.strip()
+            if not stripped:
+                continue
             try:
-                item = json.loads(line)
+                item = json.loads(stripped)
             except json.JSONDecodeError:
                 continue
             if isinstance(item, dict):
                 records.append(item)
-        return records
+        if records:
+            return records
+        recovered = _recover_top_level_object(text)
+        return [recovered] if recovered is not None else []
     if isinstance(value, dict):
         return [value]
     if isinstance(value, list):
         return [item for item in value[:100] if isinstance(item, dict)]
     return []
+
+
+def _recover_top_level_object(text: str) -> dict[str, Any] | None:
+    """Best-effort top-level keys from a truncated pretty-printed JSON object."""
+    start = text.find("{")
+    if start < 0:
+        return None
+    decoder = json.JSONDecoder()
+    try:
+        value, _ = decoder.raw_decode(text[start:])
+        if isinstance(value, dict):
+            return value
+    except json.JSONDecodeError:
+        pass
+    # Truncated object: collect "key": value pairs near the top level.
+    recovered: dict[str, Any] = {}
+    for match in _TOP_LEVEL_KEY_RE.finditer(text[start:]):
+        key = match.group(1)
+        rest = text[start + match.end() :]
+        try:
+            value, _ = decoder.raw_decode(rest)
+        except json.JSONDecodeError:
+            recovered[key] = True
+            continue
+        recovered[key] = value
+        if len(recovered) >= 40:
+            break
+    return recovered or None

@@ -264,6 +264,9 @@ class OtlpReceiver:
                     "source": trace.source,
                 },
             )
+            persisted = TraceRepo.get(self._db.reader, trace_id)
+            if persisted is not None:
+                self._bus.cost_ticks.observe(persisted)
             self._bus.publish("views-updated", {"trace_id": trace_id})
         return results
 

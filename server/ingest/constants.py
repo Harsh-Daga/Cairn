@@ -85,6 +85,7 @@ CANONICAL_NORMS: frozenset[str] = frozenset(
 _TOOL_ALIASES: dict[str, str] = {
     "read": NORM_READ,
     "read_file": NORM_READ,
+    "readfile": NORM_READ,
     "open_file": NORM_READ,
     "cat": NORM_READ,
     "view": NORM_READ,

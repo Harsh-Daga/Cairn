@@ -10,6 +10,28 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 _HERMES_PATH_RE = re.compile(r"(/[\w./-]+)")
+_PROJECT_PATH_KEYS = frozenset(
+    {
+        "cwd",
+        "directory",
+        "project",
+        "project_path",
+        "projectPath",
+        "repo",
+        "repo_root",
+        "repoRoot",
+        "root_path",
+        "rootPath",
+        "workspace",
+        "workspace_path",
+        "workspacePath",
+    }
+)
+_ARTIFACT_PATH_KEYS = frozenset(
+    {"file", "file_path", "filePath", "filename", "path", "target", "target_file"}
+)
+_PROJECT_PROBE_BYTES = 1024 * 1024
+_PROJECT_PROBE_DEPTH = 12
 
 
 def claude_project_slug(repo_root: Path) -> str:
@@ -348,6 +370,68 @@ def _path_under_project(path_str: str, project_root: Path) -> bool:
         return False
 
 
+def _structured_value_matches_project(
+    value: object,
+    project_root: Path,
+    *,
+    key: str | None = None,
+    depth: int = 0,
+) -> bool:
+    if depth > _PROJECT_PROBE_DEPTH:
+        return False
+    if isinstance(value, str):
+        if key not in _PROJECT_PATH_KEYS | _ARTIFACT_PATH_KEYS:
+            return False
+        candidate = Path(value).expanduser()
+        if not candidate.is_absolute():
+            return False
+        return _path_under_project(str(candidate), project_root)
+    if isinstance(value, dict):
+        return any(
+            _structured_value_matches_project(
+                child,
+                project_root,
+                key=str(child_key),
+                depth=depth + 1,
+            )
+            for child_key, child in value.items()
+        )
+    if isinstance(value, list):
+        return any(
+            _structured_value_matches_project(
+                child,
+                project_root,
+                key=key,
+                depth=depth + 1,
+            )
+            for child in value
+        )
+    return False
+
+
+def structured_log_matches_project(path: Path, project_root: Path) -> bool:
+    """Conservatively accept a global log only with explicit in-project path evidence."""
+    try:
+        with path.open("rb") as handle:
+            raw = handle.read(_PROJECT_PROBE_BYTES + 1)
+    except OSError:
+        return False
+    if len(raw) > _PROJECT_PROBE_BYTES:
+        return False
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    try:
+        if path.suffix == ".jsonl":
+            values: list[object] = [json.loads(line) for line in text.splitlines() if line.strip()]
+        else:
+            values = [json.loads(text)]
+    except json.JSONDecodeError:
+        return False
+    return any(_structured_value_matches_project(value, project_root) for value in values)
+
+
 def _hermes_message_paths(message: dict[str, object]) -> list[str]:
     paths: list[str] = []
     content = message.get("content")
@@ -446,6 +530,7 @@ def goose_sessions_root() -> Path:
 def discover_agent_jsonl_sessions(
     sessions_root: Path,
     *,
+    project_root: Path | None = None,
     since: datetime | None = None,
 ) -> list[Path]:
     if not sessions_root.is_dir():
@@ -456,6 +541,8 @@ def discover_agent_jsonl_sessions(
             continue
         if since is not None and path.stat().st_mtime < since.timestamp():
             continue
+        if project_root is not None and not structured_log_matches_project(path, project_root):
+            continue
         paths.append(path.resolve())
     return paths
 
@@ -465,8 +552,11 @@ def discover_aider_sessions(
     *,
     since: datetime | None = None,
 ) -> list[Path]:
-    del repo_root
-    return discover_agent_jsonl_sessions(aider_sessions_root(), since=since)
+    return discover_agent_jsonl_sessions(
+        aider_sessions_root(),
+        project_root=repo_root,
+        since=since,
+    )
 
 
 def discover_opencode_sessions(
@@ -474,8 +564,11 @@ def discover_opencode_sessions(
     *,
     since: datetime | None = None,
 ) -> list[Path]:
-    del repo_root
-    return discover_agent_jsonl_sessions(opencode_sessions_root(), since=since)
+    return discover_agent_jsonl_sessions(
+        opencode_sessions_root(),
+        project_root=repo_root,
+        since=since,
+    )
 
 
 def discover_goose_sessions(
@@ -483,8 +576,11 @@ def discover_goose_sessions(
     *,
     since: datetime | None = None,
 ) -> list[Path]:
-    del repo_root
-    return discover_agent_jsonl_sessions(goose_sessions_root(), since=since)
+    return discover_agent_jsonl_sessions(
+        goose_sessions_root(),
+        project_root=repo_root,
+        since=since,
+    )
 
 
 def path_rel_to_repo(repo_root: Path, file_path: str) -> str | None:

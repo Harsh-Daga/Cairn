@@ -4,10 +4,18 @@ from __future__ import annotations
 
 import tomllib
 from dataclasses import dataclass
+from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from server.ingest.pricing_data import PriceRow, _min_prefix_for, match_model
+from server.ingest.pricing_data import (
+    PriceRow,
+    _min_prefix_for,
+    load_price_table_meta,
+    match_model,
+)
+
+PricingKind = Literal["matched", "override", "unknown"]
 
 
 @dataclass(frozen=True)
@@ -20,6 +28,7 @@ class CostBreakdown:
     total: float
     estimated: bool
     model_matched: str | None
+    pricing_kind: PricingKind = "unknown"
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -31,10 +40,11 @@ class CostBreakdown:
             "total": self.total,
             "estimated": self.estimated,
             "model_matched": self.model_matched,
+            "pricing_kind": self.pricing_kind,
         }
 
 
-_EMPTY = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, True, None)
+_EMPTY = CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, True, None, "unknown")
 
 
 def _usage_field(usage: Any, name: str) -> int:
@@ -88,14 +98,14 @@ def estimate_cost(
     - ``cache_creation_1h_tokens`` (``ephemeral_1h_input_tokens``) → 1h write at
       ``cache_write_1h_per_mtok`` (2.0× input).
 
-    Returns a zero breakdown (estimated=True, model_matched=None) when the model
-    is unknown.
+    Returns a zero breakdown (estimated=True, model_matched=None, pricing_kind=unknown)
+    when the model is unknown.
     """
     if overrides is None and root is not None:
         overrides = load_overrides(root)
-    row = _resolve_row(model, overrides)
+    row, kind = _resolve_row(model, overrides)
     if row is None:
-        return CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, estimated, None)
+        return CostBreakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, estimated, None, "unknown")
 
     inp = _usage_field(usage, "input_tokens")
     out = _usage_field(usage, "output_tokens")
@@ -120,13 +130,14 @@ def estimate_cost(
         total=total,
         estimated=estimated,
         model_matched=row.match,
+        pricing_kind=kind,
     )
 
 
 def _resolve_row(
     model: str,
     overrides: dict[str, dict[str, Any]] | None,
-) -> PriceRow | None:
+) -> tuple[PriceRow | None, PricingKind]:
     if overrides:
         from server.ingest.pricing_data import normalize_model
 
@@ -135,31 +146,110 @@ def _resolve_row(
         candidates = [model, name]
         for key in candidates:
             if key in overrides:
-                return PriceRow.from_dict({"match": name, **overrides[key]})
+                return PriceRow.from_dict({"match": name, **overrides[key]}), "override"
         best_key: str | None = None
         for key in overrides:
             kl = key.lower()
             if name.startswith(kl) and (best_key is None or len(kl) > len(best_key)):
                 best_key = key
         if best_key is not None:
-            return PriceRow.from_dict({"match": best_key.lower(), **overrides[best_key]})
-    return match_model(model)
+            return (
+                PriceRow.from_dict({"match": best_key.lower(), **overrides[best_key]}),
+                "override",
+            )
+    row = match_model(model)
+    if row is None:
+        return None, "unknown"
+    return row, "matched"
 
 
 def load_overrides(root: Path | None) -> dict[str, dict[str, Any]]:
-    """Merge ``~/.cairn/prices.toml`` then ``<root>/.cairn/prices.local.toml``.
+    """Merge legacy price aliases with the unified typed configuration.
 
-    The project-local file wins over the user-global one.
+    Legacy user prices load first; typed user/workspace configuration overrides them; the legacy
+    project-local file remains the final compatibility override until its documented migration.
     """
+    from server.configuration import load_config
+
     merged: dict[str, dict[str, Any]] = {}
     home = Path.home() / ".cairn" / "prices.toml"
     if home.is_file():
         merged.update(_load_toml_prices(home))
+    merged.update(load_config(root).pricing.overrides)
     if root is not None:
         local = Path(root) / ".cairn" / "prices.local.toml"
         if local.is_file():
             merged.update(_load_toml_prices(local))
     return merged
+
+
+def pricing_status(
+    root: Path | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Offline pricing provenance, staleness, and override summary."""
+    from server.configuration import load_config
+
+    meta = load_price_table_meta()
+    config = load_config(root).pricing
+    overrides = load_overrides(root)
+    when = now or datetime.now(UTC)
+    age_days: int | None = None
+    stale = False
+    if meta.effective_date:
+        try:
+            effective = date.fromisoformat(meta.effective_date[:10])
+            age_days = (when.date() - effective).days
+            stale = age_days > int(config.stale_after_days)
+        except ValueError:
+            age_days = None
+            stale = True
+    return {
+        "offline": True,
+        "auto_download": False,
+        "schema": meta.schema,
+        "source": meta.source,
+        "version": meta.version,
+        "effective_date": meta.effective_date,
+        "currency": meta.currency,
+        "model_count": meta.model_count,
+        "path": meta.path,
+        "stale": stale,
+        "age_days": age_days,
+        "stale_after_days": int(config.stale_after_days),
+        "override_count": len(overrides),
+        "override_keys": sorted(overrides.keys())[:32],
+        "refresh": {
+            "available": False,
+            "message": (
+                "Bundled price refresh is not implemented. "
+                "Cairn never silently downloads pricing; use local overrides."
+            ),
+        },
+        "limitation": (
+            "Costs use offline bundled rates or local overrides. "
+            "Unknown models yield pricing_kind=unknown (no silent fetch). "
+            "Stale means the bundled effective_date exceeded stale_after_days."
+        ),
+    }
+
+
+def pricing_refresh_preview(root: Path | None = None) -> dict[str, Any]:
+    """Explicit preview stub — never downloads; documents future refresh policy."""
+    status = pricing_status(root)
+    return {
+        "ok": True,
+        "would_download": False,
+        "preview": status["refresh"],
+        "current": {
+            "source": status["source"],
+            "version": status["version"],
+            "effective_date": status["effective_date"],
+            "stale": status["stale"],
+        },
+        "limitation": status["limitation"],
+    }
 
 
 def _load_toml_prices(path: Path) -> dict[str, dict[str, Any]]:
