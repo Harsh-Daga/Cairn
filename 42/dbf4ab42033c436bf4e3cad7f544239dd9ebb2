@@ -1,0 +1,81 @@
+docs/architecture/watcher.md
+  s_2f3774c9a58583::t_7574599b03ede9 1-26
+docs/plans/v1.2.0-performance-results.json
+  s_2f3774c9a58583::t_c9c974545205a8 1-78
+docs/architecture/decisions/0001-time-range-and-timezone.md
+  s_1b322965a76443::t_f1ddb2d5ff2764 1-24
+docs/architecture/decisions/0002-static-export-query-parity.md
+  s_1b322965a76443::t_3ac16a378a2d8f 1-24
+docs/architecture/decisions/0003-openapi-generated-types.md
+  s_1b322965a76443::t_5d26a8d0a2c14b 1-24
+docs/architecture/decisions/0004-detector-consolidation.md
+  s_1b322965a76443::t_710aaa1477cc82 1-22
+docs/architecture/decisions/0005-theme-and-accessible-color.md
+  s_1b322965a76443::t_47ef9c9d6fa114 1-22
+docs/architecture/decisions/0006-large-workspace-pagination.md
+  s_1b322965a76443::t_8c2b5bcdda1b85 1-21
+docs/architecture/decisions/0007-guard-attribution-events.md
+  s_1b322965a76443::t_98c5728d4446b9 1-23
+docs/architecture/decisions/0008-release-build-publish-provenance.md
+  s_1b322965a76443::t_3dc095a5f2db79 1-22
+docs/architecture/decisions/0009-untrusted-telemetry-llm-mcp.md
+  s_1b322965a76443::t_c9d81cc5459379 1-26
+docs/architecture/decisions/0010-portable-evidence-archive.md
+  s_1b322965a76443::t_234599edc194ba 1-26
+docs/architecture/decisions/0011-resource-circuit-breakers-reference-egress.md
+  s_1b322965a76443::t_1a69c4c45c9bb9 1-29
+docs/architecture/decisions/0012-query-indexes-and-search-storage.md
+  s_1b322965a76443::t_5feb38c83a14d0 1-41
+docs/architecture/demo-adapter-boundaries.md
+  s_1b322965a76443::t_92b4dd26581a0e 1-35
+docs/plans/v1.2.0-browser-performance-results.json
+  s_1b322965a76443::t_1382726a0d3b19 1-16
+docs/plans/v1.2.0-coverage-baseline.json
+  s_1b322965a76443::t_88afa79ac09bdf 1-26
+docs/plans/v1.2.0-execution-prompt.md
+  s_f20f5aa0cdc0b9::t_dc4dac64d3b874 1-90
+docs/plans/v1.2.0-revamp-prompt.md
+  s_f20f5aa0cdc0b9::t_1f80d6ddb1c62b 1-3021
+docs/reproducible-builds.md
+  s_1b322965a76443::t_e0936f9e78ef71 1-27
+docs/security/dependency-suppressions.md
+  s_1b322965a76443::t_8191cece22e60a 1-15
+docs/security/openssf-gap-report-2026-07-17.md
+  s_1b322965a76443::t_bd6d22c4e076f9 1-75
+docs/security/threat-model.md
+  s_1b322965a76443::t_1aff7b0905abb0 1-64
+docs/testing.md
+  s_1b322965a76443::t_6298fe05abe659 1-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "42dbf4ab42033c436bf4e3cad7f544239dd9ebb2",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_f20f5aa0cdc0b9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6c32-0e4c-79d1-9870-a7ecdd7261e8",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
