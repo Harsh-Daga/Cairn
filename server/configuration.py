@@ -602,6 +602,8 @@ def configuration_reference_markdown() -> str:
                 .replace("<class '", "")
                 .replace("'>", "")
                 .replace(" | None", "?")
+                # Python 3.13 stringifies pathlib.Path as pathlib._local.Path.
+                .replace("pathlib._local.Path", "pathlib.Path")
             )
             default = _get_nested(defaults, key)
             if is_secret_key(key):

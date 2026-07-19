@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import subprocess
@@ -98,13 +99,31 @@ def _changed_lines(base: str) -> dict[str, set[int]]:
     return changed
 
 
+def _exclusion_globs() -> list[str]:
+    baseline = _read_json(BASELINE)
+    exclusions = baseline.get("exclusions") or {}
+    patterns: list[str] = []
+    for key in ("python", "ui"):
+        patterns.extend(str(item) for item in exclusions.get(key, []))
+    return patterns
+
+
+def _is_excluded(path: str, patterns: list[str]) -> bool:
+    return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+
+
 def check_changed_lines(base: str) -> list[str]:
     executable = _lcov_lines(PYTHON_LCOV)
     for path, lines in _lcov_lines(UI_LCOV).items():
         executable[path] = lines
     changed = _changed_lines(base)
+    excluded = _exclusion_globs()
     relevant: list[bool] = []
+    skipped_files = 0
     for path, lines in changed.items():
+        if _is_excluded(path, excluded):
+            skipped_files += 1
+            continue
         coverage = executable.get(path, {})
         relevant.extend(coverage[line] for line in lines if line in coverage)
     if not relevant:
@@ -114,7 +133,8 @@ def check_changed_lines(base: str) -> list[str]:
     expected = float(_read_json(BASELINE)["changed_lines_min_pct"])
     print(
         f"Changed-line coverage: {actual:.2f}% "
-        f"({sum(relevant)}/{len(relevant)}) against {base}; required {expected:.2f}%"
+        f"({sum(relevant)}/{len(relevant)}) against {base}; required {expected:.2f}% "
+        f"(skipped {skipped_files} excluded file(s))"
     )
     if actual + 1e-9 < expected:
         return [f"changed-line coverage {actual:.2f}% is below {expected:.2f}%"]

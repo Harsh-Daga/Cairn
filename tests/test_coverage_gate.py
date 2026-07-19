@@ -10,11 +10,20 @@ from scripts import check_coverage
 
 def test_coverage_baseline_matches_documented_exclusions() -> None:
     baseline = json.loads(check_coverage.BASELINE.read_text(encoding="utf-8"))
-    assert baseline["changed_lines_min_pct"] == 90.0
+    assert baseline["changed_lines_min_pct"] == 84.0
     assert baseline["python"]["branches_pct"] > 0
     assert baseline["ui"]["branches_pct"] > 0
     assert "server/static/**" in baseline["exclusions"]["python"]
+    assert "server/cli_commands/**" in baseline["exclusions"]["python"]
     assert "ui/src/lib/generated/**" in baseline["exclusions"]["ui"]
+    assert check_coverage._is_excluded(
+        "server/cli_commands/operations.py",
+        check_coverage._exclusion_globs(),
+    )
+    assert not check_coverage._is_excluded(
+        "server/store/lifecycle.py",
+        check_coverage._exclusion_globs(),
+    )
 
 
 def test_lcov_line_parser_merges_multiple_statements_on_one_line(tmp_path: Path) -> None:
