@@ -8,6 +8,22 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from server.analyze.handoff import build_handoff_for_trace
+from server.mcp.context_budget import context_budget as build_context_budget
+from server.mcp.context_budget import resolve_trace
+from server.mcp.evidence import (
+    next_evidence as build_next_evidence,
+)
+from server.mcp.evidence import (
+    policy_check as build_policy_check,
+)
+from server.mcp.evidence import (
+    regression_context as build_regression_context,
+)
+from server.mcp.evidence import (
+    verification_status as build_verification_status,
+)
+
 
 @dataclass
 class ToolsContext:
@@ -88,6 +104,107 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "description": "Applied managed-block rules and experiment conventions.",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "cairn_context_budget",
+        "description": (
+            "Read-only context composition for the current or selected session: region "
+            "token shares, largest removable/stale regions, and one conservative trim "
+            "suggestion. Pass trace_id when multiple active sessions make auto-detect "
+            "ambiguous. No provider call."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "trace_id": {
+                    "type": "string",
+                    "description": "Explicit session/trace id when auto-detection is ambiguous.",
+                },
+                "session_id": {
+                    "type": "string",
+                    "description": "Alias for trace_id.",
+                },
+            },
+        },
+    },
+    {
+        "name": "cairn_handoff",
+        "description": (
+            "Read-only offline handoff capsule for a session: goal, blockers, files, "
+            "tests, corrections, verification debt, and next checks. Each statement is "
+            "tagged fact, inference, or recommendation. Sensitive content is scrubbed. "
+            "Pass trace_id when ambiguous. No provider call."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "trace_id": {
+                    "type": "string",
+                    "description": "Explicit session/trace id when auto-detection is ambiguous.",
+                },
+                "session_id": {
+                    "type": "string",
+                    "description": "Alias for trace_id.",
+                },
+            },
+        },
+    },
+    {
+        "name": "cairn_verification_status",
+        "description": (
+            "Read-only verification receipt summary: status, active debt components, "
+            "remaining checks, and review risk. Pass trace_id when ambiguous. No provider call."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "trace_id": {"type": "string"},
+                "session_id": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "cairn_policy_check",
+        "description": (
+            "Advisory evaluation of a proposed path and/or command against [policy]. "
+            "Reports enforcement_source; never claims Cairn blocked an action. Never executes."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "path_rel": {"type": "string"},
+                "command": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "cairn_regression_context",
+        "description": (
+            "Load acceptance criteria for a local regression artifact under "
+            ".cairn/regressions. Pass regression_id when multiple exist. Never executes."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "regression_id": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "cairn_next_evidence",
+        "description": (
+            "Smallest repository-grounded next check preview with approval class, "
+            "side effects, and estimated cost — without executing it. Pass trace_id "
+            "when ambiguous. No provider call."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "trace_id": {"type": "string"},
+                "session_id": {"type": "string"},
+            },
+        },
+    },
 ]
 
 
@@ -109,6 +226,12 @@ def call_tool(ctx: ToolsContext, name: str, args: dict[str, Any]) -> dict[str, A
         "cairn_session_so_far": _session_so_far,
         "cairn_should_i_stop": _should_i_stop,
         "cairn_project_conventions": _project_conventions,
+        "cairn_context_budget": _context_budget,
+        "cairn_handoff": _handoff,
+        "cairn_verification_status": _verification_status,
+        "cairn_policy_check": _policy_check,
+        "cairn_regression_context": _regression_context,
+        "cairn_next_evidence": _next_evidence,
     }
     fn = dispatch.get(name)
     if fn is None:
@@ -345,6 +468,38 @@ def _should_i_stop(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
         "first_seen_seq": detection.first_seen_seq,
         "advice": detection.advice,
     }
+
+
+def _context_budget(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    return build_context_budget(ctx.conn, ctx.workspace_id, args)
+
+
+def _handoff(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    requested = str(args.get("trace_id") or args.get("session_id") or "").strip() or None
+    resolution = resolve_trace(ctx.conn, ctx.workspace_id, requested)
+    if resolution.get("error"):
+        return resolution
+    trace_id = str(resolution["trace_id"])
+    capsule = build_handoff_for_trace(ctx.conn, trace_id, workspace_root=ctx.workspace_root)
+    if capsule is None:
+        return {"error": "trace_not_found", "trace_id": trace_id}
+    return capsule
+
+
+def _verification_status(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    return build_verification_status(ctx.conn, ctx.workspace_id, args)
+
+
+def _policy_check(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    return build_policy_check(ctx.conn, ctx.workspace_root, ctx.workspace_id, args)
+
+
+def _regression_context(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    return build_regression_context(ctx.workspace_root, args)
+
+
+def _next_evidence(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:
+    return build_next_evidence(ctx.conn, ctx.workspace_root, ctx.workspace_id, args)
 
 
 def _project_conventions(ctx: ToolsContext, args: dict[str, Any]) -> dict[str, Any]:

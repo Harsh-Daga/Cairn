@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from server.mcp.install import BOOTSTRAP_PROMPT, install_mcp_config
@@ -43,3 +44,6 @@ def test_write_cursor_json(tmp_path: Path, monkeypatch) -> None:
     assert result["written"] is True
     data = json.loads(cfg.read_text(encoding="utf-8"))
     assert "cairn" in data["mcpServers"]
+    if os.name != "nt":
+        assert cfg.parent.stat().st_mode & 0o777 == 0o700
+        assert cfg.stat().st_mode & 0o777 == 0o600

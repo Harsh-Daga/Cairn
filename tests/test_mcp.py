@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 from pathlib import Path
 
 from server.mcp.server import serve
@@ -54,7 +55,9 @@ def test_mcp_stdio_initialize_and_list_tools(tmp_path: Path) -> None:
     assert "cairn_have_i_read" in tool_names
     assert "cairn_should_i_stop" in tool_names
     assert "cairn_before_you_read" in tool_names
-    assert len(tool_names) == 7
+    assert "cairn_context_budget" in tool_names
+    assert "cairn_handoff" in tool_names
+    assert len(tool_names) == 13
 
 
 def test_mcp_have_i_read_tool(tmp_path: Path) -> None:
@@ -91,6 +94,9 @@ def test_mcp_have_i_read_tool(tmp_path: Path) -> None:
     assert event["after_seq"] == 1
     assert "src/app.py" not in event_text
     assert "arguments" not in event_text
+    if os.name != "nt":
+        assert db_dir.stat().st_mode & 0o777 == 0o700
+        assert (db_dir / "mcp-events.jsonl").stat().st_mode & 0o777 == 0o600
 
     # The MCP process records only to the sidecar; its SQLite connection stays read-only.
     conn = connect(db_dir / "cairn.db")
