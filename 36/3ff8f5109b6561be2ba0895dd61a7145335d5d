@@ -1,0 +1,23 @@
+tests/test_doctor.py
+  s_1b322965a76443::t_3dee47618f82e7 9-15,28,69-129
+tests/test_first_run.py
+  s_1b322965a76443::t_2fd6ec7fbc7805 1-27
+tests/test_workflows.py
+  s_1b322965a76443::t_35d93e8e5883eb 1-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "363ff8f5109b6561be2ba0895dd61a7145335d5d",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
