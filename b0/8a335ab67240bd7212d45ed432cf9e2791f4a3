@@ -1,0 +1,55 @@
+docs/api/filter-grammar.json
+  s_2f3774c9a58583::t_c2a76a530473b1 1-75
+docs/api/generated.md
+  s_2f3774c9a58583::t_4d1d9cfbee06b5 1-44
+docs/api/openapi-compat.json
+  s_2f3774c9a58583::t_55152351fb09a1 1-3838
+ui/src/lib/generated/api-types.ts
+  s_2f3774c9a58583::t_8bf38145b7e57a 1-1748
+ui/src/lib/generated/filter-grammar.ts
+  s_2f3774c9a58583::t_efd79c30d3821b 1-6
+docs/time-ranges.md
+  s_1b322965a76443::t_a9c4bba80f2d13 1-45
+server/api/params.py
+  s_1b322965a76443::t_b663ad4e603ddf 1-16
+server/api/payload_domains/__init__.py
+  s_1b322965a76443::t_340eb7a952e2ab 1
+server/api/routers/insights.py
+  s_1b322965a76443::t_f2f8a5ff40cd98 11,21-22
+server/api/routers/search.py
+  s_1b322965a76443::t_9ab13db24754a7 11,22-24,26-32
+server/api/schema/__init__.py
+  s_1b322965a76443::t_f5d965f9428c40 1
+server/api/schema/query.py
+  s_1b322965a76443::t_fb93a6ba2d6172 1-33
+server/api/time_range.py
+  s_1b322965a76443::t_3cd924093264ea 1-102
+tests/test_generated_api.py
+  s_1b322965a76443::t_e347d02cd60ab0 1-29
+tests/test_time_range.py
+  s_1b322965a76443::t_f061dd815ba809 1-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b08a335ab67240bd7212d45ed432cf9e2791f4a3",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
