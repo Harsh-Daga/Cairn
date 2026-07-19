@@ -1,0 +1,41 @@
+server/store/search.py
+  s_2f3774c9a58583::t_ba75bf70ae0db1 22
+server/api/payload_domains/tools.py
+  s_2f3774c9a58583::t_ba75bf70ae0db1 289
+server/ingest/adapters/generic_jsonl_adapter.py
+  s_2f3774c9a58583::t_4cc855e0c9ca60 65-72
+server/api/payload_domains/files.py
+  s_2f3774c9a58583::t_ba75bf70ae0db1 232
+server/store/resource_soak.py
+  s_2f3774c9a58583::t_fa691504e2ed98 9,16,18-20
+  s_2f3774c9a58583::t_6e8f66df9f4b77 22,26-27,29
+server/api/payload_domains/compare.py
+  s_2f3774c9a58583::t_ba75bf70ae0db1 181
+server/ingest/adapters/claude_code.py
+  s_2f3774c9a58583::t_039c20b098f3bb 252-253
+  s_2f3774c9a58583::t_ba75bf70ae0db1 472,490
+server/ingest/adapters/opencode_db.py
+  s_2f3774c9a58583::t_5a054da1a17044 422-425,478
+server/store/dedup_assessment.py
+  s_2f3774c9a58583::t_ba75bf70ae0db1 37
+server/ingest/pipeline.py
+  s_2f3774c9a58583::t_ba75bf70ae0db1 230
+server/ingest/adapters/codex.py
+  s_2f3774c9a58583::t_ba75bf70ae0db1 421-424
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b6b7749ee8beab652cbda17835d66e2721790d3c",
+  "prompts": {},
+  "sessions": {
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
