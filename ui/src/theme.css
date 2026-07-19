@@ -6,50 +6,149 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Cairn 1.1.1 — modern signal workspace. */
+/* Cairn 1.2 semantic theme contract. RGB-channel tokens support Tailwind opacity modifiers. */
 :root {
   color-scheme: dark;
-  --anthracite: #090b10;
-  --slate: #0f1219;
-  --shale: #151923;
-  --granite: #1c2230;
-  --quartz-vein: #2a3242;
-  --bone: #f7f8fa;
-  --cinder: #98a2b3;
-  --ash: #596273;
-  --copper: #8b7cff;
-  --copper-dim: #5b4fc7;
-  --patina: #4de2c5;
-  --malachite: #7be495;
-  --ochre: #f2c94c;
-  --cinnabar: #ff6b7a;
-  --lapis: #60a5fa;
-  --signal: #8b7cff;
+
+  --surface-canvas-rgb: 9 11 16;
+  --surface-base-rgb: 15 18 25;
+  --surface-raised-rgb: 21 25 35;
+  --surface-overlay-rgb: 28 34 48;
+  --surface-hover-rgb: 35 42 57;
+  --text-primary-rgb: 247 248 250;
+  --text-muted-rgb: 166 176 191;
+  --text-disabled-rgb: 116 127 145;
+  --border-default-rgb: 55 65 84;
+  --border-strong-rgb: 91 104 128;
+  --accent-primary-rgb: 155 143 255;
+  --accent-primary-muted-rgb: 106 91 211;
+  --focus-rgb: 183 174 255;
+  --selection-rgb: 91 75 207;
+  --overlay-scrim-rgb: 0 0 0;
+
+  --chart-1-rgb: 155 143 255;
+  --chart-2-rgb: 77 226 197;
+  --chart-3-rgb: 242 201 76;
+  --chart-4-rgb: 96 165 250;
+  --chart-5-rgb: 123 228 149;
+  --chart-6-rgb: 222 134 255;
+  --chart-7-rgb: 166 176 191;
+  --status-success-rgb: 123 228 149;
+  --severity-info-rgb: 96 165 250;
+  --severity-warning-rgb: 242 201 76;
+  --severity-high-rgb: 255 145 82;
+  --severity-critical-rgb: 255 107 122;
+  --confidence-rgb: 77 226 197;
+  --estimate-rgb: 196 181 253;
+
+  --surface-canvas: rgb(var(--surface-canvas-rgb));
+  --surface-base: rgb(var(--surface-base-rgb));
+  --surface-raised: rgb(var(--surface-raised-rgb));
+  --surface-overlay: rgb(var(--surface-overlay-rgb));
+  --surface-hover: rgb(var(--surface-hover-rgb));
+  --text-primary: rgb(var(--text-primary-rgb));
+  --text-muted: rgb(var(--text-muted-rgb));
+  --text-disabled: rgb(var(--text-disabled-rgb));
+  --border-default: rgb(var(--border-default-rgb));
+  --border-strong: rgb(var(--border-strong-rgb));
+  --focus: rgb(var(--focus-rgb));
+  --selection: rgb(var(--selection-rgb));
+  --overlay-scrim: rgb(var(--overlay-scrim-rgb) / 0.72);
+
+  /* Compatibility aliases preserve the 1.1 component API while values become semantic. */
+  --anthracite: var(--surface-canvas);
+  --slate: var(--surface-base);
+  --shale: var(--surface-raised);
+  --granite: var(--surface-hover);
+  --quartz-vein: var(--border-default);
+  --bone: var(--text-primary);
+  --cinder: var(--text-muted);
+  --ash: var(--text-disabled);
+  --copper: rgb(var(--accent-primary-rgb));
+  --copper-dim: rgb(var(--accent-primary-muted-rgb));
+  --patina: rgb(var(--chart-2-rgb));
+  --malachite: rgb(var(--status-success-rgb));
+  --ochre: rgb(var(--severity-warning-rgb));
+  --cinnabar: rgb(var(--severity-critical-rgb));
+  --lapis: rgb(var(--severity-info-rgb));
+  --signal: var(--copper);
 
   --font-display: "Manrope Variable", "Manrope", system-ui, sans-serif;
   --font-ui: "Manrope Variable", "Manrope", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --shadow-stone: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 32px rgba(0, 0, 0, 0.16);
-  --shadow-lift: 0 20px 55px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(139, 124, 255, 0.12);
+  --shadow-stone:
+    0 1px 2px rgb(var(--overlay-scrim-rgb) / 0.3), 0 10px 32px rgb(var(--overlay-scrim-rgb) / 0.16);
+  --shadow-lift:
+    0 20px 55px rgb(var(--overlay-scrim-rgb) / 0.38),
+    0 0 0 1px rgb(var(--accent-primary-rgb) / 0.12);
   --r-chip: 6px;
   --r-sm: 9px;
   --r-card: 14px;
   --r-modal: 18px;
   --rail-w: 240px;
   --rail-collapsed: 72px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --type-xs: 0.6875rem;
+  --type-sm: 0.8125rem;
+  --type-md: 0.9375rem;
+  --type-lg: 1.125rem;
+  --motion-fast: 120ms;
+  --motion-normal: 180ms;
+  --motion-slow: 320ms;
 
   /* Series map */
-  --s-system: var(--copper);
-  --s-tool: var(--patina);
-  --s-result: var(--ochre);
-  --s-cache: var(--lapis);
-  --s-assistant: var(--malachite);
-  --s-retrieved: var(--cinder);
-  --s-error: var(--cinnabar);
-  --s-good: var(--malachite);
+  --s-system: rgb(var(--chart-1-rgb));
+  --s-tool: rgb(var(--chart-2-rgb));
+  --s-result: rgb(var(--chart-3-rgb));
+  --s-cache: rgb(var(--chart-4-rgb));
+  --s-assistant: rgb(var(--chart-5-rgb));
+  --s-retrieved: rgb(var(--chart-7-rgb));
+  --s-error: rgb(var(--severity-critical-rgb));
+  --s-good: rgb(var(--status-success-rgb));
+}
 
-  --grid-field: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><path d='M32 0H0V32' fill='none' stroke='%232A3242' stroke-width='1' opacity='.2'/></svg>");
+:root[data-theme="light"] {
+  color-scheme: light;
+  --surface-canvas-rgb: 247 248 251;
+  --surface-base-rgb: 255 255 255;
+  --surface-raised-rgb: 243 245 249;
+  --surface-overlay-rgb: 255 255 255;
+  --surface-hover-rgb: 232 236 243;
+  --text-primary-rgb: 20 25 34;
+  --text-muted-rgb: 72 82 98;
+  --text-disabled-rgb: 100 111 127;
+  --border-default-rgb: 198 205 216;
+  --border-strong-rgb: 137 149 168;
+  --accent-primary-rgb: 80 61 181;
+  --accent-primary-muted-rgb: 104 88 202;
+  --focus-rgb: 72 50 173;
+  --selection-rgb: 207 201 255;
+  --overlay-scrim-rgb: 24 30 42;
+  --chart-1-rgb: 80 61 181;
+  --chart-2-rgb: 0 107 94;
+  --chart-3-rgb: 143 91 0;
+  --chart-4-rgb: 31 92 169;
+  --chart-5-rgb: 25 116 61;
+  --chart-6-rgb: 130 51 153;
+  --chart-7-rgb: 72 82 98;
+  --status-success-rgb: 25 116 61;
+  --severity-info-rgb: 31 92 169;
+  --severity-warning-rgb: 143 91 0;
+  --severity-high-rgb: 177 68 0;
+  --severity-critical-rgb: 181 37 61;
+  --confidence-rgb: 0 107 94;
+  --estimate-rgb: 104 73 180;
+  --shadow-stone:
+    0 1px 2px rgb(var(--overlay-scrim-rgb) / 0.1), 0 8px 24px rgb(var(--overlay-scrim-rgb) / 0.08);
+  --shadow-lift:
+    0 18px 48px rgb(var(--overlay-scrim-rgb) / 0.16),
+    0 0 0 1px rgb(var(--accent-primary-rgb) / 0.16);
 }
 
 * {
@@ -65,7 +164,16 @@ body,
 
 body {
   background-color: var(--anthracite);
-  background-image: radial-gradient(circle at 70% -15%, rgba(139, 124, 255, 0.13), transparent 34rem), radial-gradient(circle at 10% 0%, rgba(77, 226, 197, 0.06), transparent 25rem), var(--grid-field);
+  background-image:
+    radial-gradient(circle at 70% -15%, rgb(var(--accent-primary-rgb) / 0.13), transparent 34rem),
+    radial-gradient(circle at 10% 0%, rgb(var(--chart-2-rgb) / 0.06), transparent 25rem),
+    linear-gradient(to right, rgb(var(--border-default-rgb) / 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(var(--border-default-rgb) / 0.12) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    32px 32px,
+    32px 32px;
   background-attachment: fixed;
   background-repeat: repeat;
   color: var(--bone);
@@ -77,13 +185,13 @@ body {
 }
 
 ::selection {
-  background: rgba(139, 124, 255, 0.34);
+  background: rgb(var(--selection-rgb) / 0.52);
   color: var(--bone);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(139, 124, 255, 0.8);
-  outline-offset: 2px;
+  outline: 3px solid rgb(var(--focus-rgb));
+  outline-offset: 3px;
   border-radius: var(--r-chip);
 }
 
@@ -176,10 +284,10 @@ body.ready .cairn-glyph .stone.top {
 
 @keyframes pulse-once {
   0% {
-    box-shadow: 0 0 0 0 rgba(139, 124, 255, 0.5);
+    box-shadow: 0 0 0 0 rgb(var(--accent-primary-rgb) / 0.5);
   }
   100% {
-    box-shadow: 0 0 0 8px rgba(139, 124, 255, 0);
+    box-shadow: 0 0 0 8px rgb(var(--accent-primary-rgb) / 0);
   }
 }
 
@@ -236,18 +344,25 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(22, 27, 38, 0.97), rgba(15, 18, 25, 0.98));
-  border: 1px solid rgba(152, 162, 179, 0.14);
+  background: linear-gradient(
+    180deg,
+    rgb(var(--surface-raised-rgb) / 0.97),
+    rgb(var(--surface-base-rgb) / 0.98)
+  );
+  border: 1px solid rgb(var(--border-default-rgb) / 0.7);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-stone);
 }
 
 .card--interactive {
-  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color var(--motion-normal) ease,
+    transform var(--motion-normal) ease,
+    box-shadow var(--motion-normal) ease;
 }
 
 .card--interactive:hover {
-  border-color: rgba(139, 124, 255, 0.46);
+  border-color: rgb(var(--accent-primary-rgb) / 0.7);
   box-shadow: var(--shadow-lift);
   transform: translateY(-2px);
 }
@@ -291,8 +406,8 @@ body.ready .cairn-glyph .stone.top {
 
 .page-status {
   align-items: center;
-  background: rgba(77, 226, 197, 0.06);
-  border: 1px solid rgba(77, 226, 197, 0.18);
+  background: rgb(var(--confidence-rgb) / 0.09);
+  border: 1px solid rgb(var(--confidence-rgb) / 0.32);
   border-radius: 999px;
   color: color-mix(in srgb, var(--patina) 80%, white);
   display: inline-flex;
@@ -310,7 +425,7 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .metric-card::after {
-  background-image: radial-gradient(rgba(139, 124, 255, 0.32) 0.7px, transparent 0.8px);
+  background-image: radial-gradient(rgb(var(--accent-primary-rgb) / 0.32) 0.7px, transparent 0.8px);
   background-size: 5px 5px;
   content: "";
   inset: auto -18px -24px auto;
@@ -323,19 +438,35 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .chart-surface {
-  background: radial-gradient(circle at 50% 0%, rgba(139, 124, 255, 0.055), transparent 48%), linear-gradient(180deg, rgba(9, 11, 16, 0.16), transparent);
+  background:
+    radial-gradient(circle at 50% 0%, rgb(var(--accent-primary-rgb) / 0.055), transparent 48%),
+    linear-gradient(180deg, rgb(var(--surface-canvas-rgb) / 0.16), transparent);
 }
 
 .signal-panel {
-  background: linear-gradient(120deg, rgba(139, 124, 255, 0.12), rgba(77, 226, 197, 0.035) 52%, transparent), var(--slate);
-  border: 1px solid rgba(139, 124, 255, 0.24);
+  background:
+    linear-gradient(
+      120deg,
+      rgb(var(--accent-primary-rgb) / 0.12),
+      rgb(var(--chart-2-rgb) / 0.035) 52%,
+      transparent
+    ),
+    var(--slate);
+  border: 1px solid rgb(var(--accent-primary-rgb) / 0.34);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-stone);
 }
 
 .signal-orb {
-  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.28), transparent 12%), radial-gradient(circle, rgba(139,124,255,.38), rgba(139,124,255,.06) 58%, transparent 70%);
-  filter: drop-shadow(0 0 34px rgba(139, 124, 255, 0.2));
+  background:
+    radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.28), transparent 12%),
+    radial-gradient(
+      circle,
+      rgb(var(--accent-primary-rgb) / 0.38),
+      rgb(var(--accent-primary-rgb) / 0.06) 58%,
+      transparent 70%
+    );
+  filter: drop-shadow(0 0 34px rgb(var(--accent-primary-rgb) / 0.2));
 }
 
 .skeleton {
@@ -345,7 +476,9 @@ body.ready .cairn-glyph .stone.top {
 }
 
 @keyframes skeleton-shift {
-  to { background-position-x: -220%; }
+  to {
+    background-position-x: -220%;
+  }
 }
 
 .chart-entrance {
@@ -354,8 +487,14 @@ body.ready .cairn-glyph .stone.top {
 }
 
 @keyframes chart-rise {
-  from { opacity: 0; transform: translateY(10px) scaleY(0.96); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(10px) scaleY(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .empty-state {
@@ -373,13 +512,46 @@ body.ready .cairn-glyph .stone.top {
 }
 
 .estimated-chip {
-  border-left: 2px dashed var(--cinder);
+  border-left: 2px dashed rgb(var(--estimate-rgb));
   padding-left: 6px;
 }
 
+.confidence-chip {
+  border-bottom: 2px dotted rgb(var(--confidence-rgb));
+}
+
+.severity-info,
+.severity-warning,
+.severity-high,
+.severity-critical {
+  border-inline-start: 3px solid currentColor;
+}
+
+.severity-info {
+  color: rgb(var(--severity-info-rgb));
+}
+
+.severity-warning {
+  color: rgb(var(--severity-warning-rgb));
+}
+
+.severity-high {
+  color: rgb(var(--severity-high-rgb));
+}
+
+.severity-critical {
+  color: rgb(var(--severity-critical-rgb));
+}
+
 @media (max-width: 700px) {
-  .page-header { align-items: start; flex-direction: column; gap: 10px; }
-  .page-status { display: none; }
+  .page-header {
+    align-items: start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .page-status {
+    display: none;
+  }
 }
 
 .mobile-dock {
@@ -407,19 +579,23 @@ body.ready .cairn-glyph .stone.top {
 
   .mobile-dock {
     align-items: center;
-    background: rgba(15, 18, 25, 0.92);
-    border: 1px solid rgba(152, 162, 179, 0.16);
+    background: rgb(var(--surface-base-rgb) / 0.92);
+    border: 1px solid rgb(var(--border-default-rgb) / 0.7);
     border-radius: 16px;
     bottom: 10px;
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48);
+    box-shadow: 0 18px 48px rgb(var(--overlay-scrim-rgb) / 0.48);
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-auto-columns: minmax(64px, 1fr);
+    grid-auto-flow: column;
     left: 10px;
     padding: 6px;
     position: fixed;
     right: 10px;
     z-index: 90;
     backdrop-filter: blur(18px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
   }
 
   .mobile-dock__item {
@@ -436,7 +612,7 @@ body.ready .cairn-glyph .stone.top {
   }
 
   .mobile-dock__item.is-active {
-    background: rgba(139, 124, 255, 0.12);
+    background: rgb(var(--accent-primary-rgb) / 0.12);
     color: var(--bone);
   }
 }
@@ -456,5 +632,23 @@ body.ready .cairn-glyph .stone.top {
 
   .page-title {
     font-size: 27px;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid Highlight;
+  }
+
+  .card,
+  .signal-panel,
+  .mobile-dock {
+    border: 1px solid CanvasText;
+    box-shadow: none;
+  }
+
+  .estimated-chip,
+  .confidence-chip {
+    border-color: CanvasText;
   }
 }
