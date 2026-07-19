@@ -769,9 +769,7 @@ def test_experiments_shape(api_client: TestClient) -> None:
     }
 
 
-def test_optimize_propose_rejects_apply_true(
-    api_client: TestClient, api_workspace: tuple
-) -> None:
+def test_optimize_propose_rejects_apply_true(api_client: TestClient, api_workspace: tuple) -> None:
     root, _ws, trace_id = api_workspace
     with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
         conn.execute(
@@ -784,9 +782,7 @@ def test_optimize_propose_rejects_apply_true(
     assert "experiment_apply" in message
 
 
-def test_optimize_propose_rejects_llm_true(
-    api_client: TestClient, api_workspace: tuple
-) -> None:
+def test_optimize_propose_rejects_llm_true(api_client: TestClient, api_workspace: tuple) -> None:
     root, _ws, trace_id = api_workspace
     with sqlite3.connect(root / ".cairn" / "cairn.db") as conn:
         conn.execute(
@@ -799,9 +795,7 @@ def test_optimize_propose_rejects_llm_true(
     assert "reflector" in message
 
 
-def test_rebuild_view_all_rebuilds_real_views(
-    api_client: TestClient, api_workspace: tuple
-) -> None:
+def test_rebuild_view_all_rebuilds_real_views(api_client: TestClient, api_workspace: tuple) -> None:
     response = api_client.post("/api/actions/rebuild_view", json={"view": "all"})
     assert response.status_code == 200
     payload = response.json()

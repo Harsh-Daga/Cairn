@@ -40,7 +40,7 @@ def test_hermes_truncated_pretty_json_recovers_top_level_keys(tmp_path: Path) ->
 def test_recover_ignores_nested_pretty_json_keys(tmp_path: Path) -> None:
     # Truncate after nested object so recovery must not promote nested keys.
     text = (
-        '{\n'
+        "{\n"
         '  "session_id": "sess",\n'
         '  "model": "x",\n'
         '  "nested": {\n'

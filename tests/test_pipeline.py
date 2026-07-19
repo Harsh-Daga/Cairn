@@ -164,9 +164,7 @@ def test_sync_all_honors_source_filter(
 
     monkeypatch.setattr(pipeline, "_refresh_path_index", lambda: None)
 
-    def fake_ingest(
-        path: Path, _adapter: object, source: str, *, force: bool = False
-    ) -> None:
+    def fake_ingest(path: Path, _adapter: object, source: str, *, force: bool = False) -> None:
         del force
         seen.append((path, source))
 
