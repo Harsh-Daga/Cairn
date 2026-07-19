@@ -1,34 +1,19 @@
-# E2E demo project — local Ollama (ollama serve + ollama pull llama3.2)
-# setup.sh rewrites model for --provider cloud or --model overrides
+# Sample workspace config for the e2e-demo walkthrough.
+# Copy into `<workspace>/.cairn/config.toml` (see setup.sh).
+# Release version pin for docs checks (not a config key):
+# version = "1.1.1"
 
-[project]
-name = "cairn-e2e-demo"
-version = "1.1.1"
+[budgets]
+min_quality = 0.65
+monthly_usd = 50.0
 
-[defaults]
-model = "ollama/llama3.2"
-params = { temperature = 0.2, max_tokens = 1024 }
+[collection]
+mode = "manual"
 
-[sources.notes]
-include = ["inputs/notes/**/*.md"]
+[storage]
+mode = "balanced"
+balanced_retain_days = 14
 
-[sources.spec]
-include = ["inputs/spec.md"]
-
-[steps.summaries]
-prompt = "prompts/summarize.md"
-over = "source('notes')"
-output = "outputs/summaries/{{ item.stem }}.md"
-materialization = "cached"
-
-[steps.synthesis]
-prompt = "prompts/synthesize.md"
-inputs = ["ref('summaries')", "source('spec')"]
-output = "outputs/synthesis.md"
-materialization = "cached"
-
-[steps.report]
-prompt = "prompts/polish.md"
-inputs = ["ref('synthesis')"]
-output = "outputs/report.md"
-materialization = "cached"
+[resources]
+# Soft budget only — never deletes. Raise for larger workspaces.
+soft_budget_bytes = 524288000
