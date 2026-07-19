@@ -69,3 +69,8 @@ expected of a 1.0 line.
 - **Packaging** — static UI assets are included exactly once in wheels and UI builds preserve the tracked static marker
 - **CI** — optional MCP setup no longer fails `cairn doctor` in clean installation environments
 - **Detector reliability** — all registered insight rules have regression coverage; zero-day re-billing windows no longer divide by zero
+
+[1.1.1]: https://github.com/Harsh-Daga/Cairn/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/Harsh-Daga/Cairn/compare/v1.0.1...v1.1.0
+[1.0.1]: https://github.com/Harsh-Daga/Cairn/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/Harsh-Daga/Cairn/releases/tag/v1.0.0

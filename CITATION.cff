@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If Cairn supports your work, please cite the software."
+title: "Cairn"
+type: software
+version: 1.1.1
+date-released: 2026-07-14
+license: Apache-2.0
+authors:
+  - family-names: Daga
+    given-names: Harsh
+repository-code: "https://github.com/Harsh-Daga/Cairn"
+url: "https://github.com/Harsh-Daga/Cairn"
+abstract: "Local-first observability and self-improvement for AI coding agents."
