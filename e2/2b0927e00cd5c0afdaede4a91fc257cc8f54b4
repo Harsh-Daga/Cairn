@@ -1,0 +1,21 @@
+server/regression/create.py
+  s_2f3774c9a58583::t_174dcc8223c628 155
+server/store/lifecycle.py
+  s_2f3774c9a58583::t_4f5de24bb17b46 324-326
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "e22b0927e00cd5c0afdaede4a91fc257cc8f54b4",
+  "prompts": {},
+  "sessions": {
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
