@@ -1,0 +1,55 @@
+docs/browser-support.md
+  s_1b322965a76443::t_87ba7a8449d230 1-37
+ui/src/components/ui/Actions.tsx
+  s_1b322965a76443::t_fec654b193a7cb 1-51
+ui/src/components/ui/Feedback.tsx
+  s_1b322965a76443::t_4cd52ebdabbe63 1-50
+ui/src/components/ui/Indicators.tsx
+  s_1b322965a76443::t_42d2d4d628f241 1-63
+ui/src/hooks/useTimeRangeUrlState.ts
+  s_1b322965a76443::t_f5eadf35710dce 1-64
+ui/src/lib/theme.ts
+  s_1b322965a76443::t_586e5193b065c7 1-41
+ui/src/test/timeRange.test.ts
+  s_1b322965a76443::t_be7ff1de8a8f5b 1-40
+ui/src/components/charts/ChartFrame.tsx
+  s_1b322965a76443::t_b73ae54e64bed6 1-86
+ui/src/components/ui/Controls.tsx
+  s_1b322965a76443::t_e2b7ca071c6f77 1-61
+ui/src/components/ui/DataTable.tsx
+  s_1b322965a76443::t_0a613c558f79eb 1-212
+ui/src/components/ui/ErrorBoundary.tsx
+  s_1b322965a76443::t_dbfbf27be59d9b 1-34
+ui/src/components/ui/Overlays.tsx
+  s_1b322965a76443::t_7837688fb4599e 1-202
+ui/src/components/ui/TimeRangePicker.tsx
+  s_1b322965a76443::t_ffc4b1c2b9c5a0 1-119
+ui/src/components/ui/index.ts
+  s_1b322965a76443::t_a8d79acf19529e 1-9
+ui/src/hooks/useModalFocus.ts
+  s_1b322965a76443::t_4603110daf3ca8 1-66
+ui/src/hooks/useSelectedTimeRange.ts
+  s_1b322965a76443::t_63c57ccd880de3 1-9
+ui/src/lib/timeRange.ts
+  s_1b322965a76443::t_56c1f89bc2ff36 1-71
+ui/src/test/theme.test.ts
+  s_1b322965a76443::t_47375fa09d6b24 1-179
+ui/src/theme.css
+  s_1b322965a76443::t_1b46158e5a5200 9,12-74,80-84,91-103,106-151,167-176,188,193-194,287,290,347-352,358-361,365,409-410,428,441-443,447-455,461-469,479-481,490-497,515,519-545,547-554,582-583,586,588-589,596-598,615,637-654
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b5ecd8236d4c5d53128de8a3f547da23bcd703a8",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
