@@ -385,7 +385,6 @@ export function QualityPage() {
   );
 }
 
-
 function CalibrationCard({
   coveragePct,
   humanLabeled,

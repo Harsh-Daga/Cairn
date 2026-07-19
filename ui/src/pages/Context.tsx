@@ -232,7 +232,6 @@ export function ContextPage() {
   );
 }
 
-
 function trendRows(data: RegionsAnalyticsResponse): Record<string, number | string>[] {
   const rows = new Map<string, Record<string, number | string>>();
   for (const point of data.trend) {

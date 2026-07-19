@@ -1014,7 +1014,10 @@ def test_actions_manifest_shape(api_client: TestClient) -> None:
     assert "demo_seed" in names
     assert "reflector_preview" in names
     assert "reflector_run" in names
-    assert len(names) == 45
+    assert len(names) == 48
+    assert "regression_run" in names
+    assert "regression_compare" in names
+    assert "db_backup_list" in names
 
 
 def test_reflector_action_requires_unchanged_preview_consent(

@@ -72,7 +72,6 @@ export function ExperimentLifecycle({
   );
 }
 
-
 function ExperimentCard({
   experiment,
   initialExpanded = false,

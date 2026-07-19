@@ -172,8 +172,6 @@ describe("SettingsPage", () => {
     );
     vi.mocked(runAction).mockResolvedValueOnce({ ok: true, result: { recomputed: 1 } });
     fireEvent.click(screen.getByRole("button", { name: "Rebuild" }));
-    await waitFor(() =>
-      expect(runAction).toHaveBeenCalledWith("rebuild_view", { view: "all" }),
-    );
+    await waitFor(() => expect(runAction).toHaveBeenCalledWith("rebuild_view", { view: "all" }));
   });
 });

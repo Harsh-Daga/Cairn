@@ -6,13 +6,7 @@ import { ErrorCard } from "@/components/common/DataViews";
 import { PageShell } from "@/components/common/PageShell";
 import { ResourcePrivacyCenter } from "@/components/settings/ResourcePrivacyCenter";
 import { CopyButton, Dialog } from "@/components/ui";
-import {
-  fetchBudget,
-  fetchHealth,
-  fetchWorkspace,
-  runAction,
-  waitForActionJob,
-} from "@/lib/api";
+import { fetchBudget, fetchHealth, fetchWorkspace, runAction, waitForActionJob } from "@/lib/api";
 import { formatCost, formatRelative } from "@/lib/format";
 import { THEME_PREFERENCES, type ThemePreference } from "@/lib/theme";
 import { useToastStore } from "@/state/toast";
@@ -197,7 +191,8 @@ export function SettingsPage() {
       await queryClient.invalidateQueries({ queryKey: ["workspace"] });
       await queryClient.invalidateQueries({ queryKey: ["health"] });
     } catch (error) {
-      const detail = error instanceof Error && error.message ? error.message : "Adapter rescan failed";
+      const detail =
+        error instanceof Error && error.message ? error.message : "Adapter rescan failed";
       setAdapterScanStatus(detail);
       showToast(detail, undefined, "error");
     } finally {

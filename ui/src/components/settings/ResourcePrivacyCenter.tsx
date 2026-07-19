@@ -41,11 +41,7 @@ export function ResourcePrivacyCenter({
 }: {
   workspace: WorkspaceResponse;
   configRows: ConfigRow[] | undefined;
-  onSaveConfig: (
-    key: string,
-    value: string,
-    options?: { confirmStorageUpgrade?: boolean },
-  ) => void;
+  onSaveConfig: (key: string, value: string, options?: { confirmStorageUpgrade?: boolean }) => void;
   onSync: () => void;
   onExport: () => void;
   onRebuild: () => void;
@@ -69,13 +65,8 @@ export function ResourcePrivacyCenter({
   const mode = storageModeValue(configRows);
 
   const action = useMutation({
-    mutationFn: async ({
-      name,
-      params,
-    }: {
-      name: string;
-      params?: Record<string, unknown>;
-    }) => runAction(name, params),
+    mutationFn: async ({ name, params }: { name: string; params?: Record<string, unknown> }) =>
+      runAction(name, params),
     onSuccess: async (res, vars) => {
       const result = res.result ?? {};
       if (vars.name === "lifecycle_plan") {
@@ -97,8 +88,7 @@ export function ResourcePrivacyCenter({
       }
       if (vars.name === "circuit_status") {
         const paused = result.paused_adapters;
-        const pausedCount =
-          paused && typeof paused === "object" ? Object.keys(paused).length : 0;
+        const pausedCount = paused && typeof paused === "object" ? Object.keys(paused).length : 0;
         const quarantine =
           typeof result.quarantine_count === "number" ? result.quarantine_count : 0;
         const globalPause = Boolean(result.global_pause);
@@ -111,12 +101,14 @@ export function ResourcePrivacyCenter({
       if (vars.name === "db_backup_list") {
         const rows = Array.isArray(result.backups) ? result.backups : [];
         setBackups(
-          rows.map((row) => ({
-            path: String((row as { path?: string }).path ?? ""),
-            name: String((row as { name?: string }).name ?? ""),
-            bytes: Number((row as { bytes?: number }).bytes ?? 0),
-            mtime: String((row as { mtime?: string }).mtime ?? ""),
-          })).filter((row) => row.path),
+          rows
+            .map((row) => ({
+              path: String((row as { path?: string }).path ?? ""),
+              name: String((row as { name?: string }).name ?? ""),
+              bytes: Number((row as { bytes?: number }).bytes ?? 0),
+              mtime: String((row as { mtime?: string }).mtime ?? ""),
+            }))
+            .filter((row) => row.path),
         );
       }
       if (vars.name === "db_restore" && result.dry_run) {
@@ -130,8 +122,7 @@ export function ResourcePrivacyCenter({
         );
       }
       const quietPreview =
-        vars.name === "db_backup_list" ||
-        (vars.name === "db_restore" && Boolean(result.dry_run));
+        vars.name === "db_backup_list" || (vars.name === "db_restore" && Boolean(result.dry_run));
       if (!quietPreview) {
         showToast("Action completed", undefined, "good");
       }
@@ -323,8 +314,8 @@ export function ResourcePrivacyCenter({
         {stripConfirmOpen ? (
           <div className="mt-3 rounded-sm border border-ochre/40 bg-ochre/10 p-3 text-xs text-cinder">
             <p>
-              Strip retained <code className="font-mono">text_inline</code> according to the
-              current storage mode. Metrics and hashes stay. Source agent logs are not modified.
+              Strip retained <code className="font-mono">text_inline</code> according to the current
+              storage mode. Metrics and hashes stay. Source agent logs are not modified.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
@@ -472,11 +463,7 @@ export function ResourcePrivacyCenter({
               <button
                 type="button"
                 className="rounded-sm bg-cinnabar px-3 py-1.5 font-mono text-xs text-bone disabled:opacity-40"
-                disabled={
-                  action.isPending ||
-                  restoreConfirm !== "RESTORE" ||
-                  !selectedBackup
-                }
+                disabled={action.isPending || restoreConfirm !== "RESTORE" || !selectedBackup}
                 onClick={() => {
                   const backup = selectedBackup;
                   setRestoreOpen(false);
@@ -525,15 +512,15 @@ export function ResourcePrivacyCenter({
       </section>
 
       <section className="rounded-sm border border-quartz-vein/60 p-3">
-        <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">Git &amp; egress</p>
+        <p className="font-mono text-[10px] uppercase tracking-wide text-cinder">
+          Git &amp; egress
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
             className="rounded-sm border border-quartz-vein px-3 py-2 font-mono text-xs text-bone"
             disabled={action.isPending}
-            onClick={() =>
-              action.mutate({ name: "git_exclude_cairn", params: { approve: true } })
-            }
+            onClick={() => action.mutate({ name: "git_exclude_cairn", params: { approve: true } })}
           >
             Add .cairn/ to git exclude
           </button>

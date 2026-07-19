@@ -47,11 +47,13 @@ EXPECTED_GROUP_COMMANDS = {
     "mcp": {"install"},
     "optimize": {"evaluate", "export-effects", "llm-preview", "llm-run", "revert"},
     "regression": {
+        "compare",
         "create",
         "delete",
         "export",
         "import",
         "ls",
+        "run",
         "show",
         "validate",
     },

@@ -91,7 +91,10 @@ def _seed_opencode_db(db_path: Path, *, directory: str) -> str:
         ),
     )
     conn.execute(
-        "INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) VALUES (?,?,?,?,?,?)",
+        (
+            "INSERT INTO part (id, message_id, session_id, time_created, "
+            "time_updated, data) VALUES (?,?,?,?,?,?)"
+        ),
         (
             "prt_user",
             "msg_user",
@@ -112,7 +115,10 @@ def _seed_opencode_db(db_path: Path, *, directory: str) -> str:
         ),
     )
     conn.execute(
-        "INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) VALUES (?,?,?,?,?,?)",
+        (
+            "INSERT INTO part (id, message_id, session_id, time_created, "
+            "time_updated, data) VALUES (?,?,?,?,?,?)"
+        ),
         (
             "prt_text",
             "msg_asst",
@@ -123,7 +129,10 @@ def _seed_opencode_db(db_path: Path, *, directory: str) -> str:
         ),
     )
     conn.execute(
-        "INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) VALUES (?,?,?,?,?,?)",
+        (
+            "INSERT INTO part (id, message_id, session_id, time_created, "
+            "time_updated, data) VALUES (?,?,?,?,?,?)"
+        ),
         (
             "prt_tool",
             "msg_asst",
@@ -137,7 +146,11 @@ def _seed_opencode_db(db_path: Path, *, directory: str) -> str:
                     "callID": "call_1",
                     "state": {
                         "status": "completed",
-                        "input": {"filePath": f"{directory}/app.py", "oldString": "a", "newString": "b"},
+                        "input": {
+                            "filePath": f"{directory}/app.py",
+                            "oldString": "a",
+                            "newString": "b",
+                        },
                         "output": "ok",
                     },
                 }

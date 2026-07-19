@@ -179,7 +179,6 @@ export function ComparePage() {
   );
 }
 
-
 function CellsTable({ cells, minSample }: { cells: CompareCell[]; minSample: number }) {
   return (
     <section className="card overflow-hidden" aria-labelledby="compare-cells-heading">

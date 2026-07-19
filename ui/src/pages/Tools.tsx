@@ -170,7 +170,6 @@ export function ToolsPage() {
   );
 }
 
-
 function ToolTable({ data }: { data: ToolsAnalyticsResponse }) {
   return (
     <div className="space-y-3" aria-labelledby="tools-table-heading">

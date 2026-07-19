@@ -356,4 +356,3 @@ function CoverageTable({ data }: { data: AgentsResponse }) {
     </section>
   );
 }
-

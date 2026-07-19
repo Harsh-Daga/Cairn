@@ -11,7 +11,6 @@ import { fetchGuard } from "@/lib/api";
 import { formatDecimal, formatNumber, formatRelative } from "@/lib/format";
 import type { GuardEventRow } from "@/lib/types";
 
-
 function EventCard({ event, selected }: { event: GuardEventRow; selected: boolean }) {
   const assoc = event.association;
   return (

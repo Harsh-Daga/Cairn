@@ -56,7 +56,6 @@ DOCS_INDEX = [
 
 FORBIDDEN_DOC_PATTERNS = [
     re.compile(r"(?<![./])cairn/[a-z_]+"),  # retired module paths, not .cairn/
-    re.compile(r"\brun_id\b"),
     re.compile(r"`cairn (init|validate|build|profile|behavior|outcomes|advanced)\b"),
     re.compile(r"docs/reference/"),
     re.compile(r"docs/guides/"),

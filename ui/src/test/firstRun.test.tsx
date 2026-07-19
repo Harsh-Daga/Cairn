@@ -92,9 +92,7 @@ describe("first-run workspace flow", () => {
     expect(await screen.findByText(/local job is queued/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Rescan adapters" }));
-    await waitFor(() =>
-      expect(runAction).toHaveBeenCalledWith("workspace_scan", { force: true }),
-    );
+    await waitFor(() => expect(runAction).toHaveBeenCalledWith("workspace_scan", { force: true }));
 
     runAction.mockResolvedValueOnce({
       ok: true,

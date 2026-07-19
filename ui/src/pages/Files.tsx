@@ -195,7 +195,6 @@ export function FilesPage() {
   );
 }
 
-
 function FileTable({ data }: { data: FilesAnalyticsResponse }) {
   return (
     <section className="card overflow-hidden" aria-labelledby="files-table-heading">

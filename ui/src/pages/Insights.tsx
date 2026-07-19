@@ -383,7 +383,6 @@ export function InsightsPage() {
   );
 }
 
-
 function FilterChip({
   active,
   label,
