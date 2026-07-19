@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="copperTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e4a172"/>
+      <stop offset="1" stop-color="#d98e5f"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="#0f0d0b"/>
+
+  <!-- faint broken contour arcs -->
+  <g fill="none" stroke="#3d3527" stroke-width="1.5" opacity="0.4">
+    <path d="M52 236 C46 178 76 122 130 98"/>
+    <path d="M348 170 C356 224 332 282 284 308"/>
+    <path d="M90 300 C128 344 196 360 254 342" opacity="0.6"/>
+  </g>
+
+  <ellipse cx="200" cy="314" rx="106" ry="8" fill="#000000" opacity="0.4"/>
+
+  <!-- irregular stacked stones, alternating offsets -->
+  <g>
+    <path d="M98 296 C94 276 104 262 120 258 L264 250 C284 250 298 262 298 280 C298 296 288 306 270 307 L124 310 C108 310 100 306 98 296 Z" fill="#6b5a45"/>
+    <path d="M120 258 L264 250 C276 250 286 256 292 266 L108 272 C112 264 114 260 120 258 Z" fill="#ffffff" opacity="0.06"/>
+
+    <path d="M118 246 C115 229 124 216 138 213 L256 208 C272 208 283 219 282 234 C281 247 272 254 258 255 L140 257 C126 257 119 253 118 246 Z" fill="#8f7554"/>
+    <path d="M138 213 L256 208 C266 208 274 214 278 222 L124 227 C128 219 132 214 138 213 Z" fill="#ffffff" opacity="0.07"/>
+
+    <path d="M136 202 C134 188 142 177 154 174 L240 170 C254 170 263 179 262 192 C261 202 254 208 242 209 L154 211 C143 211 137 208 136 202 Z" fill="#b39468"/>
+    <path d="M154 174 L240 170 C248 170 255 175 258 182 L142 186 C145 179 149 175 154 174 Z" fill="#ffffff" opacity="0.08"/>
+
+    <path d="M166 162 C165 150 172 141 181 139 L216 138 C225 139 231 147 230 158 C229 167 223 172 214 173 L180 173 C171 172 166 169 166 162 Z" fill="url(#copperTop)"/>
+    <path d="M181 139 L216 138 C222 139 226 143 228 149 L170 152 C172 145 176 140 181 139 Z" fill="#ffffff" opacity="0.12"/>
+
+    <g transform="rotate(4 201 128)">
+      <path d="M188 132 C188 125 192 120 197 119 L207 119 C212 120 215 124 214 131 C213 136 210 138 205 138 L195 138 C190 138 188 136 188 132 Z" fill="#c4ad87"/>
+    </g>
+  </g>
+</svg>

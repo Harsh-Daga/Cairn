@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-17",
+  "method": "complete deterministic backend and UI unit suites with branch instrumentation",
+  "python": {
+    "statements_pct": 81.61,
+    "branches_pct": 58.77
+  },
+  "ui": {
+    "statements_pct": 28.89,
+    "branches_pct": 20.64
+  },
+  "changed_lines_min_pct": 90.0,
+  "exclusions": {
+    "python": [
+      "server/static/**",
+      "server/models/otlp_pb.py"
+    ],
+    "ui": [
+      "ui/src/lib/generated/**",
+      "ui/src/test/**",
+      "ui/src/main.tsx",
+      "ui/src/vite-env.d.ts"
+    ]
+  }
+}

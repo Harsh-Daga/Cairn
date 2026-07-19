@@ -2,6 +2,49 @@
 
 Use Cairn in CI to block merges when agent quality regresses.
 
+## Repository quality gates
+
+The checked-in GitHub workflows use frozen `uv.lock` and `package-lock.json` resolution and pin
+every external action to a reviewed commit. Pull-request CI is cancelable and receives read-only
+repository permissions. Fast gates cover Python 3.11, 3.12, and 3.13; Ruff lint/format; strict
+mypy; pytest; Prettier; ESLint TypeScript/React Hooks; TypeScript; Vitest; generated artifacts; and
+the gzip bundle budget. A dedicated coverage job records Python/UI statement and branch coverage,
+prevents the observed baseline from decreasing, and enforces 90% coverage on changed executable
+lines. Integration jobs build and inspect archives, test a clean wheel, run the
+seeded Chromium browser suite without skips, run tagged Firefox/WebKit core journeys, and open the
+static snapshot from `file://` in all three engines. Demo Pages builds a `_site` preview artifact on
+relevant pull requests; public deploy stays `workflow_dispatch`-only (see [pages.md](pages.md)).
+
+The scheduled install workflow repeats clean-wheel smoke tests on Linux, macOS, and Windows.
+Security automation and release permissions are documented in
+[the OpenSSF gap report](security/openssf-gap-report-2026-07-17.md) and
+[release process](release.md).
+
+Local equivalents:
+
+```bash
+uv sync --frozen --extra dev
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy --strict server
+uv run pytest -q
+npm --prefix ui ci
+npm --prefix ui run lint
+npm --prefix ui run format:check
+npm --prefix ui run typecheck
+npm --prefix ui test
+npm --prefix ui run test:coverage
+npm --prefix ui run test:e2e
+uv run python scripts/check_coverage.py
+# Packaging metadata + wheel doctor (also what CI integration job runs).
+# Success line reads: release_check passed (packaging-only)
+uv run python scripts/release_check.py --packaging-only
+# Full local release gate before a release PR/tag (lint/tests/e2e/packaging/reproducibility).
+# Success line reads: release_check passed (full gate)
+uv run python scripts/release_check.py
+uv run python scripts/check_reproducibility.py
+```
+
 ## Basic gate
 
 ```bash
@@ -48,13 +91,14 @@ cairn doctor --json
 
 ## Release publishing
 
-Merging a versioned change to `main` runs the publish workflow. It checks the
-exact version in `pyproject.toml` against PyPI before building and uploading.
-An already-published version is skipped successfully, so ordinary later merges
-cannot overwrite or fail on an immutable PyPI release. PyPI Trusted Publishing
-is required for the repository environment.
+Merging to `main` never publishes. An existing annotated semantic-version tag, either pushed or
+selected by an approved manual dispatch, starts the build-once workflow. It creates and attests the
+wheel, sdist, checksums, and CycloneDX SBOM; tests the downloaded artifacts; then uses the protected
+PyPI Trusted Publishing environment and creates the GitHub Release from the same files. A final
+public-index install verifies the published version. See [Release process](release.md).
 
 ## Related
 
 - [Optimize loop](optimize.md) — experiment verdicts
 - [Configuration](configuration.md) — `[budgets]` thresholds
+- [Testing and coverage](testing.md) — baseline methodology, exclusions, and local commands
