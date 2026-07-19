@@ -1,0 +1,25 @@
+.github/CODEOWNERS
+  s_1b322965a76443::t_9467ac8020ce55 1
+.github/ISSUE_TEMPLATE/config.yml
+  s_1b322965a76443::t_5be70baba6cf73 1-8
+.github/ISSUE_TEMPLATE/docs_report.yml
+  s_1b322965a76443::t_23ebc663ffe64f 1-23
+.github/ISSUE_TEMPLATE/feature_request.yml
+  s_1b322965a76443::t_be65262eead23d 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "7ca1dc1f1acae34d2c05f6f90b7964c5f102fa88",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
