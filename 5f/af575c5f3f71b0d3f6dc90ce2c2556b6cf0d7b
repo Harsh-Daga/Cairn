@@ -1,0 +1,25 @@
+server/recap_share.py
+  s_1b322965a76443::t_fc14fb4c62dc69 118,163
+server/export/rule_effects.py
+  s_1b322965a76443::t_43dbaff13d79c9 13,25,28,71
+server/export/scrub.py
+  s_1b322965a76443::t_cbe373ee30e88d 16-24,44,49-64,73-75,91-97
+tests/test_rule_effect_export.py
+  s_1b322965a76443::t_5903c7c11eccdb 6,98-100,140-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "5faf575c5f3f71b0d3f6dc90ce2c2556b6cf0d7b",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
