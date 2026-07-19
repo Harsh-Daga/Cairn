@@ -20,7 +20,7 @@ REGRESSION_JSON_SCHEMA = REGRESSION_SCHEMA_VERSION
 
 regression_app = typer.Typer(
     name="regression",
-    help="Create, list, validate, record, compare, and port local regression artifacts (no execution).",
+    help="Create, list, validate, record, compare, and port local regressions (no execution).",
     no_args_is_help=True,
 )
 cli.app.add_typer(regression_app, name="regression")

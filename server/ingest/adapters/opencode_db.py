@@ -375,9 +375,12 @@ class _ParserState:
                 cache_read_tokens=cache_read,
                 cache_creation_tokens=cache_write,
             )
-            if observed.input_tokens or observed.output_tokens or observed.cache_read_tokens:
-                if self._usage.usage.input_tokens == 0 and self._usage.usage.output_tokens == 0:
-                    self._usage.usage.add(observed)
+            if (
+                (observed.input_tokens or observed.output_tokens or observed.cache_read_tokens)
+                and self._usage.usage.input_tokens == 0
+                and self._usage.usage.output_tokens == 0
+            ):
+                self._usage.usage.add(observed)
         cost = message.get("cost")
         if isinstance(cost, (int, float)) and cost > 0:
             self._has_cost = True
@@ -494,11 +497,7 @@ def _parts_text(parts: list[dict[str, Any]], *, include_reasoning: bool) -> str:
     chunks: list[str] = []
     for part in parts:
         ptype = part.get("type")
-        if ptype == "text":
-            text = part.get("text")
-            if isinstance(text, str) and text.strip():
-                chunks.append(text.strip())
-        elif include_reasoning and ptype == "reasoning":
+        if ptype == "text" or (include_reasoning and ptype == "reasoning"):
             text = part.get("text")
             if isinstance(text, str) and text.strip():
                 chunks.append(text.strip())
