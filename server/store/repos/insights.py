@@ -6,6 +6,7 @@ import sqlite3
 from dataclasses import dataclass
 
 from server.models.insight import Insight, InsightLifecycle, InsightState
+from server.store.pagination import bounded_page
 from server.store.repos._crud import delete_where, fetch_all, fetch_one, insert, update, upsert
 
 _INSIGHTS = "insights"
@@ -48,6 +49,7 @@ class InsightRepo:
         limit: int = 100,
         offset: int = 0,
     ) -> list[Insight]:
+        limit, offset = bounded_page(limit, offset)
         return fetch_all(
             conn,
             f"SELECT * FROM {_INSIGHTS} ORDER BY last_seen_at DESC LIMIT ? OFFSET ?",
@@ -63,12 +65,17 @@ class InsightRepo:
         limit: int = 100,
         offset: int = 0,
     ) -> list[InsightWithState]:
+        limit, offset = bounded_page(limit, offset)
+        select = f"""
+                SELECT i.*, s.insight_id AS state_insight_id, s.state, s.changed_at, s.changed_by,
+                       s.snoozed_until, s.snooze_savings_baseline, s.see_count
+                FROM {_INSIGHTS} i
+                LEFT JOIN {_STATES} s ON i.insight_id = s.insight_id
+        """
         if state is None:
             rows = conn.execute(
                 f"""
-                SELECT i.*, s.insight_id AS state_insight_id, s.state, s.changed_at, s.changed_by
-                FROM {_INSIGHTS} i
-                LEFT JOIN {_STATES} s ON i.insight_id = s.insight_id
+                {select}
                 ORDER BY i.last_seen_at DESC
                 LIMIT ? OFFSET ?
                 """,
@@ -77,9 +84,7 @@ class InsightRepo:
         else:
             rows = conn.execute(
                 f"""
-                SELECT i.*, s.insight_id AS state_insight_id, s.state, s.changed_at, s.changed_by
-                FROM {_INSIGHTS} i
-                LEFT JOIN {_STATES} s ON i.insight_id = s.insight_id
+                {select}
                 WHERE COALESCE(s.state, 'new') = ?
                 ORDER BY i.last_seen_at DESC
                 LIMIT ? OFFSET ?
@@ -139,10 +144,26 @@ def _insight_with_state_from_row(row: sqlite3.Row) -> InsightWithState:
     raw_state = row["state"]
     lifecycle: InsightLifecycle = "new" if raw_state is None else str(raw_state)  # type: ignore[assignment]
     changed_at = row["changed_at"]
+    keys = set(row.keys())
     state = InsightState(
         insight_id=insight.insight_id,
         state=lifecycle,
         changed_at=str(changed_at) if changed_at is not None else insight.created_at,
         changed_by=None if row["changed_by"] is None else str(row["changed_by"]),
+        snoozed_until=(
+            None
+            if "snoozed_until" not in keys or row["snoozed_until"] is None
+            else str(row["snoozed_until"])
+        ),
+        snooze_savings_baseline=(
+            None
+            if "snooze_savings_baseline" not in keys or row["snooze_savings_baseline"] is None
+            else float(row["snooze_savings_baseline"])
+        ),
+        see_count=(
+            int(row["see_count"] or 1)
+            if "see_count" in keys and row["see_count"] is not None
+            else 1
+        ),
     )
     return InsightWithState(insight=insight, state=state)

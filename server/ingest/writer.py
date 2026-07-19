@@ -7,6 +7,7 @@ from pathlib import Path
 
 from server.ingest.map import ParsedSession, session_to_trace_spans
 from server.ingest.pricing import load_overrides
+from server.ingest.storage import apply_policy_to_spans
 from server.models.data_quality import DataQuality
 from server.models.span import Span
 from server.models.trace import Trace
@@ -45,6 +46,7 @@ class IngestWriter:
             repo_root=self.repo_root,
             pricing_overrides=self._pricing_overrides,
         )
+        spans = apply_policy_to_spans(spans, workspace_root=self.repo_root)
 
         def _write(conn: object) -> IngestResult:
             import sqlite3

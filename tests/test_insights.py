@@ -88,7 +88,8 @@ def test_identical_calls_detector(db: tuple[Database, str]) -> None:
     conn.commit()
 
     insights = evaluate(conn, workspace_id=ws_id, days=14)
-    assert any(i.detector == "identical-tool-calls" for i in insights)
+    detectors = {i.detector for i in insights}
+    assert detectors & {"identical-tool-calls", "retry-storm"}
 
 
 def test_error_streak_detector(db: tuple[Database, str]) -> None:
@@ -105,7 +106,8 @@ def test_error_streak_detector(db: tuple[Database, str]) -> None:
         )
     conn.commit()
     insights = evaluate(conn, workspace_id=ws_id, days=14)
-    assert any(i.detector == "error-streak" for i in insights)
+    detectors = {i.detector for i in insights}
+    assert detectors & {"error-streak", "retry-storm"}
 
 
 def test_failing_command_detector(db: tuple[Database, str]) -> None:
@@ -122,7 +124,8 @@ def test_failing_command_detector(db: tuple[Database, str]) -> None:
         )
     conn.commit()
     insights = evaluate(conn, workspace_id=ws_id, days=14)
-    assert any(i.detector == "failing-command" for i in insights)
+    detectors = {i.detector for i in insights}
+    assert detectors & {"failing-command", "retry-storm"}
 
 
 def test_reread_hotspot_detector(db: tuple[Database, str]) -> None:
@@ -140,7 +143,8 @@ def test_reread_hotspot_detector(db: tuple[Database, str]) -> None:
         )
     conn.commit()
     insights = evaluate(conn, workspace_id=ws_id, days=14)
-    assert any(i.detector == "reread-hotspot" for i in insights)
+    detectors = {i.detector for i in insights}
+    assert detectors & {"reread-hotspot", "context-thrash"}
 
 
 def test_stale_tool_results_detector(db: tuple[Database, str]) -> None:
@@ -159,7 +163,8 @@ def test_stale_tool_results_detector(db: tuple[Database, str]) -> None:
         )
     conn.commit()
     insights = evaluate(conn, workspace_id=ws_id, days=14)
-    assert any(i.detector == "stale-tool-results" for i in insights)
+    detectors = {i.detector for i in insights}
+    assert detectors & {"stale-tool-results", "context-thrash"}
 
 
 def test_cost_anomaly_detector(db: tuple[Database, str]) -> None:

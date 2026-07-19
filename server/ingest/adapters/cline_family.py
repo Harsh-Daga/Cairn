@@ -10,6 +10,7 @@ from typing import Any
 
 from server.ingest.adapters.claude_code import ToolCallDraft
 from server.ingest.normalizer import args_payload, assign_seq, result_payload, text_payload
+from server.ingest.project_paths import structured_log_matches_project
 from server.ingest.usage import UsageAccumulator
 
 _PUBLISHERS: dict[str, str] = {
@@ -38,16 +39,23 @@ def cline_global_storage_roots() -> list[Path]:
     home = Path.home()
     system = platform.system()
     if system == "Darwin":
-        return [home / "Library" / "Application Support" / "Code" / "User" / "globalStorage"]
+        return [
+            home / "Library" / "Application Support" / "Code" / "User" / "globalStorage",
+            home / "Library" / "Application Support" / "Cursor" / "User" / "globalStorage",
+        ]
     if system == "Linux":
         return [
             home / ".config" / "Code" / "User" / "globalStorage",
+            home / ".config" / "Cursor" / "User" / "globalStorage",
             home / ".vscode-server" / "data" / "User" / "globalStorage",
         ]
-    return [home / "AppData" / "Roaming" / "Code" / "User" / "globalStorage"]
+    return [
+        home / "AppData" / "Roaming" / "Code" / "User" / "globalStorage",
+        home / "AppData" / "Roaming" / "Cursor" / "User" / "globalStorage",
+    ]
 
 
-def discover_cline_sessions(_repo_root: Path) -> list[tuple[Path, str]]:
+def discover_cline_sessions(repo_root: Path) -> list[tuple[Path, str]]:
     found: list[tuple[Path, str]] = []
     for root in cline_global_storage_roots():
         if not root.is_dir():
@@ -57,7 +65,12 @@ def discover_cline_sessions(_repo_root: Path) -> list[tuple[Path, str]]:
             if not tasks_root.is_dir():
                 continue
             for ui_path in tasks_root.glob("*/ui_messages.json"):
-                if ui_path.is_file():
+                task_json = ui_path.parent.glob("*.json")
+                if ui_path.is_file() and any(
+                    structured_log_matches_project(candidate, repo_root)
+                    for candidate in task_json
+                    if candidate.is_file()
+                ):
                     found.append((ui_path, source))
     return found
 

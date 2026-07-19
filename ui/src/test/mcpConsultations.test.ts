@@ -25,9 +25,12 @@ function span(seq: number): Span {
     cache_creation_tokens: null,
     context_tokens_after: null,
     text_inline: null,
+    text_hash: null,
+    args_hash: null,
     path_rel: null,
     waste_category: null,
     waste_tokens: 0,
+    attrs_json: {},
   };
 }
 

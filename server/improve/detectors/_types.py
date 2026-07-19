@@ -35,6 +35,15 @@ class LiveDetection:
     priority: int
 
 
+DetectorFamily = Literal[
+    "retry_storm",
+    "context_thrash",
+    "model_mismatch",
+    "stale_tool_schema",
+]
+EstimateKind = Literal["measured", "conservative", "unavailable"]
+
+
 @dataclass
 class Insight:
     id: str
@@ -48,6 +57,13 @@ class Insight:
     diagnostic: bool = False
     action: str | None = None
     difficulty_aware: bool = False
+    family: DetectorFamily | None = None
+    estimate_kind: EstimateKind | None = None
+    confidence: float | None = None
+    coverage: str | None = None
+    subject_key: str | None = None
+    span_ids: list[str] = field(default_factory=list)
+    alias_ids: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -63,6 +79,14 @@ class Insight:
             "action": self.action,
             "difficulty_aware": self.difficulty_aware,
             "tier": "2.0" if self.difficulty_aware else "legacy",
+            "family": self.family,
+            "estimate_kind": self.estimate_kind
+            or ("unavailable" if self.savings_estimate is None else "conservative"),
+            "confidence": self.confidence,
+            "coverage": self.coverage,
+            "subject_key": self.subject_key,
+            "span_ids": list(self.span_ids),
+            "alias_ids": list(self.alias_ids),
         }
 
 

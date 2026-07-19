@@ -4,7 +4,8 @@ version = "1.1.1"
 description = "Local-first observability and self-improvement platform for AI coding agents"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "licenses/*"]
 authors = [{ name = "Cairn contributors" }]
 keywords = ["llm", "agents", "observability", "tracing", "self-improvement"]
 classifiers = [
@@ -34,6 +35,10 @@ Homepage = "https://github.com/Harsh-Daga/Cairn"
 Documentation = "https://github.com/Harsh-Daga/Cairn/blob/main/README.md"
 Repository = "https://github.com/Harsh-Daga/Cairn"
 Issues = "https://github.com/Harsh-Daga/Cairn/issues"
+Changelog = "https://github.com/Harsh-Daga/Cairn/blob/main/CHANGELOG.md"
+Security = "https://github.com/Harsh-Daga/Cairn/security/policy"
+Funding = "https://github.com/sponsors/Harsh-Daga"
+Demo = "https://harsh-daga.github.io/Cairn/"
 
 [project.scripts]
 cairn = "server.cli:app"
@@ -49,6 +54,7 @@ dev = [
     "pre-commit>=4.0",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
     "ruff>=0.8",
     "types-protobuf>=7.34.1.20260518",
 ]
@@ -59,7 +65,23 @@ testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-norecursedirs = ["_legacy", ".git", "ui", "node_modules"]
+norecursedirs = [".*", "_legacy", ".git", "ui", "node_modules", "build", "dist", "*.egg", "venv"]
+
+[tool.coverage.run]
+branch = true
+source = ["server"]
+omit = [
+    "server/static/*",
+    "server/models/otlp_pb.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+show_missing = true
 
 [tool.ruff]
 target-version = "py311"
@@ -79,22 +101,41 @@ packages = ["server"]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[dependency-groups]
+dev = [
+    "hatchling>=1.31.0",
+    "pip-audit>=2.10.1",
+    "types-pyyaml>=6.0.12.20260518",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["server"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "server/static/index.html" = "server/static/index.html"
+"server/static/theme-bootstrap.js" = "server/static/theme-bootstrap.js"
 "server/static/assets" = "server/static/assets"
+"server/static_file/index.html" = "server/static_file/index.html"
+"server/static_file/theme-bootstrap.js" = "server/static_file/theme-bootstrap.js"
+"server/static_file/assets" = "server/static_file/assets"
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "scripts/hatch_build.py"
 
 [tool.hatch.build.targets.sdist]
-exclude = [
-  "ui/node_modules",
-  "ui/dist",
-  ".git",
+include = [
+  "/server",
+  "/scripts/build_ui.py",
+  "/scripts/hatch_build.py",
+  "/pyproject.toml",
+  "/README.md",
+  "/CHANGELOG.md",
+  "/SECURITY.md",
+  "/LICENSE",
+  "/licenses",
+  "/THIRD_PARTY_NOTICES.md",
 ]
 
 [tool.hatch.build.targets.sdist.force-include]
 "server/static" = "server/static"
+"server/static_file" = "server/static_file"

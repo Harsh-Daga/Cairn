@@ -1,17 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { fetchReplayCheckpoints, fetchTraceDetail, setHumanLabel } from "@/lib/api";
+import {
+  fetchReplayCheckpoints,
+  fetchTraceDetail,
+  isStaticMode,
+  runAction,
+  setHumanLabel,
+} from "@/lib/api";
 import { interpolateReplayAtSeq } from "@/lib/replay";
-import { formatCost } from "@/lib/format";
+import { formatCost, formatDuration, formatTokens } from "@/lib/format";
 import { mergeConsultationRows } from "@/lib/mcpConsultations";
 import { PageShell } from "@/components/common/PageShell";
 import { Chip } from "@/components/common/Chip";
-import { flattenTree, Waterfall } from "@/components/waterfall/Waterfall";
+import { Waterfall } from "@/components/waterfall/Waterfall";
+import { flattenTree } from "@/lib/waterfallTree";
 import { LinkLegend } from "@/components/waterfall/LinkConnectors";
 import { ContextTimeline, ReplayScrubber } from "@/components/session/ReplayScrubber";
 import { SpanInspector } from "@/components/session/SpanInspector";
+import {
+  SessionCorrections,
+  SessionPostmortem,
+  SessionReceipt,
+} from "@/components/session/SessionEvidenceViews";
+import { SessionShields } from "@/components/session/SessionShields";
+import { SessionTranscript } from "@/components/session/SessionTranscript";
 import { QualityScoreDetails } from "@/components/quality/QualityScoreDetails";
+import { SidePanel } from "@/components/ui";
 import type { Span } from "@/lib/types";
 import {
   formatZoomParam,
@@ -21,6 +36,9 @@ import {
   zoomDomainForSpan,
   type WaterfallMode,
 } from "@/lib/waterfallLayout";
+
+const DETAIL_TABS = ["investigate", "transcript", "receipt", "corrections", "postmortem"] as const;
+type DetailTab = (typeof DETAIL_TABS)[number];
 
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,15 +50,29 @@ export function SessionDetailPage() {
   const [highlightedLinkId, setHighlightedLinkId] = useState<string | null>(null);
   const [humanLabel, setHumanLabelValue] = useState<"up" | "down" | null>(null);
   const [humanNote, setHumanNote] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
   const queryClient = useQueryClient();
   const modeParam = searchParams.get("mode");
   const waterfallMode: WaterfallMode = modeParam === "time" ? "time" : "tokens";
   const timeZoom = parseZoomParam(searchParams.get("zoom"));
+  const spanParam = searchParams.get("span");
+  const requestedTab = searchParams.get("tab");
+  const detailTab: DetailTab = DETAIL_TABS.includes(requestedTab as DetailTab)
+    ? (requestedTab as DetailTab)
+    : "investigate";
 
-  const { data: detail, isLoading, isError } = useQuery({
+  const {
+    data: detail,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["trace", id],
     queryFn: () => fetchTraceDetail(id!),
     enabled: Boolean(id),
+    refetchInterval: (query) => {
+      const status = query.state.data?.trace.status.toLowerCase();
+      return status && ["active", "running", "in_progress"].includes(status) ? 2_000 : false;
+    },
   });
 
   const maxSeq = detail?.spans.length ? Math.max(...detail.spans.map((s) => s.seq)) : 0;
@@ -60,6 +92,14 @@ export function SessionDetailPage() {
   const labelMutation = useMutation({
     mutationFn: () => setHumanLabel(id!, humanLabel, humanNote),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trace", id] }),
+  });
+  const exportMutation = useMutation({
+    mutationFn: () => runAction("export_bundle", { trace_id: id, scrub: true }),
+    onSuccess: (result) => {
+      const path = typeof result.result?.path === "string" ? result.result.path : "local exports";
+      setActionMessage(`Scrubbed export saved to ${path}.`);
+    },
+    onError: () => setActionMessage("Scrubbed export failed. No file was reported."),
   });
 
   const activeSpans: Span[] = useMemo(() => {
@@ -86,10 +126,40 @@ export function SessionDetailPage() {
 
   const selectedSpan = rows.find((row) => row.span.span_id === selectedId)?.span ?? null;
 
+  useEffect(() => {
+    if (spanParam && detail?.spans.some((span) => span.span_id === spanParam)) {
+      setSelectedId(spanParam);
+    }
+  }, [detail?.spans, spanParam]);
+
   const setSeq = (next: number) => {
     const p = new URLSearchParams(searchParams);
     if (next <= 0) p.delete("seq");
     else p.set("seq", String(next));
+    setSearchParams(p);
+  };
+
+  const setDetailTab = (next: DetailTab) => {
+    const p = new URLSearchParams(searchParams);
+    if (next === "investigate") p.delete("tab");
+    else p.set("tab", next);
+    setSearchParams(p);
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setActionMessage("Exact local deep link copied.");
+    } catch {
+      setActionMessage("Copy was unavailable; use the current address bar URL.");
+    }
+  };
+
+  const selectSpan = (spanId: string | null) => {
+    setSelectedId(spanId);
+    const p = new URLSearchParams(searchParams);
+    if (spanId) p.set("span", spanId);
+    else p.delete("span");
     setSearchParams(p);
   };
 
@@ -113,21 +183,51 @@ export function SessionDetailPage() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && searchParams.get("zoom")) {
-        const p = new URLSearchParams(searchParams);
-        p.delete("zoom");
-        setSearchParams(p);
+      if (event.defaultPrevented) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+      ) {
+        return;
+      }
+      if (event.key === "Escape") {
+        if (searchParams.get("zoom")) {
+          const p = new URLSearchParams(searchParams);
+          p.delete("zoom");
+          setSearchParams(p);
+        } else if (selectedId) {
+          setSelectedId(null);
+          const p = new URLSearchParams(searchParams);
+          p.delete("span");
+          setSearchParams(p);
+        }
+      } else if ((event.key === "j" || event.key === "k") && rows.length > 0) {
+        event.preventDefault();
+        const current = rows.findIndex((row) => row.span.span_id === selectedId);
+        const delta = event.key === "j" ? 1 : -1;
+        const origin = current >= 0 ? current : delta > 0 ? -1 : rows.length;
+        const next = rows[Math.max(0, Math.min(rows.length - 1, origin + delta))];
+        if (next) {
+          setSelectedId(next.span.span_id);
+          const p = new URLSearchParams(searchParams);
+          p.set("span", next.span.span_id);
+          setSearchParams(p);
+        }
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [searchParams, setSearchParams]);
+  }, [rows, searchParams, selectedId, setSearchParams]);
 
   if (!id) return null;
 
   if (isLoading) {
     return (
-      <PageShell title="Session" question="Replay the run, inspect every span, and localize where behavior changed.">
+      <PageShell
+        title="Session"
+        question="Replay the run, inspect every span, and localize where behavior changed."
+      >
         <div className="card h-64 animate-pulse bg-granite/30" />
       </PageShell>
     );
@@ -135,7 +235,10 @@ export function SessionDetailPage() {
 
   if (isError || !detail) {
     return (
-      <PageShell title="Session" question="Replay the run, inspect every span, and localize where behavior changed.">
+      <PageShell
+        title="Session"
+        question="Replay the run, inspect every span, and localize where behavior changed."
+      >
         <div className="card p-6 text-cinnabar">Session not found.</div>
       </PageShell>
     );
@@ -144,10 +247,29 @@ export function SessionDetailPage() {
   const { trace } = detail;
   const wasteCount = activeSpans.filter((s) => s.waste_tokens > 0 || s.waste_category).length;
   const traceDuration = traceDurationMs(trace.started_at, trace.ended_at, activeSpans);
+  const totalTokens =
+    trace.input_tokens +
+    trace.output_tokens +
+    trace.cache_read_tokens +
+    trace.cache_creation_tokens +
+    trace.reasoning_tokens;
+  const models = [
+    ...new Set([trace.model, ...detail.spans.map((span) => span.model)].filter(Boolean)),
+  ] as string[];
+  const activeSession = ["active", "running", "in_progress"].includes(trace.status.toLowerCase());
+  const dataQualityLabel = detail.quality
+    ? detail.quality.dropped_events > 0
+      ? `degraded · ${detail.quality.dropped_events} dropped`
+      : detail.quality.pct_tokens_estimated
+        ? `${detail.quality.pct_tokens_estimated.toFixed(0)}% estimated`
+        : "measured"
+    : "data quality unavailable";
   const traceStartMs = trace.started_at ? Date.parse(trace.started_at) : 0;
   const showTimestampNote = waterfallMode === "time" && spansMissingTimestamps(activeSpans);
   const visibleLinks = detail.links.filter((link) =>
-    activeSpans.some((span) => span.span_id === link.from_span_id || span.span_id === link.to_span_id),
+    activeSpans.some(
+      (span) => span.span_id === link.from_span_id || span.span_id === link.to_span_id,
+    ),
   );
 
   const handleZoomSpan = (span: Span) => {
@@ -157,7 +279,10 @@ export function SessionDetailPage() {
   };
 
   return (
-    <PageShell title={trace.title ?? "Session"} question="Replay the run, inspect every span, and localize where behavior changed.">
+    <PageShell
+      title={trace.title ?? "Session"}
+      question="Replay the run, inspect every span, and localize where behavior changed."
+    >
       <div className="mb-4">
         <Link to="/sessions" className="font-mono text-xs text-copper hover:underline">
           ← Sessions
@@ -165,10 +290,15 @@ export function SessionDetailPage() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Chip label={detail.outcome?.outcome_label ?? trace.status} tone="patina" />
         <Chip label={trace.source} tone="patina" />
-        {trace.model ? <Chip label={trace.model} /> : null}
+        {models.length > 0 ? <Chip label={models.join(", ")} /> : <Chip label="model unknown" />}
         <Chip label={formatCost(trace.cost)} tone="copper" />
+        <Chip label={`${formatTokens(totalTokens)} tokens`} />
+        <Chip label={formatDuration(traceDuration)} />
         <Chip label={`${trace.span_count} spans`} />
+        <Chip label={dataQualityLabel} tone={detail.quality ? "estimated" : "cinnabar"} />
+        {activeSession ? <Chip label="live tail · polling 2s" tone="cinnabar" /> : null}
         {trace.cost_source === "absent" ? <Chip label="est." tone="estimated" /> : null}
         {detail.outcome?.quality_score != null ? (
           <QualityScoreDetails
@@ -178,6 +308,44 @@ export function SessionDetailPage() {
           />
         ) : null}
       </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Session actions">
+        <Link
+          to={`/sessions?selected=${encodeURIComponent(trace.trace_id)}`}
+          className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-copper hover:bg-shale"
+        >
+          Compare
+        </Link>
+        <button
+          type="button"
+          className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-copper hover:bg-shale"
+          onClick={() => setDetailTab("postmortem")}
+        >
+          Post-mortem
+        </button>
+        <button
+          type="button"
+          disabled={isStaticMode() || exportMutation.isPending}
+          className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-copper hover:bg-shale disabled:opacity-50"
+          onClick={() => exportMutation.mutate()}
+        >
+          {exportMutation.isPending ? "Exporting…" : "Scrubbed export"}
+        </button>
+        <button
+          type="button"
+          className="rounded-sm border border-quartz-vein px-3 py-1.5 font-mono text-xs text-copper hover:bg-shale"
+          onClick={() => void copyLink()}
+        >
+          Copy link
+        </button>
+        {actionMessage ? (
+          <span className="text-xs text-cinder" role="status">
+            {actionMessage}
+          </span>
+        ) : null}
+      </div>
+
+      <SessionShields shields={detail.shields} />
 
       <section className="mb-4 card p-4" aria-label="Human session label">
         <div className="flex flex-wrap items-center gap-2">
@@ -225,84 +393,123 @@ export function SessionDetailPage() {
         </div>
       </section>
 
-      <ReplayScrubber
-        maxSeq={maxSeq}
-        seq={seq}
-        spans={activeSpans}
-        onChange={setSeq}
-      />
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
-            waterfallMode === "time"
-              ? "border-lapis/60 bg-lapis/10 text-lapis"
-              : "border-quartz-vein text-cinder hover:text-bone"
-          }`}
-          onClick={() => setWaterfallMode(waterfallMode === "time" ? "tokens" : "time")}
-        >
-          {waterfallMode === "time" ? "Time mode" : "Token mode"}
-        </button>
-        {timeZoom ? (
+      <div
+        className="mb-4 flex overflow-x-auto border-b border-quartz-vein"
+        role="tablist"
+        aria-label="Session detail views"
+      >
+        {DETAIL_TABS.map((tab) => (
           <button
+            key={tab}
             type="button"
-            className="rounded-chip border border-quartz-vein px-2 py-1 font-mono text-[10px] text-cinder hover:text-bone"
-            onClick={() => setTimeZoom(null)}
+            role="tab"
+            aria-selected={detailTab === tab}
+            className={`px-4 py-3 font-mono text-[10px] uppercase tracking-wide ${
+              detailTab === tab
+                ? "border-b-2 border-copper text-bone"
+                : "text-cinder hover:text-bone"
+            }`}
+            onClick={() => setDetailTab(tab)}
           >
-            Reset zoom (Esc)
+            {tab}
           </button>
-        ) : null}
-        <button
-          type="button"
-          className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
-            blameMode
-              ? "border-ochre/60 bg-ochre/10 text-ochre"
-              : "border-quartz-vein text-cinder hover:text-bone"
-          }`}
-          onClick={() => setBlameMode((v) => !v)}
-        >
-          Blame {wasteCount > 0 ? `(${wasteCount})` : ""}
-        </button>
-        <button
-          type="button"
-          className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
-            foldSubagents
-              ? "border-patina/60 bg-patina/10 text-patina"
-              : "border-quartz-vein text-cinder hover:text-bone"
-          }`}
-          onClick={() => setFoldSubagents((v) => !v)}
-        >
-          {foldSubagents ? "Expand subagents" : "Fold subagents"}
-        </button>
+        ))}
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[58%_42%] lg:grid-rows-[minmax(280px,1fr)_auto]">
-        <div className="min-h-[280px] lg:row-span-2">
-          <LinkLegend links={visibleLinks} />
-          <Waterfall
-            rows={rows.length > 0 ? rows : allRows}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            blameMode={blameMode}
-            mode={waterfallMode}
-            traceStartedAt={trace.started_at}
-            traceDurationMs={traceDuration}
-            timeDomain={timeZoom}
-            showTimestampNote={showTimestampNote}
-            onZoomSpan={handleZoomSpan}
-            links={visibleLinks}
-            highlightedLinkId={highlightedLinkId}
-            onLinkHover={setHighlightedLinkId}
-          />
-        </div>
-        <ContextTimeline
-          spans={activeSpans}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
-        <SpanInspector span={selectedSpan} />
-      </div>
+      {detailTab === "investigate" ? (
+        <>
+          <ReplayScrubber maxSeq={maxSeq} seq={seq} spans={activeSpans} onChange={setSeq} />
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
+                waterfallMode === "time"
+                  ? "border-lapis/60 bg-lapis/10 text-lapis"
+                  : "border-quartz-vein text-cinder hover:text-bone"
+              }`}
+              onClick={() => setWaterfallMode(waterfallMode === "time" ? "tokens" : "time")}
+            >
+              {waterfallMode === "time" ? "Time mode" : "Token mode"}
+            </button>
+            {timeZoom ? (
+              <button
+                type="button"
+                className="rounded-chip border border-quartz-vein px-2 py-1 font-mono text-[10px] text-cinder hover:text-bone"
+                onClick={() => setTimeZoom(null)}
+              >
+                Reset zoom (Esc)
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
+                blameMode
+                  ? "border-ochre/60 bg-ochre/10 text-ochre"
+                  : "border-quartz-vein text-cinder hover:text-bone"
+              }`}
+              onClick={() => setBlameMode((v) => !v)}
+            >
+              Blame {wasteCount > 0 ? `(${wasteCount})` : ""}
+            </button>
+            <button
+              type="button"
+              className={`rounded-chip border px-2 py-1 font-mono text-[10px] uppercase tracking-wide ${
+                foldSubagents
+                  ? "border-patina/60 bg-patina/10 text-patina"
+                  : "border-quartz-vein text-cinder hover:text-bone"
+              }`}
+              onClick={() => setFoldSubagents((v) => !v)}
+            >
+              {foldSubagents ? "Expand subagents" : "Fold subagents"}
+            </button>
+            {trace.cost > 0 ? (
+              <span className="self-center font-mono text-[10px] text-cinder">
+                ~ span cost is token-proportional allocation, not measured attribution.
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[58%_42%] lg:grid-rows-[minmax(280px,1fr)_auto]">
+            <div className="min-h-[280px] lg:row-span-2">
+              <LinkLegend links={visibleLinks} />
+              <Waterfall
+                rows={rows.length > 0 ? rows : allRows}
+                selectedId={selectedId}
+                onSelect={selectSpan}
+                blameMode={blameMode}
+                mode={waterfallMode}
+                traceStartedAt={trace.started_at}
+                traceDurationMs={traceDuration}
+                timeDomain={timeZoom}
+                showTimestampNote={showTimestampNote}
+                onZoomSpan={handleZoomSpan}
+                links={visibleLinks}
+                highlightedLinkId={highlightedLinkId}
+                onLinkHover={setHighlightedLinkId}
+                traceCost={trace.cost}
+              />
+            </div>
+            <ContextTimeline spans={activeSpans} selectedId={selectedId} onSelect={selectSpan} />
+          </div>
+          <SidePanel
+            open={selectedSpan != null}
+            title="Span inspector"
+            onClose={() => selectSpan(null)}
+          >
+            <SpanInspector
+              span={selectedSpan}
+              regions={detail.regions}
+              links={visibleLinks}
+              onSelectSpan={selectSpan}
+            />
+          </SidePanel>
+        </>
+      ) : null}
+      {detailTab === "transcript" ? <SessionTranscript spans={detail.spans} /> : null}
+      {detailTab === "receipt" ? <SessionReceipt detail={detail} /> : null}
+      {detailTab === "corrections" ? <SessionCorrections detail={detail} /> : null}
+      {detailTab === "postmortem" ? <SessionPostmortem detail={detail} /> : null}
     </PageShell>
   );
 }

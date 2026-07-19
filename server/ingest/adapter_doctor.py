@@ -27,11 +27,7 @@ def run_adapter_doctor(
             "adapter_id": adapter_id,
             "error": f"unknown adapter; available: {', '.join(sorted(adapters))}",
         }
-    path = (
-        sample_path.resolve()
-        if sample_path is not None
-        else _newest_path(adapter.detect())
-    )
+    path = sample_path.resolve() if sample_path is not None else _newest_path(adapter.detect())
     if path is None or not path.is_file():
         return {
             "ok": False,

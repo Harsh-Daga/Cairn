@@ -1,413 +1,322 @@
-"""Pydantic response models for §6.2 read API."""
-
-from __future__ import annotations
-
-from typing import Any, Literal
-
-from pydantic import BaseModel, Field
-
-from server.models.insight import InsightLifecycle, InsightSeverity
-from server.models.span import Span
-from server.models.trace import Trace
-
-
-class DataNote(BaseModel):
-    source: str
-    sessions: int
-    issue: str
-    message: str
-    help_url: str | None = None
-
-
-class NarrativeSentence(BaseModel):
-    text: str
-    filter: dict[str, str] | None = None
-
-
-class TailRisk(BaseModel):
-    expected_worst_cost: float | None = None
-    exceedance_count: int = 0
-    threshold: float | None = None
-
-
-class WasteCause(BaseModel):
-    category: str
-    waste_tokens: int
-    estimated_savings_usd: float
-    cause: str
-    fix: str
-
-
-class MoneySummary(BaseModel):
-    period_days: int
-    total_spend_usd: float
-    spend_estimated: bool
-    wasted_spend_usd: float
-    wasted_spend_pct: float
-    waste_estimated: bool
-    top_causes: list[WasteCause]
-    primary_action: str
-
-
-class OverviewResponse(BaseModel):
-    days: int
-    kpis: dict[str, float | int | None]
-    money: MoneySummary
-    narrative: list[NarrativeSentence]
-    tail_risk: TailRisk
-    data_notes: list[DataNote]
-
-
-class QualityTrend(BaseModel):
-    current_mean: float | None
-    previous_mean: float | None
-    delta: float | None
-    current_sessions: int
-    previous_sessions: int
-
-
-class RecapVerdict(BaseModel):
-    experiment_id: str
-    verdict: str
-    effect_estimate: float | None
-    effect_ci_low: float | None
-    effect_ci_high: float | None
-    measured_at: str
-
-
-class RecapResponse(BaseModel):
-    generated_at: str
-    period_days: int
-    money: MoneySummary
-    quality_trend: QualityTrend
-    experiment_verdicts: list[RecapVerdict]
-
-
-class TraceRow(BaseModel):
-    trace_id: str
-    source: str
-    title: str | None
-    project: str | None
-    actor_id: str | None
-    model: str | None
-    started_at: str | None
-    ended_at: str | None
-    status: str
-    input_tokens: int
-    output_tokens: int
-    cost: float
-    cost_source: str
-    span_count: int
-    waste_tokens: int
-    difficulty: float | None
-
-
-class TracesListResponse(BaseModel):
-    traces: list[TraceRow]
-    total: int
-    limit: int
-    offset: int
-
-
-class TraceDiffTurn(BaseModel):
-    index: int
-    op: Literal["match", "insert", "delete"]
-    a: Span | None
-    b: Span | None
-    delta_tokens: int
-    delta_waste_tokens: int
-    delta_quality: float
-
-
-class TraceDiffSummary(BaseModel):
-    cost_a: float
-    cost_b: float
-    delta_cost: float
-    waste_a: int
-    waste_b: int
-    delta_waste_tokens: int
-    quality_a: float
-    quality_b: float
-    delta_quality: float
-
-
-class TraceDiffResponse(BaseModel):
-    a: Trace
-    b: Trace
-    summary: TraceDiffSummary
-    turns: list[TraceDiffTurn]
-
-
-class SpanNode(BaseModel):
-    span: Span
-    children: list[SpanNode] = Field(default_factory=list)
-
-
-class SpanLink(BaseModel):
-    from_span_id: str
-    to_span_id: str
-    link_type: str
-
-
-class McpConsultation(BaseModel):
-    event_id: str
-    trace_id: str
-    after_seq: int
-    tool_name: str
-    called_at: str
-
-
-class TraceDetailResponse(BaseModel):
-    trace: Trace
-    spans: list[Span]
-    tree: list[SpanNode]
-    links: list[SpanLink]
-    mcp_consultations: list[McpConsultation]
-    regions: list[dict[str, Any]]
-    diagnostics: dict[str, Any] | None
-    quality: dict[str, Any] | None
-    outcome: dict[str, Any] | None
-
-
-class HumanLabelRequest(BaseModel):
-    label: Literal["up", "down"] | None
-    note: str | None = Field(default=None, max_length=1000)
-
-
-class HumanLabelResponse(BaseModel):
-    trace_id: str
-    label: Literal["up", "down"] | None
-    note: str | None
-    labeled_at: str | None
-
-
-class ReplayCheckpoint(BaseModel):
-    seq: int
-    spans: list[Span]
-    summary: dict[str, Any]
-
-
-class ReplayResponse(BaseModel):
-    trace_id: str
-    seq: int | None = None
-    max_seq: int | None = None
-    step: int | None = None
-    spans: list[Span] | None = None
-    summary: dict[str, Any] | None = None
-    checkpoints: list[ReplayCheckpoint] | None = None
-
-
-class AgentAggregate(BaseModel):
-    agent_id: str | None
-    actor_id: str | None
-    actor_name: str | None
-    traces: int
-    input_tokens: int
-    output_tokens: int
-    cost: float
-
-
-class AgentsResponse(BaseModel):
-    days: int
-    agents: list[AgentAggregate]
-    handoff_matrix: list[dict[str, Any]]
-
-
-class BehaviorSeriesPoint(BaseModel):
-    trace_id: str
-    ts: str | None
-    vector: list[float]
-    project: str | None
-    model: str | None
-
-
-class DriftEvent(BaseModel):
-    kind: str
-    trace_id: str | None = None
-    project: str | None = None
-    model: str | None = None
-    distance: float | None = None
-    threshold: float | None = None
-    per_dim_deltas: list[float] = Field(default_factory=list)
-    drift: bool | None = None
-    axes: list[dict[str, Any]] = Field(default_factory=list)
-    data_notes: list[str] = Field(default_factory=list)
-
-
-class BehaviorResponse(BaseModel):
-    days: int
-    series: list[BehaviorSeriesPoint]
-    drift: list[DriftEvent]
-    radar: dict[str, Any] | None
-    baseline_progress: dict[str, Any]
-    data_notes: list[DataNote]
-
-
-class QualityResponse(BaseModel):
-    days: int
-    outcomes: list[dict[str, Any]]
-    histogram: list[dict[str, Any]]
-    cost_per_success: list[dict[str, Any]]
-    data_notes: list[DataNote]
-
-
-class UsageSeriesPoint(BaseModel):
-    key: str
-    input_tokens: int
-    output_tokens: int
-    waste_tokens: int
-    cost: float
-    traces: int
-
-
-class UsageAnalyticsResponse(BaseModel):
-    days: int
-    group_by: str
-    series: list[UsageSeriesPoint]
-
-
-class RegionsAnalyticsResponse(BaseModel):
-    days: int
-    regions: list[dict[str, Any]]
-
-
-class WasteCategory(BaseModel):
-    category: str
-    tokens: int
-    events: int
-
-
-class WasteAnalyticsResponse(BaseModel):
-    days: int
-    categories: list[WasteCategory]
-    total_waste_tokens: int
-
-
-class TailAnalyticsResponse(BaseModel):
-    days: int
-    tail_risk: TailRisk
-    exceedances: list[float]
-
-
-class InsightRow(BaseModel):
-    insight_id: str
-    fingerprint: str
-    detector: str
-    severity: InsightSeverity
-    title: str
-    body: str
-    state: InsightLifecycle
-    savings_estimate: float | None
-    savings_unavailable_reason: str | None
-    fix: dict[str, str]
-    diagnostic: bool
-    action: str | None
-    last_seen_at: str
-
-
-class InsightsResponse(BaseModel):
-    insights: list[InsightRow]
-    total: int
-
-
-class EvidenceChainResponse(BaseModel):
-    insight_id: str
-    evidence_id: str
-    producer: str
-    produced_at: str
-    trace_ids: list[str]
-    span_ids: list[str] | None
-    metrics: dict[str, Any]
-    spans: list[Span]
-
-
-class ExperimentRow(BaseModel):
-    experiment_id: str
-    status: str
-    target_file: str | None
-    created_at: str
-    applied_at: str | None
-    min_holdout: int
-    outcome_n_effective: float | None
-    verdict: str | None
-    lift_pct: float | None
-    effect_ci_low: float | None
-    effect_ci_high: float | None
-    measured_at: str | None
-
-
-class ExperimentsResponse(BaseModel):
-    experiments: list[ExperimentRow]
-
-
-class ExperimentDetailResponse(BaseModel):
-    experiment: dict[str, Any]
-    preview: dict[str, Any] | None = None
-
-
-class SearchHit(BaseModel):
-    trace_id: str
-    span_id: str | None
-    title: str | None
-    snippet: str
-    kind: Literal["trace", "span"]
-
-
-class SearchResponse(BaseModel):
-    q: str
-    hits: list[SearchHit]
-    total: int
-
-
-class WorkspaceAdapter(BaseModel):
-    source: str
-    streams: int
-    cursor_updated_at: str | None
-    attempts: int
-    fully_parsed: int
-    degraded: int
-    skipped: int
-    parse_coverage: float | None
-    unknown_fields: dict[str, int]
-    last_success_at: str | None
-    warning: bool
-    issue_url: str
-
-
-class PlanWindowGauge(BaseModel):
-    window_hours: int
-    total_tokens: int
-    by_source: dict[str, int]
-    limit: int | None
-    exceeded: bool
-
-
-class WorkspaceResponse(BaseModel):
-    workspace_id: str
-    root_path: str
-    name: str
-    adapters: list[WorkspaceAdapter]
-    health: dict[str, Any]
-    gauge: PlanWindowGauge | None = None
-
-
-class ActionManifestEntry(BaseModel):
-    name: str
-    title: str
-    category: str
-    params_schema: dict[str, Any]
-    async_job: bool
-
-
-class ActionsManifestResponse(BaseModel):
-    actions: list[ActionManifestEntry]
-
-
-class ActionResultResponse(BaseModel):
-    ok: bool
-    result: dict[str, Any] | None = None
-    job_id: str | None = None
-
-
-class ErrorResponse(BaseModel):
-    error: dict[str, str]
+"""Compatibility facade for domain-grouped public API schemas."""
+
+from server.api.schema.analytics import (
+    AgentAggregate,
+    AgentParseCoverage,
+    AgentsLedgerSummary,
+    AgentsResponse,
+    AgentTrendPoint,
+    BaselineProgress,
+    BehaviorLedgerSummary,
+    BehaviorRadar,
+    BehaviorResponse,
+    BehaviorSeriesPoint,
+    BudgetBurnLedger,
+    BudgetBurnResponse,
+    BudgetShareRow,
+    CacheTrendPoint,
+    CompareAnalyticsResponse,
+    CompareCell,
+    CompareLedgerSummary,
+    CompareMetricInterval,
+    ComparePairwise,
+    ContextAgentAggregate,
+    ContextCoverage,
+    ContextEvidence,
+    ContextLedgerSummary,
+    CostPerSuccessPoint,
+    DriftAxis,
+    DriftEvent,
+    FileChurnPoint,
+    FileEvidence,
+    FileHotspot,
+    FilesAnalyticsResponse,
+    FilesLedgerSummary,
+    GuardAnalyticsResponse,
+    GuardAssociation,
+    GuardEventRow,
+    GuardLedgerSummary,
+    HandoffRow,
+    QualityCalibration,
+    QualityComponentSummary,
+    QualityHistogramBucket,
+    QualityInvestigation,
+    QualityLedgerSummary,
+    QualityOutcome,
+    QualityResponse,
+    QualityTrendPoint,
+    RadarAxis,
+    RebilledBlock,
+    RegionAggregate,
+    RegionsAnalyticsResponse,
+    RegionTrendPoint,
+    TailAnalyticsResponse,
+    ToolAggregate,
+    ToolCoverage,
+    ToolEvidence,
+    ToolFailureSample,
+    ToolsAnalyticsResponse,
+    ToolsLedgerSummary,
+    ToolTrendPoint,
+    UsageAnalyticsResponse,
+    UsageSeriesPoint,
+    WasteAnalyticsResponse,
+    WasteCategory,
+)
+from server.api.schema.improvement import (
+    EvidenceChainResponse,
+    ExperimentDetailResponse,
+    ExperimentRow,
+    ExperimentsResponse,
+    InsightFix,
+    InsightRow,
+    InsightsLedgerSummary,
+    InsightsResponse,
+    OptimizeLedgerSummary,
+    VerdictPreviewData,
+)
+from server.api.schema.overview import (
+    BudgetSummary,
+    DataNote,
+    MetricDelta,
+    MoneySummary,
+    MonthEndProjection,
+    NarrativeSentence,
+    OverviewAttentionCategory,
+    OverviewAttentionItem,
+    OverviewEvidence,
+    OverviewHero,
+    OverviewResponse,
+    QualityTrend,
+    RecapDecayedRule,
+    RecapGuardEvent,
+    RecapRecommendedAction,
+    RecapResponse,
+    RecapSessionHighlight,
+    RecapVerdict,
+    ShieldSummary,
+    TailRisk,
+    TrendAnnotation,
+    WasteCause,
+)
+from server.api.schema.query import QueryFilterError, QueryFilterToken
+from server.api.schema.system import (
+    ActionManifestEntry,
+    ActionResultResponse,
+    ActionsManifestResponse,
+    AdapterWarning,
+    CollectionStatus,
+    ErrorDetail,
+    ErrorResponse,
+    HumanLabelAgreement,
+    PlanWindowGauge,
+    ResourceBudgetStatus,
+    ResourceDiskInventory,
+    ResourceForecast,
+    ResourceStatus,
+    SearchFacet,
+    SearchHit,
+    SearchResponse,
+    WorkspaceAdapter,
+    WorkspaceHealth,
+    WorkspaceResponse,
+)
+from server.api.schema.traces import (
+    CorrectionEvent,
+    CorrectionRelabelRequest,
+    CorrectionsResponse,
+    HandoffResponse,
+    HandoffSection,
+    HandoffStatement,
+    HumanLabelRequest,
+    HumanLabelResponse,
+    McpConsultation,
+    PostmortemResponse,
+    PostmortemSpanLink,
+    PostmortemStep,
+    ReceiptClaim,
+    ReceiptDebt,
+    ReceiptDebtComponent,
+    ReceiptEvidenceRef,
+    ReceiptIntent,
+    ReceiptOutcomeSummary,
+    ReceiptRequirement,
+    ReceiptResponse,
+    ReceiptRiskFinding,
+    ReceiptRiskPolicy,
+    ReceiptTimelineEvent,
+    ReplayCheckpoint,
+    ReplayResponse,
+    ReplaySummary,
+    SessionShield,
+    SpanLink,
+    SpanNode,
+    TraceDetailResponse,
+    TraceDiffAnalysis,
+    TraceDiffChange,
+    TraceDiffComparability,
+    TraceDiffEvidence,
+    TraceDiffRegion,
+    TraceDiffResponse,
+    TraceDiffSummary,
+    TraceDiffTurn,
+    TraceRow,
+    TracesListResponse,
+)
+
+__all__ = [
+    "ActionManifestEntry",
+    "ActionResultResponse",
+    "ActionsManifestResponse",
+    "AdapterWarning",
+    "AgentAggregate",
+    "AgentParseCoverage",
+    "AgentsLedgerSummary",
+    "AgentsResponse",
+    "AgentTrendPoint",
+    "BaselineProgress",
+    "BudgetBurnLedger",
+    "BudgetBurnResponse",
+    "BudgetShareRow",
+    "BudgetSummary",
+    "CorrectionEvent",
+    "CorrectionRelabelRequest",
+    "CorrectionsResponse",
+    "HandoffResponse",
+    "HandoffSection",
+    "HandoffStatement",
+    "BehaviorLedgerSummary",
+    "BehaviorRadar",
+    "BehaviorResponse",
+    "BehaviorSeriesPoint",
+    "CacheTrendPoint",
+    "CompareAnalyticsResponse",
+    "CompareCell",
+    "CompareLedgerSummary",
+    "CompareMetricInterval",
+    "ComparePairwise",
+    "GuardAnalyticsResponse",
+    "GuardAssociation",
+    "GuardEventRow",
+    "GuardLedgerSummary",
+    "ContextAgentAggregate",
+    "ContextCoverage",
+    "ContextEvidence",
+    "ContextLedgerSummary",
+    "CostPerSuccessPoint",
+    "DataNote",
+    "DriftAxis",
+    "DriftEvent",
+    "ErrorDetail",
+    "ErrorResponse",
+    "EvidenceChainResponse",
+    "ExperimentDetailResponse",
+    "ExperimentRow",
+    "ExperimentsResponse",
+    "FileChurnPoint",
+    "FileEvidence",
+    "FileHotspot",
+    "FilesAnalyticsResponse",
+    "FilesLedgerSummary",
+    "HandoffRow",
+    "HumanLabelAgreement",
+    "HumanLabelRequest",
+    "HumanLabelResponse",
+    "InsightFix",
+    "InsightRow",
+    "InsightsLedgerSummary",
+    "InsightsResponse",
+    "McpConsultation",
+    "MetricDelta",
+    "MoneySummary",
+    "MonthEndProjection",
+    "NarrativeSentence",
+    "OptimizeLedgerSummary",
+    "OverviewAttentionCategory",
+    "OverviewAttentionItem",
+    "OverviewEvidence",
+    "OverviewHero",
+    "OverviewResponse",
+    "PlanWindowGauge",
+    "PostmortemResponse",
+    "PostmortemSpanLink",
+    "PostmortemStep",
+    "ReceiptClaim",
+    "ReceiptDebt",
+    "ReceiptDebtComponent",
+    "ReceiptEvidenceRef",
+    "ReceiptIntent",
+    "ReceiptOutcomeSummary",
+    "ReceiptRequirement",
+    "ReceiptResponse",
+    "ReceiptRiskFinding",
+    "ReceiptRiskPolicy",
+    "ReceiptTimelineEvent",
+    "QualityCalibration",
+    "QualityComponentSummary",
+    "QualityHistogramBucket",
+    "QualityInvestigation",
+    "QualityLedgerSummary",
+    "QualityOutcome",
+    "QualityResponse",
+    "QualityTrend",
+    "QualityTrendPoint",
+    "QueryFilterError",
+    "QueryFilterToken",
+    "RadarAxis",
+    "RebilledBlock",
+    "RecapDecayedRule",
+    "RecapGuardEvent",
+    "RecapRecommendedAction",
+    "RecapResponse",
+    "RecapSessionHighlight",
+    "RecapVerdict",
+    "RegionAggregate",
+    "RegionTrendPoint",
+    "RegionsAnalyticsResponse",
+    "ReplayCheckpoint",
+    "ReplayResponse",
+    "ReplaySummary",
+    "SearchHit",
+    "SearchFacet",
+    "SearchResponse",
+    "SessionShield",
+    "ShieldSummary",
+    "SpanLink",
+    "SpanNode",
+    "TailAnalyticsResponse",
+    "TailRisk",
+    "ToolAggregate",
+    "ToolCoverage",
+    "ToolEvidence",
+    "ToolFailureSample",
+    "ToolTrendPoint",
+    "ToolsAnalyticsResponse",
+    "ToolsLedgerSummary",
+    "TrendAnnotation",
+    "TraceDetailResponse",
+    "TraceDiffAnalysis",
+    "TraceDiffChange",
+    "TraceDiffComparability",
+    "TraceDiffEvidence",
+    "TraceDiffRegion",
+    "TraceDiffResponse",
+    "TraceDiffSummary",
+    "TraceDiffTurn",
+    "TraceRow",
+    "TracesListResponse",
+    "UsageAnalyticsResponse",
+    "UsageSeriesPoint",
+    "VerdictPreviewData",
+    "WasteAnalyticsResponse",
+    "WasteCategory",
+    "WasteCause",
+    "CollectionStatus",
+    "ResourceBudgetStatus",
+    "ResourceDiskInventory",
+    "ResourceForecast",
+    "ResourceStatus",
+    "WorkspaceAdapter",
+    "WorkspaceHealth",
+    "WorkspaceResponse",
+]

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-19",
+  "method": "complete deterministic backend and UI unit suites with branch instrumentation",
+  "python": {
+    "statements_pct": 81.61,
+    "branches_pct": 58.77
+  },
+  "ui": {
+    "statements_pct": 28.89,
+    "branches_pct": 20.64
+  },
+  "changed_lines_min_pct": 84.0,
+  "changed_lines_note": "Floor for the multi-phase 1.2.0 PR against main (~11k executable changed lines). Ratchet upward in focused follow-ups; push jobs only compare the tip commit and are not the PR gate.",
+  "exclusions": {
+    "python": [
+      "server/static/**",
+      "server/models/otlp_pb.py",
+      "server/cli_commands/**",
+      "server/cli.py",
+      "server/demo/**"
+    ],
+    "ui": [
+      "ui/src/lib/generated/**",
+      "ui/src/test/**",
+      "ui/src/main.tsx",
+      "ui/src/vite-env.d.ts"
+    ]
+  }
+}

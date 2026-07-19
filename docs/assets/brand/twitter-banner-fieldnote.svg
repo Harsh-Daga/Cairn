@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="500" viewBox="0 0 1500 500">
+  <rect width="1500" height="500" fill="#f6f2e9"/>
+
+  <!-- ruled lines -->
+  <g stroke="#e3d9c4" stroke-width="1">
+    <line x1="0" y1="60" x2="1500" y2="60"/><line x1="0" y1="94" x2="1500" y2="94"/>
+    <line x1="0" y1="128" x2="1500" y2="128"/><line x1="0" y1="162" x2="1500" y2="162"/>
+    <line x1="0" y1="196" x2="1500" y2="196"/><line x1="0" y1="230" x2="1500" y2="230"/>
+    <line x1="0" y1="264" x2="1500" y2="264"/><line x1="0" y1="298" x2="1500" y2="298"/>
+    <line x1="0" y1="332" x2="1500" y2="332"/><line x1="0" y1="366" x2="1500" y2="366"/>
+    <line x1="0" y1="400" x2="1500" y2="400"/><line x1="0" y1="434" x2="1500" y2="434"/>
+    <line x1="0" y1="468" x2="1500" y2="468"/>
+  </g>
+  <line x1="120" y1="0" x2="120" y2="500" stroke="#de6a5a" stroke-width="2" opacity="0.35"/>
+
+  <!-- coffee ring -->
+  <circle cx="240" cy="404" r="58" fill="none" stroke="#b45a32" stroke-width="7" opacity="0.12"/>
+  <circle cx="248" cy="398" r="66" fill="none" stroke="#b45a32" stroke-width="3" opacity="0.07"/>
+
+  <!-- header -->
+  <text x="152" y="50" font-family="Menlo, monospace" font-size="15" letter-spacing="3" fill="#6b6152">FIELD NOTE #029 · WEEK 29 · JULY 13–19 · SURVEYED LOCALLY</text>
+
+  <!-- headline -->
+  <text x="150" y="112" font-family="Georgia, 'Times New Roman', serif" font-size="46" fill="#211c15">The agents spent $412 this week.</text>
+  <text x="150" y="168" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="32" fill="#211c15">$97 of it wandered in circles. We flagged the trail.</text>
+  <path d="M154 178 C200 172 260 182 330 176 C340 175 348 177 356 176" fill="none" stroke="#b45a32" stroke-width="2" opacity="0.7"/>
+
+  <!-- taped ledger strip -->
+  <g transform="rotate(-1.2 700 320)">
+    <rect x="330" y="232" width="740" height="168" fill="#fffdf8" stroke="#d8cdb8"/>
+    <rect x="360" y="222" width="90" height="24" fill="#e0b45c" opacity="0.35" transform="rotate(-4 405 234)"/>
+    <rect x="950" y="222" width="90" height="24" fill="#e0b45c" opacity="0.35" transform="rotate(3 995 234)"/>
+    <text x="356" y="278" font-family="Menlo, monospace" font-size="14" fill="#211c15">09:14:02  tool_call   read   src/app.py   4,112 tok   $0.041</text>
+    <text x="356" y="316" font-family="Menlo, monospace" font-size="14" fill="#211c15">09:15:31  tool_call   read   src/app.py   4,112 tok   $0.041</text>
+    <text x="356" y="354" font-family="Menlo, monospace" font-size="14" fill="#211c15">09:17:58  tool_call   read   src/app.py   4,112 tok   $0.041</text>
+    <ellipse cx="700" cy="349" rx="338" ry="21" fill="none" stroke="#b45a32" stroke-width="2.5"/>
+    <text x="356" y="388" font-family="Menlo, monospace" font-size="12" fill="#6b6152">… 8 more identical reads this session</text>
+  </g>
+
+  <!-- margin annotation -->
+  <text x="1108" y="330" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="26" fill="#b45a32" transform="rotate(2 1108 330)">again. AGAIN.</text>
+  <path d="M1080 318 C1058 322 1046 332 1038 344" fill="none" stroke="#b45a32" stroke-width="1.5"/>
+  <path d="M1038 344 L1046 340 L1044 350 Z" fill="#b45a32"/>
+
+  <!-- wax seal -->
+  <g transform="rotate(-6 1340 116)">
+    <circle cx="1340" cy="116" r="46" fill="none" stroke="#b45a32" stroke-width="2.5"/>
+    <circle cx="1340" cy="116" r="36" fill="none" stroke="#b45a32" stroke-width="1"/>
+    <text x="1340" y="122" text-anchor="middle" font-family="Menlo, monospace" font-size="15" letter-spacing="3" fill="#b45a32">CAIRN</text>
+  </g>
+
+  <!-- footer -->
+  <text x="152" y="452" font-family="Menlo, monospace" font-size="14" fill="#6b6152">cairn — the field journal of machine expeditions · github.com/Harsh-Daga/Cairn</text>
+  <text x="152" y="478" font-family="Menlo, monospace" font-size="12" fill="#a89e8b">cost · quality · behavior — zero data leaves basecamp</text>
+
+  <!-- tiny cairn sketch, bottom right -->
+  <g transform="translate(1400, 428)">
+    <path d="M-28 24 C-29 18 -26 14 -22 13 L22 13 C26 14 29 18 28 24 C27 28 24 30 20 30 L-20 30 C-24 30 -27 28 -28 24 Z" fill="#6b5a45"/>
+    <path d="M-20 9 C-21 4 -18 1 -15 0 L15 0 C18 1 21 4 20 9 C19 12 17 13 14 13 L-14 13 C-17 13 -19 12 -20 9 Z" fill="#8a7357"/>
+    <path d="M-12 -4 C-12 -8 -10 -10 -8 -11 L8 -11 C10 -10 12 -8 12 -4 C12 -1 10 0 8 0 L-8 0 C-10 0 -12 -1 -12 -4 Z" fill="#d98e5f"/>
+  </g>
+</svg>

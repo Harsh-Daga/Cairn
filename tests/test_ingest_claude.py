@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from server.ingest import tokenize
+from server.ingest.adapters.claude_code import parse_jsonl_file
 from server.ingest.adapters.claude_code_adapter import ClaudeCodeAdapter
+from server.ingest.parse_health import inspect_unknown_fields
 from server.ingest.writer import IngestWriter
 from server.models.workspace import Workspace
 from server.store.db import Database
@@ -153,3 +156,193 @@ def test_ingest_refreshes_an_existing_active_session(
     assert second_trace.span_count == first_trace.span_count + 1
     stored_spans = SpanRepo.list_by_trace(ingest_writer._db.reader, first.trace_id)
     assert len(stored_spans) == second.span_count
+
+
+def test_claude_keeps_additive_tools_across_shared_request_id(tmp_path: Path) -> None:
+    """One requestId can stream multiple tool batches; all tools must be kept."""
+    path = tmp_path / "dup-request.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": "sess-dup",
+            "uuid": "u1",
+            "parentUuid": None,
+            "timestamp": "2026-06-01T10:00:00Z",
+            "cwd": str(tmp_path),
+            "gitBranch": "main",
+            "message": {"role": "user", "content": [{"type": "text", "text": "edit it"}]},
+        },
+        {
+            "type": "assistant",
+            "sessionId": "sess-dup",
+            "uuid": "a1",
+            "parentUuid": "u1",
+            "timestamp": "2026-06-01T10:00:01Z",
+            "requestId": "req_shared",
+            "message": {
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool_bash",
+                        "name": "Bash",
+                        "input": {"command": "ls"},
+                    }
+                ],
+                "usage": {
+                    "input_tokens": 2,
+                    "output_tokens": 10,
+                    "cache_read_input_tokens": 100,
+                    "cache_creation_input_tokens": 10,
+                },
+            },
+        },
+        {
+            "type": "assistant",
+            "sessionId": "sess-dup",
+            "uuid": "a2",
+            "parentUuid": "u1",
+            "timestamp": "2026-06-01T10:00:02Z",
+            "requestId": "req_shared",
+            "message": {
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool_read",
+                        "name": "Read",
+                        "input": {"file_path": str(tmp_path / "a.py")},
+                    }
+                ],
+                "usage": {
+                    "input_tokens": 2,
+                    "output_tokens": 20,
+                    "cache_read_input_tokens": 100,
+                    "cache_creation_input_tokens": 10,
+                },
+            },
+        },
+        {
+            # Inflated usage-only duplicate must not replace cache-backed usage.
+            "type": "assistant",
+            "sessionId": "sess-dup",
+            "uuid": "a3",
+            "parentUuid": "u1",
+            "timestamp": "2026-06-01T10:00:03Z",
+            "requestId": "req_shared",
+            "message": {
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [],
+                "usage": {"input_tokens": 9999, "output_tokens": 9999},
+            },
+        },
+    ]
+    path.write_text("\n".join(json.dumps(row) for row in records) + "\n", encoding="utf-8")
+
+    parsed = parse_jsonl_file(path, repo_root=tmp_path)
+    assert parsed is not None
+    assert [t.name for t in parsed.tool_calls] == ["Bash", "Read"]
+    assert parsed.usage.usage.input_tokens < 9999
+    assert parsed.usage.usage.output_tokens < 9999
+    assert parsed.usage.usage.cache_read_tokens == 100
+
+
+def test_claude_ignores_synthetic_model_overwrite(tmp_path: Path) -> None:
+    path = tmp_path / "synthetic-model.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": "sess-model",
+            "uuid": "u1",
+            "timestamp": "2026-06-01T10:00:00Z",
+            "cwd": str(tmp_path),
+            "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]},
+        },
+        {
+            "type": "assistant",
+            "sessionId": "sess-model",
+            "uuid": "a1",
+            "timestamp": "2026-06-01T10:00:01Z",
+            "requestId": "req_1",
+            "message": {
+                "role": "assistant",
+                "model": "claude-sonnet-4-5",
+                "content": [{"type": "text", "text": "hello"}],
+                "usage": {"input_tokens": 10, "output_tokens": 4},
+            },
+        },
+        {
+            "type": "assistant",
+            "sessionId": "sess-model",
+            "uuid": "a2",
+            "timestamp": "2026-06-01T10:00:02Z",
+            "requestId": "req_2",
+            "message": {
+                "role": "assistant",
+                "model": "<synthetic>",
+                "content": [{"type": "text", "text": "bye"}],
+                "usage": {"input_tokens": 2, "output_tokens": 2},
+            },
+        },
+    ]
+    path.write_text("\n".join(json.dumps(row) for row in records) + "\n", encoding="utf-8")
+    parsed = parse_jsonl_file(path, repo_root=tmp_path)
+    assert parsed is not None
+    assert parsed.model == "claude-sonnet-4-5"
+
+
+def test_claude_agent_id_camel_case_is_expected(tmp_path: Path) -> None:
+    path = tmp_path / "agent-id.jsonl"
+    records = [
+        {
+            "type": "assistant",
+            "sessionId": "sess-agent",
+            "uuid": "a1",
+            "timestamp": "2026-06-01T10:00:00Z",
+            "cwd": str(tmp_path),
+            "agentId": "agent-sidechain-1",
+            "attributionAgent": "Explore",
+            "message": {
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [{"type": "text", "text": "ok"}],
+                "usage": {"input_tokens": 3, "output_tokens": 1},
+            },
+        }
+    ]
+    path.write_text("\n".join(json.dumps(row) for row in records) + "\n", encoding="utf-8")
+    assert inspect_unknown_fields("claude_code", path) == {}
+    parsed = parse_jsonl_file(path, repo_root=tmp_path)
+    assert parsed is not None
+    assert parsed.events[0].get("agent_id") == "agent-sidechain-1"
+
+
+def test_claude_live_metadata_keys_are_expected(tmp_path: Path) -> None:
+    path = tmp_path / "meta.jsonl"
+    records = [
+        {
+            "type": "mode",
+            "sessionId": "sess-meta",
+            "uuid": "m1",
+            "timestamp": "2026-06-01T10:00:00Z",
+            "userType": "external",
+            "version": "1.2.3",
+            "mode": "default",
+            "permissionMode": "default",
+        },
+        {
+            "type": "user",
+            "sessionId": "sess-meta",
+            "uuid": "u1",
+            "timestamp": "2026-06-01T10:00:01Z",
+            "cwd": str(tmp_path),
+            "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]},
+            "promptId": "p1",
+            "entrypoint": "cli",
+        },
+    ]
+    path.write_text("\n".join(json.dumps(row) for row in records) + "\n", encoding="utf-8")
+    assert inspect_unknown_fields("claude_code", path) == {}

@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from server.util.private_files import ensure_private_dir, write_private_text
+
 McpClient = Literal["claude-code", "cursor", "codex", "other"]
 
 AGENT_SETUP_URL = "https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/AGENT_SETUP.md"
@@ -85,7 +87,7 @@ def install_mcp_config(
             "snippet": {target.merge_key: {"cairn": snippet}},
         }
 
-    path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_private_dir(path.parent)
     if client == "codex":
         _merge_codex_toml(path, snippet)
     else:
@@ -101,7 +103,7 @@ def _merge_json_servers(path: Path, merge_key: str, snippet: dict[str, object]) 
         servers = {}
         existing[merge_key] = servers
     servers["cairn"] = snippet
-    path.write_text(json.dumps(existing, indent=2) + "\n", encoding="utf-8")
+    write_private_text(path, json.dumps(existing, indent=2) + "\n")
 
 
 def _merge_codex_toml(path: Path, snippet: dict[str, object]) -> None:
@@ -115,6 +117,6 @@ def _merge_codex_toml(path: Path, snippet: dict[str, object]) -> None:
         text = path.read_text(encoding="utf-8")
         if "[mcp_servers.cairn]" in text:
             return
-        path.write_text(text.rstrip() + block, encoding="utf-8")
+        write_private_text(path, text.rstrip() + block)
     else:
-        path.write_text(block.lstrip(), encoding="utf-8")
+        write_private_text(path, block.lstrip())

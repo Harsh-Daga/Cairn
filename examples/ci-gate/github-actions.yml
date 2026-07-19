@@ -1,0 +1,19 @@
+# Example job fragment — copy into your workflow; pin action SHAs in production.
+name: Cairn check
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  cairn-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install Cairn
+        run: uv tool install cairn-workspace
+      - name: Sync and gate
+        run: |
+          export PATH="$(uv tool dir --bin):$PATH"
+          cairn sync
+          cairn check --min-quality 0.6

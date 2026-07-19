@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Harsh-Daga/Cairn/security/policy
+    about: Report vulnerabilities privately; never attach private traces to a public issue.
+  - name: Usage and installation documentation
+    url: https://github.com/Harsh-Daga/Cairn/blob/main/SUPPORT.md
+    about: Review support and privacy guidance before opening a defect.

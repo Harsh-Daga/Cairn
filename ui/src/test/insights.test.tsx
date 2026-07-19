@@ -1,9 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { InsightCard } from "@/components/insights/InsightCard";
 import type { InsightRow } from "@/lib/types";
-import { splitInsights } from "@/pages/Insights";
+import { splitInsights } from "@/lib/insights";
 
 const base: InsightRow = {
   insight_id: "i1",
@@ -19,21 +18,33 @@ const base: InsightRow = {
   diagnostic: false,
   action: null,
   last_seen_at: "2026-01-01T00:00:00Z",
+  rank_score: 0.42,
+  impact: null,
+  confidence: "low",
+  recurrence: 1,
+  snoozed_until: null,
+  suppressed_duplicate: false,
 };
 
 describe("insight action contract", () => {
-  it("shows the null-savings reason and copies the structured fix", () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  it("shows rank metadata and snooze/ack actions", () => {
+    const onAck = vi.fn();
+    const onSnooze = vi.fn();
     render(
-      <QueryClientProvider client={new QueryClient()}>
-        <InsightCard insight={base} expanded onToggle={() => undefined} onAck={() => undefined} />
-      </QueryClientProvider>,
+      <InsightCard
+        insight={base}
+        selected
+        onSelect={() => undefined}
+        onAck={onAck}
+        onSnooze={onSnooze}
+      />,
     );
-    expect(screen.getByText(/Savings not priced: Per-retry cost/)).toBeTruthy();
-    expect(screen.getByText("Read the error before retrying.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Copy fix" }));
-    expect(writeText).toHaveBeenCalledWith("Read the error before retrying.");
+    expect(screen.getByText(/unpriced/)).toBeTruthy();
+    expect(screen.getByText(/rank/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ack" }));
+    fireEvent.click(screen.getByRole("button", { name: "Snooze 14d" }));
+    expect(onAck).toHaveBeenCalledWith(base);
+    expect(onSnooze).toHaveBeenCalledWith(base);
   });
 
   it("separates non-actionable evidence into diagnostics", () => {

@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 _PRICES_PATH = Path(__file__).resolve().parent.parent / "data" / "model_prices.json"
 _DATE_SUFFIX = re.compile(r"-20\d{6}$")
@@ -44,6 +45,19 @@ class PriceRow:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class PriceTableMeta:
+    """Provenance for the bundled offline price table."""
+
+    schema: str
+    source: str
+    version: str
+    effective_date: str
+    currency: str
+    model_count: int
+    path: str
+
+
 def _min_prefix_for(match: str) -> int | None:
     m = match.lower()
     if "opus" in m:
@@ -58,8 +72,39 @@ def _min_prefix_for(match: str) -> int | None:
 
 
 @lru_cache(maxsize=1)
+def _load_raw_table() -> dict[str, Any]:
+    loaded: dict[str, Any] = json.loads(_PRICES_PATH.read_text(encoding="utf-8"))
+    return loaded
+
+
+def clear_price_table_cache() -> None:
+    """Test helper — drop cached table/meta after fixture swaps."""
+    _load_raw_table.cache_clear()
+    load_price_table.cache_clear()
+    load_price_table_meta.cache_clear()
+
+
+@lru_cache(maxsize=1)
+def load_price_table_meta() -> PriceTableMeta:
+    data = _load_raw_table()
+    effective = str(data.get("effective_date") or data.get("generated_at") or "")
+    version = str(data.get("version") or effective or "unknown")
+    source = str(data.get("source") or "bundled model_prices.json")
+    models = data.get("models") or []
+    return PriceTableMeta(
+        schema=str(data.get("schema") or "cairn.model_prices.v1"),
+        source=source,
+        version=version,
+        effective_date=effective,
+        currency=str(data.get("currency") or "USD"),
+        model_count=len(models) if isinstance(models, list) else 0,
+        path=str(_PRICES_PATH),
+    )
+
+
+@lru_cache(maxsize=1)
 def load_price_table() -> tuple[PriceRow, ...]:
-    data = json.loads(_PRICES_PATH.read_text(encoding="utf-8"))
+    data = _load_raw_table()
     rows: list[PriceRow] = []
     for m in data.get("models", []):
         row = PriceRow.from_dict(m)

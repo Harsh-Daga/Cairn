@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import { chartColors } from "@/components/charts/chartTheme";
 
 interface HandoffEdge {
-  from_agent?: string;
-  to_agent?: string;
+  from_agent?: string | null;
+  to_agent?: string | null;
   from_span_id?: string;
   to_span_id?: string;
   link_type?: string;
@@ -24,12 +24,7 @@ function nodeId(h: HandoffEdge, side: "from" | "to"): string {
   return String(h.to_agent ?? h.to_span_id ?? "?");
 }
 
-export function HandoffDag({
-  handoffs,
-  width = 640,
-  height = 240,
-  className,
-}: HandoffDagProps) {
+export function HandoffDag({ handoffs, width = 640, height = 240, className }: HandoffDagProps) {
   const { nodes, edges } = useMemo(() => {
     const g = new dagre.graphlib.Graph();
     g.setGraph({ rankdir: "LR", nodesep: 36, ranksep: 72, marginx: 16, marginy: 16 });
@@ -60,9 +55,7 @@ export function HandoffDag({
   }, [handoffs]);
 
   if (handoffs.length === 0) {
-    return (
-      <p className="p-4 text-sm text-cinder">No handoff links in this window.</p>
-    );
+    return <p className="p-4 text-sm text-cinder">No handoff links in this window.</p>;
   }
 
   return (

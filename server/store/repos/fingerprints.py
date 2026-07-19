@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 from server.models.fingerprint import Fingerprint, FingerprintBaseline
+from server.store.pagination import bounded_page
 from server.store.repos._crud import delete_where, fetch_all, fetch_one, insert, update, upsert
 
 _FINGERPRINTS = "fingerprints"
@@ -36,6 +37,7 @@ class FingerprintRepo:
         limit: int = 100,
         offset: int = 0,
     ) -> list[Fingerprint]:
+        limit, offset = bounded_page(limit, offset)
         return fetch_all(
             conn,
             f"SELECT * FROM {_FINGERPRINTS} WHERE project = ? ORDER BY ts DESC LIMIT ? OFFSET ?",
@@ -82,6 +84,7 @@ class FingerprintRepo:
         limit: int = 100,
         offset: int = 0,
     ) -> list[FingerprintBaseline]:
+        limit, offset = bounded_page(limit, offset)
         if project is None:
             return fetch_all(
                 conn,

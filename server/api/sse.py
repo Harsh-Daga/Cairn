@@ -11,7 +11,10 @@ from collections.abc import AsyncIterator, Iterator
 from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from server.api.cost_ticks import SessionCostTickPublisher
 
 SSE_QUEUE_SIZE = 64
 SSE_HEARTBEAT_SECONDS = 15.0
@@ -38,6 +41,19 @@ class EventBus:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._clients: dict[str, _ClientQueue] = {}
+        self._cost_ticks: SessionCostTickPublisher | None = None
+
+    @property
+    def cost_ticks(self) -> SessionCostTickPublisher:
+        """Lazily create the shared per-session cost-tick coalescer.
+
+        Lazy import avoids a module cycle with ``server.api.cost_ticks``.
+        """
+        if self._cost_ticks is None:
+            from server.api.cost_ticks import SessionCostTickPublisher
+
+            self._cost_ticks = SessionCostTickPublisher(self)
+        return self._cost_ticks
 
     def publish(self, event: str, data: dict[str, Any] | None = None) -> SseEvent:
         """Broadcast an event to all connected SSE clients."""
@@ -149,7 +165,9 @@ async def sse_stream(bus: EventBus) -> AsyncIterator[str]:
             if event is None:
                 if not bus.is_subscribed(client_id):
                     break
+                # Comment keeps proxies warm; named event lets clients observe liveness.
                 yield ": heartbeat\n\n"
+                yield format_sse(SseEvent(event="heartbeat", data={"ok": True}))
                 continue
             dropped = bus.client_dropped(client_id)
             yield format_sse(event, include_dropped=dropped)

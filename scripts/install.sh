@@ -1,8 +1,8 @@
 #!/bin/sh
 # Cairn installer — POSIX sh, idempotent.
 #
-# One line install:
-#   curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/install.sh | sh
+# Downloaded-script install:
+#   curl -LsSf URL -o /tmp/cairn-install.sh && sh /tmp/cairn-install.sh
 #
 # Environment:
 #   INSTALL_UV=0      Skip uv bootstrap (error if uv is absent)
@@ -26,13 +26,18 @@ install_uv() {
     err "uv is required but INSTALL_UV=0 and uv was not found"
   fi
   info "Installing uv..."
+  installer="$(mktemp "${TMPDIR:-/tmp}/cairn-uv-install.XXXXXX")"
+  trap 'rm -f "${installer:-}"' EXIT HUP INT TERM
   if command -v curl >/dev/null 2>&1; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -LsSf https://astral.sh/uv/install.sh -o "${installer}"
   elif command -v wget >/dev/null 2>&1; then
-    wget -qO- https://astral.sh/uv/install.sh | sh
+    wget -qO "${installer}" https://astral.sh/uv/install.sh
   else
     err "Need curl or wget to download the uv installer"
   fi
+  sh "${installer}"
+  rm -f "${installer}"
+  trap - EXIT HUP INT TERM
   if [ -f "${HOME}/.local/bin/env" ]; then
     # shellcheck disable=SC1091
     . "${HOME}/.local/bin/env"
@@ -81,7 +86,7 @@ install_cairn() {
     return 0
   fi
 
-  err "No installer found. Install uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
+  err "No installer found. Install uv from https://docs.astral.sh/uv/"
 }
 
 main() {
@@ -94,7 +99,7 @@ main() {
 
   if command -v cairn >/dev/null 2>&1; then
     info "Installed $(cairn --version)"
-    cairn doctor || true
+    cairn doctor
   fi
 
   cat <<'EOF'

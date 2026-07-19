@@ -3,6 +3,11 @@ description: Report a reproducible Cairn bug
 title: "[bug]: "
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach a Cairn database or raw trace. Remove usernames, absolute paths, prompts,
+        repository content, tokens, credentials, and personal data from every field and image.
   - type: textarea
     id: summary
     attributes:
@@ -26,7 +31,7 @@ body:
     id: version
     attributes:
       label: Cairn version
-      placeholder: "e.g. 1.0.0"
+      placeholder: "Output of `cairn --version`"
     validations:
       required: true
 
@@ -52,4 +57,12 @@ body:
     id: logs
     attributes:
       label: Relevant logs/screenshots
-      description: Paste terminal output, traceback, or screenshots.
+      description: Paste only the minimal scrubbed terminal output, traceback, or screenshot.
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed private traces, prompts, repository content, paths, secrets, and personal data.
+          required: true

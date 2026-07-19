@@ -25,9 +25,7 @@ export function AdapterWarningBanner({ warnings }: { warnings: AdapterWarning[] 
         Open a prefilled adapter issue
       </a>
       {warnings.length > 1 ? (
-        <span className="ml-2 font-mono text-[10px] text-cinder">
-          +{warnings.length - 1} more
-        </span>
+        <span className="ml-2 font-mono text-[10px] text-cinder">+{warnings.length - 1} more</span>
       ) : null}
     </div>
   );

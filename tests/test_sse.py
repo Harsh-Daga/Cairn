@@ -19,6 +19,9 @@ async def test_sse_stream_emits_heartbeat_and_unsubscribes(monkeypatch: pytest.M
     stream = sse_stream(bus)
 
     assert await anext(stream) == ": heartbeat\n\n"
+    named = await anext(stream)
+    assert "event: heartbeat" in named
+    assert '"ok":true' in named
     assert len(bus._clients) == 1
 
     await stream.aclose()
@@ -37,6 +40,27 @@ async def test_sse_stream_delivers_events_without_waiting_for_heartbeat() -> Non
     assert "event: trace-updated" in frame
     assert '"trace_id":"trace-1"' in frame
     await stream.aclose()
+
+
+def test_event_bus_drop_oldest_backpressure() -> None:
+    bus = EventBus()
+    client_id, _ = bus.subscribe()
+    for index in range(sse.SSE_QUEUE_SIZE + 5):
+        bus.publish("trace-updated", {"trace_id": f"t-{index}"})
+    assert bus.client_dropped(client_id) == 5
+    first = bus.wait_for_event(client_id, timeout=0.1)
+    assert first is not None
+    assert first.data["trace_id"] == "t-5"
+    bus.unsubscribe(client_id)
+
+
+def test_format_sse_includes_dropped_count() -> None:
+    frame = sse.format_sse(
+        sse.SseEvent(event="trace-updated", data={"trace_id": "t1"}),
+        include_dropped=3,
+    )
+    assert "event: trace-updated" in frame
+    assert '"dropped_events":3' in frame
 
 
 def test_live_events_route_is_registered_once(tmp_path) -> None:

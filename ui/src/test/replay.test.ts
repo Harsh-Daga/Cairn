@@ -25,11 +25,25 @@ function mkCheckpoint(seq: number): ReplayCheckpoint {
     cache_creation_tokens: null,
     context_tokens_after: (i + 1) * 100,
     text_inline: null,
+    text_hash: null,
+    args_hash: null,
     path_rel: null,
     waste_category: null,
     waste_tokens: 0,
+    attrs_json: {},
   }));
-  return { seq, spans, summary: { turn: seq, context_tokens: seq * 100 } };
+  return {
+    seq,
+    spans,
+    summary: {
+      turn: seq,
+      context_tokens: seq * 100,
+      cost: 0,
+      cost_estimated: false,
+      files_read: 0,
+      agents: 0,
+    },
+  };
 }
 
 describe("interpolateReplayAtSeq", () => {

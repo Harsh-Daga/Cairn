@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 from server.models.rollup import RollupDaily
+from server.store.pagination import bounded_page
 from server.store.repos._crud import delete_where, fetch_all, fetch_one, insert, update, upsert
 
 _TABLE = "rollup_daily"
@@ -45,8 +46,27 @@ class RollupRepo:
         workspace_id: str,
         *,
         days: int | None = None,
+        start: str | None = None,
+        end: str | None = None,
         limit: int = 365,
     ) -> list[RollupDaily]:
+        limit, _ = bounded_page(limit)
+        if start is not None or end is not None:
+            clauses = ["workspace_id = ?"]
+            params: list[object] = [workspace_id]
+            if start is not None:
+                clauses.append("day >= ?")
+                params.append(start)
+            if end is not None:
+                clauses.append("day < ?")
+                params.append(end)
+            params.append(limit)
+            return fetch_all(
+                conn,
+                f"SELECT * FROM {_TABLE} WHERE {' AND '.join(clauses)} ORDER BY day DESC LIMIT ?",
+                tuple(params),
+                RollupDaily,
+            )
         if days is None:
             return fetch_all(
                 conn,

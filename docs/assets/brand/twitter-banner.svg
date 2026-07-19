@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="500" viewBox="0 0 1500 500">
+  <rect width="1500" height="500" fill="#0f0d0b"/>
+
+  <!-- organic topographic contours, summit massif -->
+  <g fill="none" stroke="#3d3527" stroke-width="1.5">
+    <path opacity="0.9" d="M1150 170 C1198 168 1234 196 1240 236 C1246 276 1224 314 1182 326 C1140 338 1098 322 1082 286 C1066 250 1074 208 1104 186 C1118 176 1132 171 1150 170 Z"/>
+    <path opacity="0.7" d="M1152 138 C1214 134 1266 176 1274 234 C1282 292 1248 346 1192 362 C1136 378 1076 356 1054 306 C1032 256 1044 198 1088 166 C1108 151 1128 139 1152 138 Z"/>
+    <path opacity="0.5" d="M1154 106 C1230 100 1298 154 1308 228 C1318 304 1272 376 1198 396 C1124 416 1048 388 1020 322 C992 256 1008 178 1070 138 C1096 121 1124 107 1154 106 Z"/>
+    <path opacity="0.32" d="M1156 74 C1246 66 1330 132 1342 222 C1354 314 1298 406 1204 430 C1112 454 1018 420 986 338 C954 256 972 160 1050 112 C1082 92 1118 75 1156 74 Z"/>
+  </g>
+
+  <!-- elevation callouts, right flank -->
+  <text x="1252" y="290" font-family="Menlo, monospace" font-size="11" fill="#6e6455" transform="rotate(5 1252 290)">elev. $1,000</text>
+  <text x="1272" y="346" font-family="Menlo, monospace" font-size="11" fill="#6e6455" transform="rotate(6 1272 346)">elev. $2,500</text>
+  <text x="1288" y="402" font-family="Menlo, monospace" font-size="11" fill="#6e6455" transform="rotate(7 1288 402)">elev. $4,000</text>
+
+  <!-- dotted agent trail: basecamp to summit -->
+  <path d="M700 402 C780 398 800 356 860 346 C940 334 970 302 1030 280 C1080 262 1110 252 1146 250"
+        fill="none" stroke="#d98e5f" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round"/>
+
+  <!-- hazard markers on the trail: where the agent wasted -->
+  <g>
+    <path d="M790 358 L798 372 L782 372 Z" fill="#de6a5a"/>
+    <text x="790" y="352" text-anchor="middle" font-family="Menlo, monospace" font-size="10" fill="#a89e8b">retry x3</text>
+    <path d="M942 314 L950 328 L934 328 Z" fill="#de6a5a"/>
+    <text x="942" y="308" text-anchor="middle" font-family="Menlo, monospace" font-size="10" fill="#a89e8b">re-read x11</text>
+    <path d="M1040 262 L1048 276 L1032 276 Z" fill="#de6a5a"/>
+    <text x="1040" y="256" text-anchor="middle" font-family="Menlo, monospace" font-size="10" fill="#a89e8b">compaction</text>
+  </g>
+
+  <!-- waypoint diamonds -->
+  <g fill="#d98e5f">
+    <rect x="722" y="379" width="9" height="9" transform="rotate(45 726.5 383.5)"/>
+    <rect x="884" y="329" width="9" height="9" transform="rotate(45 888.5 333.5)"/>
+  </g>
+
+  <!-- basecamp cairn -->
+  <g>
+    <path d="M672 420 C671 412 675 406 680 405 L720 405 C725 406 729 412 728 420 C727 425 723 428 718 428 L682 428 C677 428 673 425 672 420 Z" fill="#6b5a45"/>
+    <path d="M678 401 C677 395 681 390 685 389 L715 389 C719 390 723 395 722 401 C721 405 718 407 714 407 L686 407 C682 407 679 405 678 401 Z" fill="#8a7357"/>
+    <path d="M686 385 C686 380 689 377 692 376 L708 376 C711 377 714 380 714 385 C714 389 711 391 708 391 L692 391 C689 391 686 389 686 385 Z" fill="#c4ad87"/>
+    <path d="M694 373 C694 369 696 367 698 366 L704 366 C706 367 708 369 708 373 C708 376 706 378 704 378 L698 378 C696 378 694 376 694 373 Z" fill="#d98e5f"/>
+    <text x="700" y="452" text-anchor="middle" font-family="Menlo, monospace" font-size="12" letter-spacing="2" fill="#a89e8b">BASECAMP</text>
+    <text x="700" y="470" text-anchor="middle" font-family="Menlo, monospace" font-size="10" fill="#6e6455">(localhost)</text>
+  </g>
+
+  <!-- summit flag -->
+  <g>
+    <line x1="1150" y1="248" x2="1150" y2="180" stroke="#a89e8b" stroke-width="2.5"/>
+    <path d="M1150 180 L1200 193 L1150 206 Z" fill="#d98e5f"/>
+    <text x="1150" y="164" text-anchor="middle" font-family="Menlo, monospace" font-size="13" letter-spacing="1" fill="#e4a172">SUMMIT: $4,213 SAVED</text>
+  </g>
+
+  <!-- wordmark block -->
+  <text x="80" y="112" font-family="Menlo, monospace" font-size="14" letter-spacing="4" fill="#62b8a2">MACHINE EXPEDITION QUADRANGLE · SURVEYED LOCALLY</text>
+  <text x="76" y="238" font-family="Georgia, 'Times New Roman', serif" font-size="110" letter-spacing="8" fill="#f4efe4">CAIRN</text>
+  <text x="82" y="292" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="26" fill="#c4ad87">every agent run leaves a trail. we read it.</text>
+  <text x="82" y="334" font-family="Menlo, monospace" font-size="15" fill="#a89e8b">cost · quality · behavior — zero data leaves basecamp</text>
+
+  <!-- survey stamp -->
+  <g transform="rotate(-6 250 408)">
+    <rect x="88" y="388" width="324" height="38" fill="none" stroke="#d98e5f" stroke-width="2" opacity="0.9"/>
+    <rect x="93" y="393" width="314" height="28" fill="none" stroke="#d98e5f" stroke-width="1" opacity="0.5"/>
+    <text x="250" y="412" text-anchor="middle" font-family="Menlo, monospace" font-size="14" letter-spacing="2" fill="#d98e5f">SURVEYED · NO DATA LEFT MACHINE</text>
+  </g>
+
+  <!-- map chrome -->
+  <text x="80" y="470" font-family="Menlo, monospace" font-size="12" fill="#6e6455">37°46′N 122°25′W — DATUM: YOUR MACHINE</text>
+  <text x="80" y="490" font-family="Menlo, monospace" font-size="12" fill="#6e6455">SCALE 1:∞ · 1 COMMIT = 1 KM</text>
+
+  <!-- legend -->
+  <g>
+    <rect x="1090" y="436" width="330" height="46" fill="#16130f" stroke="#3d3527"/>
+    <text x="1104" y="455" font-family="Menlo, monospace" font-size="10" fill="#6e6455">LEGEND</text>
+    <line x1="1104" y1="470" x2="1128" y2="470" stroke="#d98e5f" stroke-width="2" stroke-dasharray="1 5" stroke-linecap="round"/>
+    <text x="1134" y="474" font-family="Menlo, monospace" font-size="10" fill="#a89e8b">agent trail</text>
+    <path d="M1236 464 L1242 474 L1230 474 Z" fill="#de6a5a"/>
+    <text x="1248" y="474" font-family="Menlo, monospace" font-size="10" fill="#a89e8b">hazard</text>
+    <rect x="1314" y="465" width="8" height="8" transform="rotate(45 1318 469)" fill="#d98e5f"/>
+    <text x="1328" y="474" font-family="Menlo, monospace" font-size="10" fill="#a89e8b">waypoint</text>
+  </g>
+
+  <!-- compass rose -->
+  <g transform="translate(1440,64)">
+    <circle r="24" fill="none" stroke="#5c5138" stroke-width="1.5"/>
+    <path d="M0 -14 L5 6 L0 2 L-5 6 Z" fill="#d98e5f"/>
+    <text y="-30" text-anchor="middle" font-family="Menlo, monospace" font-size="11" fill="#a89e8b">N</text>
+  </g>
+
+  <!-- frame ticks -->
+  <g stroke="#3d3527" stroke-width="1.5">
+    <line x1="24" y1="24" x2="24" y2="44"/><line x1="24" y1="24" x2="44" y2="24"/>
+    <line x1="1476" y1="24" x2="1476" y2="44"/><line x1="1476" y1="24" x2="1456" y2="24"/>
+    <line x1="24" y1="476" x2="24" y2="456"/><line x1="24" y1="476" x2="44" y2="476"/>
+    <line x1="1476" y1="476" x2="1476" y2="456"/><line x1="1476" y1="476" x2="1456" y2="476"/>
+  </g>
+</svg>

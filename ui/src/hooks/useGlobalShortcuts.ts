@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUiStore } from "@/state/ui";
 import type { TimeRange } from "@/lib/types";
+import { useTimeRangeUrlState } from "./useTimeRangeUrlState";
+import { GO_SHORTCUTS } from "@/lib/navigation";
 
 const RANGES: TimeRange[] = ["24h", "7d", "30d", "90d"];
 
@@ -19,8 +21,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 export function useGlobalShortcuts(): void {
   const navigate = useNavigate();
-  const timeRange = useUiStore((s) => s.timeRange);
-  const setTimeRange = useUiStore((s) => s.setTimeRange);
+  const { timeRange, selectPreset } = useTimeRangeUrlState();
   const paletteOpen = useUiStore((s) => s.paletteOpen);
   const setPaletteOpen = useUiStore((s) => s.setPaletteOpen);
   const shortcutsOpen = useUiStore((s) => s.shortcutsOpen);
@@ -30,38 +31,45 @@ export function useGlobalShortcuts(): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTypingTarget(event.target)) return;
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
 
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      if ((event.metaKey || event.ctrlKey) && key === "k") {
         event.preventDefault();
         setPaletteOpen(!paletteOpen);
         return;
       }
 
-      if (event.key === "?" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      if (key === "?" && !event.metaKey && !event.ctrlKey && !event.altKey) {
         event.preventDefault();
         setShortcutsOpen(!shortcutsOpen);
         return;
       }
 
-      if (event.key === "Escape") {
+      if (key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        setPaletteOpen(true);
+        return;
+      }
+
+      if (key === "Escape") {
         if (shortcutsOpen) setShortcutsOpen(false);
         if (paletteOpen) setPaletteOpen(false);
         return;
       }
 
-      if (event.key === "[") {
+      if (key === "[") {
         event.preventDefault();
-        setTimeRange(cycleRange(timeRange, -1));
+        selectPreset(cycleRange(timeRange, -1));
         return;
       }
 
-      if (event.key === "]") {
+      if (key === "]") {
         event.preventDefault();
-        setTimeRange(cycleRange(timeRange, 1));
+        selectPreset(cycleRange(timeRange, 1));
         return;
       }
 
-      if (event.key === "g") {
+      if (key === "g") {
         pendingGo.current = "g";
         window.setTimeout(() => {
           pendingGo.current = null;
@@ -69,10 +77,11 @@ export function useGlobalShortcuts(): void {
         return;
       }
 
-      if (event.key === "s" && pendingGo.current === "g") {
+      const goTarget = pendingGo.current === "g" ? GO_SHORTCUTS.get(key) : undefined;
+      if (goTarget) {
         event.preventDefault();
         pendingGo.current = null;
-        navigate("/sessions");
+        navigate(goTarget);
       }
     };
 
@@ -83,7 +92,7 @@ export function useGlobalShortcuts(): void {
     paletteOpen,
     setPaletteOpen,
     setShortcutsOpen,
-    setTimeRange,
+    selectPreset,
     shortcutsOpen,
     timeRange,
   ]);

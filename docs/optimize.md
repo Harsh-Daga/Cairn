@@ -6,28 +6,33 @@ Implementation lives in `server/improve/` (detectors, proposals, experiments, ba
 
 ## 1. Observe — insight detectors
 
-After sync, the improve engine runs modular detectors (`server/improve/detectors/`):
+After sync, the improve engine runs modular detectors (`server/improve/detectors/`) and
+**ADR-04 family aggregators** that merge overlapping producers into one board card:
+
+| Family card | Alias producers (evidence only when family fires) |
+|-------------|-----------------------------------------------------|
+| `retry-storm` | `retry-loops-detected`, `error-streak`, `failing-command`, `identical-tool-calls` |
+| `context-thrash` | `reread-hotspot`, `rebilling-waste`, `stale-tool-results` |
+| `model-mismatch` | `multi-model-cost-spread` (cheaper-model routing gated on ≥8 comparable samples) |
+| `stale-tool-schema` | `unused-tools` |
+
+Other detectors remain standalone:
 
 | Detector | What it flags |
 |----------|---------------|
 | `context-window-pressure` | Sessions approaching context limits |
-| `identical-tool-calls` | Repeated read/search with same args |
 | `oversize-tool-results` | Tool outputs dominating context |
 | `high-file-churn` | Excessive file touches per session |
-| `reread-hotspot` | Repeated reads of unchanged file content (same hash) |
-| `retry-loops-detected` | Blind retry patterns |
 | `cache-misuse` | Prompt caching opportunities missed |
-| `multi-model-cost-spread` | Cost variance across models |
 | `runaway-sessions` | Unusually long or expensive runs |
-| `rebilling-waste` | Stale results re-billed each turn |
 | `behavioral-drift` | Fingerprint deviation from baseline |
 | `quality-regression` | Outcome score drops |
-| `unused-tools` | Tool schemas rarely invoked |
 | `subagent-heavy` | High subagent fan-out |
-| `stale-tool-results` | Tool output still in context after last reference |
-| `failing-command` | Same command failing ≥3× |
-| `error-streak` | ≥4 consecutive tool errors |
 | `cost-anomaly` | Session cost > μ+3σ for difficulty bucket |
+
+Family and standalone results carry `estimate_kind`, confidence/coverage notes, subject
+fingerprints, and span evidence when available. Alias IDs stay readable in evidence but are
+suppressed from the Insights board when their family card is present.
 
 The registry enforces an action contract before an insight can be persisted. Every detector
 must provide either a weekly savings estimate or a specific reason the signal cannot be
@@ -37,7 +42,10 @@ priced, plus one structured fix payload:
 - `settings` — a concrete model, cache, or tool configuration change; or
 - `manual` — a bounded investigation step when automation would overclaim.
 
-Actionable findings appear in the main **Insights** feed and feed the proposal generator.
+Actionable findings appear in the main **Insights** feed (ranked by impact, confidence, severity,
+recency, and recurrence) and feed the proposal generator. Snooze hides a finding for 14 days unless
+its estimated impact worsens; overlapping detectors on the same primary evidence trace are
+suppressed so the board does not flood.
 Signals such as behavioral drift, quality regression, and cost anomalies identify a change
 but do not establish its cause; they are explicitly marked as supporting **Diagnostics**.
 Expanding any card shows its fix and a copy-to-clipboard control. A detector with neither a
@@ -50,14 +58,18 @@ Each insight links to an evidence chain (`GET /api/insights/{id}/evidence`) show
 ## 3. Propose
 
 ```bash
-cairn optimize              # list proposals (dry run)
-cairn optimize --llm        # optional LLM reflector (httpx + API key)
-cairn optimize --apply      # apply all pending (prefer UI for selective apply)
+cairn optimize                 # generate local proposals (creates experiment cards)
+cairn action reflector_preview # optional LLM reflector preview (consent required to run)
+# Apply selectively from the Optimize UI, or:
+# cairn action experiment_apply --param experiment_id=<id>
 ```
+
+`--llm` and `--apply` on `cairn optimize` are rejected (exit 2): they previously implied
+provider calls or bulk apply that `optimize_propose` does not perform.
 
 Or on the **Optimize** page, review experiments in the **Proposed** column.
 
-`optimize_propose` maps open insights to managed blocks targeting `AGENTS.md`, `CLAUDE.md`, or `.cursor/rules`. The deterministic generator lives in `server/improve/proposals.py`; the optional reflector is in `server/improve/reflector.py`.
+`optimize_propose` maps open insights to managed blocks targeting `AGENTS.md`, `CLAUDE.md`, or `.cursor/rules`. The deterministic generator lives in `server/improve/proposals.py`; the optional reflector is in `server/improve/reflector.py` via `reflector_preview` / `reflector_run`.
 
 ## 4. Apply
 
@@ -98,7 +110,10 @@ persists `status=measuring` and `outcome_n_effective`; refreshing the page never
   and an anytime-valid confidence-sequence boundary
 - `server/improve/experiments.py` — transitions experiment to `measuring` then `verdict`
 
-Trigger measurement manually with `experiment_measure` or wait for post-sync evaluation.
+Trigger measurement manually with `experiment_measure`, or let opportunistic portfolio
+re-evaluation run on `cairn sync`, `cairn recap` / `/api/recap`, or
+`cairn optimize evaluate` (also `optimize_evaluate` action). Cairn does **not** run a
+monthly daemon.
 
 Sessions in the before and after windows are independent; Cairn does not pair them by list
 position and does not synthesize CUPED covariates. The effect is `mean(after) - mean(before)`.
@@ -119,11 +134,27 @@ parser metadata.
 
 ## 6. Verdict
 
-Experiments land in **Verdict** with:
+Experiments land in **Verdict** with a plain-language summary first, then:
 
 - Effect estimate (waste ↓, quality ↑, stability)
-- `n_effective` (sample size after clustering)
-- Gated flag when holdout is too small
+- Anytime-valid confidence interval and `n_effective` (clustered sample size)
+- Confound notes when mix shifted between windows
+- Proposal source (`local` deterministic vs opt-in `provider` reflector)
+- Descriptive decay flag (`healthy` / `decaying` / `decayed` / `unknown`)
+- `last_evaluated_at`, `eval_interval_days`, sample size (`n_eff`), and whether the latest
+  estimate left the **prior** confidence interval (descriptive drift only)
+- Preserved historical verdicts (`verdict_history`) across re-evaluations
+
+The Optimize page ledger answers proposed / active / portfolio / decay counts before the board.
+**Board** follows Proposed → Applied → Measuring → Verdict. **Portfolio** lists applied,
+measuring, verdict, and reverted rules with effect sparklines and historical verdicts when
+present. Guard event links appear when an applied experiment matches an instruction-file event
+window.
+
+```bash
+cairn optimize evaluate           # due rules only
+cairn optimize evaluate --force   # ignore interval
+```
 
 Rules that repeatedly fail holdout are candidates for hard prune via Thompson sampling (`server/improve/bandit.py`).
 
@@ -149,6 +180,20 @@ Set environment variables for the reflector backend:
 | `CAIRN_LLM_API_KEY` | API key (or provider-specific `OPENAI_API_KEY`, etc.) |
 
 Without LLM config, Cairn uses templated rewrites from evidence.
+
+Provider execution is denied unless the caller passes the reflector's exact preview-consent
+boundary:
+
+```bash
+cairn optimize llm-preview --backend provider:openai
+cairn optimize llm-run --backend provider:openai --consent-token TOKEN_FROM_PREVIEW
+```
+
+The first command makes no request and reports the destination origin, model, field classes, exact
+bounded content, character count, and a content-bound consent token; it never returns an API key.
+If the content, destination, backend, or model changes, the token is rejected and a new preview is
+required. The API/action manifest exposes the same `reflector_preview` and `reflector_run` flow.
+Normal sync, analysis, API, MCP, demo, and export flows do not invoke a provider.
 
 ## CLI ↔ UI parity
 

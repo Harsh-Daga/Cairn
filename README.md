@@ -8,9 +8,14 @@
 </p>
 
 <p align="center">
-  <strong>Cairn watches what your AI coding agents actually do — profiles every token,<br>
-  fingerprints behavior, ties it to real outcomes, and proposes instruction-file fixes<br>
-  whose measured results stay visible.</strong>
+  <strong>Cairn is local-first observability for AI coding agents — ingest sessions,<br>
+  explain cost and quality with evidence, and measure instruction-file changes.</strong>
+</p>
+
+<p align="center">
+  <a href="https://harsh-daga.github.io/Cairn/">Live static demo</a>
+  · <a href="docs/README.md">Docs</a>
+  · <a href="docs/pages.md">Pages hosting</a>
 </p>
 
 <p align="center">
@@ -22,144 +27,114 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/hero.gif" width="720" alt="Cairn demo: Overview → costly sessions → replay scrub">
+  <img src="https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/hero.gif" width="720" alt="Cairn demo: Overview attention, costly sessions, and session replay scrubber">
 </p>
 
 ---
 
-## 60-second quickstart
-
-**Primary — uv tool**
+## 60-second install
 
 ```bash
 uv tool install cairn-workspace
 cd your-repo && cairn
 ```
 
-**pip**
+Also: `pip install cairn-workspace`, [install.sh](scripts/install.sh), or [install.ps1](install.ps1).
+No account and no cloud. Stop with `cairn stop`. Update with `cairn upgrade`.
 
-```bash
-pip install cairn-workspace
-cd your-repo && cairn
-```
+Agent bootstrap: paste the block from [AGENT_SETUP.md](AGENT_SETUP.md) (or `cairn setup-prompt`).
 
-**curl installer**
+### After first run
 
-```bash
-curl -LsSf https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/scripts/install.sh | sh
-cd your-repo && cairn
-```
-
-**PowerShell installer (Windows)**
-
-```powershell
-irm https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.ps1 | iex
-```
-
-No account, no cloud, no config. `cairn stop` to quit (or `uv run cairn stop` from a dev checkout).
-
-Already installed? Run `cairn upgrade` to update the local CLI to the newest published release. Add `--check` to preview the package-manager command.
-
-> **Note:** If `cairn stop` fails because an older installation is first on PATH, reinstall with `uv tool install --force cairn-workspace` or use `uv run cairn` from the repository.
-
-### Or let your agent install it
-
-Paste this into Claude Code, Cursor, Codex, or any coding agent. It fetches the full setup prompt and wires MCP automatically.
-
-```
-Set up Cairn (open-source agent observability, https://github.com/Harsh-Daga/Cairn) in this repo. Fetch https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/AGENT_SETUP.md and follow it exactly. Do not use sudo; stop and report if any VERIFY step fails.
-```
-
-Full prompt: [AGENT_SETUP.md](AGENT_SETUP.md) · `cairn setup-prompt`
+Cairn syncs local agent logs into `.cairn/`, opens the dashboard on loopback, and shows an Overview
+with spend, quality attention, and adapter health. First-run offers privacy/git-exclude steps when
+needed. Collection mode controls backend auto-sync; browser Live updates are separate.
 
 ---
 
-## The five pillars (+ causal traces)
+## What makes Cairn different
 
-**Context profiling** — Decompose each trace into regions (system, tool schema, tool results, retrieved files, user, history). Surface re-billing waste and concrete fixes: cache, clear stale results, drop unused tools.
-
-**Behavioral fingerprinting** — Compress sessions into behavioral vectors. Detect drift with AMDM (Mahalanobis + per-axis EWMA). See when an agent's behavior changed and which axes moved.
-
-**Outcome-anchored quality** — Capture git and test signals after sessions. Score process quality, not just pass/fail. Flag brittle "lucky pass" sessions.
-
-**Measured self-improvement** — Propose instruction edits to `AGENTS.md`, `CLAUDE.md`, `.cursor/rules`. Apply with human approval, then track the before/after result and confidence interval.
-
-**Agent self-awareness (MCP)** — MCP tools mid-session: recurring waste, project primer, session-so-far, should-I-stop. Auto-install via Settings or `cairn mcp install`.
-
-**Causal traces** — Parent/child spans, retry links, blame view for multi-agent failures. Waterfall swimlanes show handoffs and retry arcs.
+- **Verification receipts** — claim–evidence checks for session outcomes ([verification](docs/verification.md))
+- **Session → regression** — scrubbed portable artifacts, no command execution ([regressions](docs/regressions.md))
+- **Supervision / review risk** — corrections and advisory policy scoring ([policy](docs/policy.md))
+- **Token & context evidence** — regions, rebilling, cache coverage ([ui tour](docs/ui-tour.md))
+- **Outcome-linked compare** — agent metrics with intervals and confound notes
+- **Measured Optimize / Guard** — instruction edits with before/after evidence ([optimize](docs/optimize.md))
+- **Resource & Privacy Shield** — disk inventory, storage modes, egress ledger, circuit breakers
+  ([resource shield](docs/resource-shield.md), [egress](docs/egress.md), [privacy via `cairn privacy`](docs/storage-modes.md))
 
 ---
-
-## What the React dashboard looks like
-
-| Overview | Session waterfall + strata | Optimize verdict |
-|----------|---------------------------|------------------|
-| ![Overview](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/overview.png) | ![Session detail](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/session-detail.png) | ![Optimize verdict](https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/docs/assets/optimize-verdict.png) |
 
 ## Supported agents
 
-| Agent | Adapter ID | Log source |
-|-------|------------|------------|
-| Claude Code | `claude_code` | `~/.claude/projects/…/*.jsonl` |
-| Codex CLI | `codex` | `~/.codex/sessions/…/*.jsonl` |
-| Cursor | `cursor` | agent transcripts + `state.vscdb` |
-| Cline | `cline` | VS Code `globalStorage/…/tasks/*/ui_messages.json` |
-| Roo Code | `roo` | same Cline-family shape |
-| Kilo Code | `kilo` | same Cline-family shape |
-| Goose | `goose` | `~/.goose/sessions/*.jsonl` |
-| Aider | `aider` | `~/.aider/sessions/*.jsonl` |
-| Gemini CLI | `gemini_cli` | `~/.gemini/tmp/`, `~/.config/gemini/` |
-| OpenCode | `opencode` | `~/.local/share/opencode/sessions/` |
-| Hermes | `hermes` | `~/.hermes/sessions/*.json` |
-| OpenClaw | `openclaw` | `~/.openclaw/` session logs |
-| Generic JSONL | `agent_jsonl` | Aider, Goose, and OpenCode-compatible JSONL logs |
+| Agent | Adapter | Notes |
+|-------|---------|--------|
+| Claude Code | `claude_code` | Measured usage when present |
+| Codex CLI | `codex` | Measured usage when present |
+| Cursor | `cursor` | Transcripts + `state.vscdb` |
+| Cline / Roo / Kilo | `cline` family | Shared task JSON shape |
+| Gemini CLI, Goose, Aider, OpenCode, Hermes, OpenClaw | see [adapters](docs/adapters.md) | Coverage varies |
 
-Adding an adapter is one parser, one fixture, and a conformance test — see `cairn adapter new` and [adapters.md](docs/adapters.md).
+Parse coverage and token methods are published in [ACCURACY.md](ACCURACY.md). Fixture canaries are
+not a claim of 100% production reliability.
 
 ---
 
-## How it's honest
+## Product tour
 
-- **Estimated tokens** are always marked with ± error chips in the UI — never presented as ground truth.
-- **Experiment results** show their method, confidence interval, and effective sample size; [the optimize docs](docs/optimize.md) describe the current calculation and limits.
-- Per-adapter estimation error is published in [ACCURACY.md](ACCURACY.md) and refreshed by CI.
+| Overview (desktop baseline) | Session waterfall | Optimize verdict |
+|-----------------------------|-------------------|------------------|
+| ![Overview desktop](docs/assets/v1.2/baseline/overview-desktop.png) | ![Session detail](docs/assets/session-detail.png) | ![Optimize verdict](docs/assets/optimize-verdict.png) |
+
+Baselines under `docs/assets/v1.2/baseline/` are deterministic screenshot captures for layout checks.
 
 ---
 
-## CLI quick reference
+## Local-first privacy
+
+- Default bind `127.0.0.1`; no accounts; no silent network for default flows
+- Opt-in reflector/provider calls require consent and are logged in `.cairn/egress.jsonl`
+- Storage modes: `reference` / `metrics` / `balanced` / `forensic` ([storage modes](docs/storage-modes.md))
+- Portable archive: `cairn archive export|inspect|import` ([archive](docs/archive.md))
+
+### Honest limits
+
+- Estimated tokens are labeled; not ground truth
+- Optimize verdicts need adequate samples; methods and CIs are shown in-product
+- Egress ledger cannot see traffic from unrelated agent processes
+- Reference mode does not store raw `text_inline`; source drift is detected when logs move/rewrite
+
+---
+
+## CLI examples
 
 | Command | What it does |
 |---------|--------------|
-| `cairn` | Golden path: sync → open dashboard |
+| `cairn` | Sync and open the dashboard |
 | `cairn sync` | Ingest agent logs into `.cairn/cairn.db` |
-| `cairn show ID` | Text waterfall for a trace |
+| `cairn show` | Text waterfall for a session |
 | `cairn insights` | List detector insights |
 | `cairn optimize` | Generate instruction proposals |
-| `cairn optimize revert ID` | Safely revert one applied instruction experiment |
-| `cairn experiments ls` | List improvement experiments |
-| `cairn check` | CI quality gate (non-zero on failure) |
-| `cairn export` | Export scrubbed trace bundle |
+| `cairn check` | CI quality gate |
+| `cairn privacy` | Privacy / storage / egress summary |
+| `cairn resource` | Disk inventory and soft budget |
+| `cairn archive export` | Versioned portable workspace archive |
+| `cairn doctor` | Install and environment checks |
 | `cairn mcp install` | Write MCP config for your agent |
-| `cairn doctor` | Verify install, PATH, port, assets |
-| `cairn upgrade` | Update the local CLI to the latest release |
-| `cairn setup-prompt` | Print agent bootstrap block |
 
-The running dashboard auto-syncs active agent logs, discovers new session files, and refreshes
-visible data as ingest events arrive. `cairn sync` remains available for one-shot and CI workflows.
-
-Full reference: [docs/cli.md](docs/cli.md) (auto-generated from the action registry).
+Full surface: [docs/cli.md](docs/cli.md).
 
 ---
 
 ## Architecture
 
 ```
-adapters / OTLP ──► spans ledger (SQLite) ──► incremental views
-        │                      │                      │
-        │                      ├── detectors / experiments
-        │                      ▼
-        └────────────► FastAPI ⇄ React UI (SSE) + MCP server
+adapters / OTLP → normalize → SQLite ledger → views / detectors
+                              ↓
+              FastAPI ⇄ React UI (SSE) · CLI · MCP · export / archive
 ```
+
+Single-writer SQLite, action registry parity (UI/CLI/API), static export for demos.
 
 ---
 
@@ -169,37 +144,15 @@ adapters / OTLP ──► spans ledger (SQLite) ──► incremental views
 |----------|----------|-----------------|
 | Spend dashboards | [ccusage](https://github.com/ryoppippi/ccusage), [Tokscale](https://github.com/junhoyeo/tokscale) | Causal traces + waste taxonomy, not just totals |
 | Context profilers | [ContextLens](https://pypi.org/project/contextlens-profiler/) | Multi-agent ledger + outcome and experiment views |
-| Eval platforms | [OpenAI Evals](https://github.com/openai/evals) | Measurements from local coding-agent sessions instead of a standalone eval dataset |
-| Observability standards | [OpenTelemetry](https://opentelemetry.io/) | Agent-specific analysis over local logs and OTLP spans |
-
-Cairn combines those concerns in one local workspace; the linked projects have different scopes and trade-offs.
+| Eval platforms | [OpenAI Evals](https://github.com/openai/evals) | Measurements from local coding-agent sessions |
+| Observability standards | [OpenTelemetry](https://opentelemetry.io/) | Agent-specific analysis over local logs and OTLP |
 
 ---
 
-## Privacy
+## Docs · Contributing · Security · License
 
-Local-first. Loopback-only default (`127.0.0.1`). No telemetry, no accounts, no cloud sync. Export bundles are scrubbed of common secret patterns.
+[Documentation home](docs/README.md) · [Getting started](docs/getting-started.md) ·
+[CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [SUPPORT.md](SUPPORT.md) ·
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
----
-
-## Documentation
-
-- [Documentation home](docs/README.md)
-- [Getting started](docs/getting-started.md)
-- [Concepts](docs/concepts.md)
-- [UI tour](docs/ui-tour.md)
-- [CLI reference](docs/cli.md)
-- [API overview](docs/api.md)
-- [Adapters](docs/adapters.md)
-- [Optimize loop](docs/optimize.md)
-- [CI gates](docs/ci.md)
-- [Configuration](docs/configuration.md)
-- [Accuracy](ACCURACY.md)
-
----
-
-## Contributing · License
-
-Adapter PRs welcome — one parser, one fixture, conformance harness green. See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SUPPORT.md](SUPPORT.md). If Cairn is useful to you, you can [support its development](https://buymeacoffee.com/harshdaga).
-
-Apache-2.0 — see [LICENSE](LICENSE).
+Apache-2.0 — see [LICENSE](LICENSE). Optional support: [buymeacoffee.com/harshdaga](https://buymeacoffee.com/harshdaga).

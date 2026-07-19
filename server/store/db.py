@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TypeVar
 
 from server.store.migrate import migrate
+from server.util.private_files import ensure_private_file, restrict_sqlite_files
 
 T = TypeVar("T")
 WRITE_QUEUE_SIZE = 256
@@ -20,12 +21,13 @@ _QueueItem = tuple[_WriteFn | None, queue.Queue[object]]
 
 def connect(db_path: Path) -> sqlite3.Connection:
     """Open a SQLite connection with WAL mode enabled."""
-    db_path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_private_file(db_path)
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=5000")
     conn.execute("PRAGMA foreign_keys=ON")
+    restrict_sqlite_files(db_path)
     return conn
 
 
@@ -78,3 +80,4 @@ class Database:
         self._thread.join(timeout=5)
         self._reader.close()
         self._writer_conn.close()
+        restrict_sqlite_files(self.db_path)

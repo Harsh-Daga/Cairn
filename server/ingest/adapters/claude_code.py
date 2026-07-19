@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,7 @@ from server.ingest.normalizer import (
     text_payload,
 )
 from server.ingest.project_paths import claude_subagent_external_id, path_rel_to_repo
-from server.ingest.usage import UsageAccumulator, estimate_claude_turn
+from server.ingest.usage import ObservedUsage, UsageAccumulator, estimate_claude_turn
 
 _SKIP_CONTENT_TYPES = frozenset({"attachment"})
 
@@ -92,12 +92,14 @@ class _ParserState:
         self._usage = UsageAccumulator()
         self._parent_uuids: dict[str, str | None] = {}
         self._seq_hint = 0
-        self._seen_request_ids: set[str] = set()
+        # Content is additive across streamed requestId lines; usage counted once.
+        self._request_usage: dict[str, ObservedUsage] = {}
+        self._request_usage_quality: dict[str, int] = {}
         self._last_user_text: str = ""
 
     def _agent_fields(self, obj: dict[str, Any]) -> dict[str, str]:
         fields: dict[str, str] = {}
-        agent_id = obj.get("agent_id")
+        agent_id = obj.get("agent_id") or obj.get("agentId")
         if isinstance(agent_id, str) and agent_id:
             fields["agent_id"] = agent_id
         elif self._external_id:
@@ -223,17 +225,8 @@ class _ParserState:
         if not isinstance(message, dict):
             return
         model = message.get("model")
-        if isinstance(model, str):
+        if isinstance(model, str) and model and not _is_placeholder_model(model):
             self._model = model
-
-        # requestId dedup (§2.1): streaming emits duplicate placeholder-usage
-        # entries per requestId. Keep the last by skipping earlier duplicates'
-        # usage absorption so cost math does not double-count.
-        request_id = obj.get("requestId")
-        if isinstance(request_id, str) and request_id:
-            if request_id in self._seen_request_ids:
-                return
-            self._seen_request_ids.add(request_id)
 
         content = message.get("content")
         if not isinstance(content, list):
@@ -250,15 +243,25 @@ class _ParserState:
             for block in content
             if isinstance(block, dict) and block.get("type") == "text" and block.get("text")
         ).strip()
+        tool_blocks = [
+            block
+            for block in content
+            if isinstance(block, dict) and block.get("type") == "tool_use"
+        ]
 
-        raw_usage = message.get("usage")
+        usage_obj = message.get("usage")
+        raw_usage: dict[str, Any] = usage_obj if isinstance(usage_obj, dict) else {}
         observed = estimate_claude_turn(
-            raw_usage if isinstance(raw_usage, dict) else {},
+            raw_usage,
             assistant_text=text,
             user_text=self._last_user_text,
             model=self._model,
         )
-        self._usage.usage.add(observed)
+        request_id = obj.get("requestId")
+        if isinstance(request_id, str) and request_id:
+            self._absorb_request_usage(request_id, observed, raw_usage)
+        else:
+            self._usage.usage.add(observed)
 
         if visible_text:
             self._next_seq_hint()
@@ -279,14 +282,28 @@ class _ParserState:
             if observed.cache_creation_tokens:
                 event["cache_creation_tokens"] = observed.cache_creation_tokens
             self._events.append(event)
-        self._last_user_text = ""
+        if visible_text or tool_blocks:
+            self._last_user_text = ""
 
-        for block in content:
-            if not isinstance(block, dict):
-                continue
-            if block.get("type") != "tool_use":
-                continue
+        for block in tool_blocks:
             self._emit_tool_call(block, obj=obj, line_no=line_no, timestamp=timestamp)
+
+    def _absorb_request_usage(
+        self,
+        request_id: str,
+        observed: ObservedUsage,
+        raw_usage: dict[str, Any],
+    ) -> None:
+        quality = _usage_observation_quality(raw_usage)
+        prior = self._request_usage.get(request_id)
+        prior_quality = self._request_usage_quality.get(request_id, -1)
+        if prior is not None and quality < prior_quality:
+            return
+        if prior is not None:
+            _subtract_usage(self._usage.usage, prior)
+        self._usage.usage.add(observed)
+        self._request_usage[request_id] = replace(observed)
+        self._request_usage_quality[request_id] = quality
 
     def _parse_system(
         self, obj: dict[str, Any], *, line_no: int, timestamp: str | None = None
@@ -441,3 +458,36 @@ def _tool_result_text(content: Any) -> str:
     if isinstance(content, list):
         return _content_text(content)
     return json.dumps(content, sort_keys=True)
+
+
+def _is_placeholder_model(model: str) -> bool:
+    lowered = model.strip().lower()
+    return lowered in {"", "<synthetic>", "synthetic", "unknown"}
+
+
+def _usage_observation_quality(raw_usage: dict[str, Any]) -> int:
+    """Rank usage rows so inflated exact duplicates lose to cache-backed ones."""
+    raw_input = int(raw_usage.get("input_tokens") or raw_usage.get("inputTokens") or 0)
+    cache_read = int(
+        raw_usage.get("cache_read_input_tokens") or raw_usage.get("cacheReadInputTokens") or 0
+    )
+    cache_creation = int(
+        raw_usage.get("cache_creation_input_tokens")
+        or raw_usage.get("cacheCreationInputTokens")
+        or 0
+    )
+    if cache_read > 0 or cache_creation > 0 or raw_input <= 2:
+        return 2
+    if raw_input < 1000:
+        return 1
+    return 0
+
+
+def _subtract_usage(total: ObservedUsage, other: ObservedUsage) -> None:
+    total.input_tokens = max(0, total.input_tokens - other.input_tokens)
+    total.output_tokens = max(0, total.output_tokens - other.output_tokens)
+    total.cache_read_tokens = max(0, total.cache_read_tokens - other.cache_read_tokens)
+    total.cache_creation_tokens = max(0, total.cache_creation_tokens - other.cache_creation_tokens)
+    total.reasoning_tokens = max(0, total.reasoning_tokens - other.reasoning_tokens)
+    if total.cost is not None and other.cost is not None:
+        total.cost = max(0.0, total.cost - other.cost)

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from server.util.private_files import ensure_private_dir, ensure_private_file
+
 MANAGED_START = "<!-- cairn:begin"
 MANAGED_END = "<!-- cairn:end -->"
 _BLOCK_HEADING = "## Cairn agent guide"
@@ -147,12 +149,13 @@ def apply_entries(
     original = target.read_text(encoding="utf-8") if existed else ""
     updated = ensure_block(original, entries)
 
-    backup_dir.mkdir(parents=True, exist_ok=True)
+    ensure_private_dir(backup_dir)
     backup = _backup_path(backup_dir, target, backup_key, existed)
     if existed:
         shutil.copy2(target, backup)
+        ensure_private_file(backup)
     else:
-        backup.write_bytes(b"")
+        ensure_private_file(backup)
 
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(updated, encoding="utf-8")

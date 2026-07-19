@@ -1,0 +1,16 @@
+{
+  "base_url": "http://127.0.0.1:8799",
+  "console_errors": [],
+  "environment": {
+    "browser": "bundled Playwright Chromium",
+    "machine": "Apple arm64, 8 logical CPUs",
+    "viewport": "1440x1000"
+  },
+  "initial_virtual_rows": 34,
+  "replay_interaction_ms": 115.799,
+  "session_page_rows": 50,
+  "session_scroll_ms": 61.1,
+  "sessions_ready_ms": 638.85,
+  "virtual_rows_after_replay": 34,
+  "wide_trace_ready_ms": 864.97
+}

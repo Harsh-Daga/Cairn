@@ -9,46 +9,107 @@ Cairn CLI entry point: `server.cli:app`. Mutations are also available as `cairn 
 | Command | Description |
 |---------|-------------|
 | `cairn action annotate` | Annotate trace or span |
+| `cairn action archive-export` | Export versioned cairn.archive.v1 ZIP |
+| `cairn action archive-import` | Import cairn.archive.v1 ZIP (dry-run default) |
+| `cairn action archive-inspect` | Inspect cairn.archive.v1 ZIP without applying |
 | `cairn action backfill` | Backfill historical logs |
 | `cairn action check` | Run CI quality gate |
-| `cairn action config-set` | Set runtime config |
+| `cairn action circuit-resume` | Resume paused ingest adapters (explicit) |
+| `cairn action circuit-status` | Show ingest circuit-breaker / quarantine status |
+| `cairn action config-set` | Manage typed configuration |
+| `cairn action corrections-rebuild` | Rebuild session correction ledgers |
+| `cairn action db-backup-list` | List cairn.db backups under .cairn/backups/manual |
+| `cairn action db-backup` | Backup cairn.db under .cairn/backups/manual |
+| `cairn action db-compact` | Checkpoint WAL and VACUUM cairn.db (confirmed) |
+| `cairn action db-integrity` | Check cairn.db integrity (quick_check + FK) |
+| `cairn action db-restore` | Restore cairn.db from a .cairn backup (confirmed) |
 | `cairn action demo-seed` | Seed deterministic demo workspace |
+| `cairn action egress-export` | Export egress ledger JSON (secret-free) |
+| `cairn action egress-status` | Show privacy-minimized egress ledger status |
 | `cairn action experiment-apply` | Apply experiment |
 | `cairn action experiment-measure` | Measure experiment |
 | `cairn action experiment-revert` | Revert experiment |
 | `cairn action export-bundle` | Export trace bundle |
+| `cairn action export-session-html` | Export scrubbed session HTML |
+| `cairn action git-exclude-cairn` | Add .cairn/ to local git exclude (approved) |
 | `cairn action insight-set-state` | Set insight lifecycle state |
+| `cairn action insight-snooze` | Snooze insight |
+| `cairn action lifecycle-cleanup` | Run data lifecycle cleanup (confirmed) |
+| `cairn action lifecycle-plan` | Dry-run data lifecycle cleanup plan |
 | `cairn action mcp-install` | Install MCP server config |
+| `cairn action optimize-evaluate` | Re-evaluate due portfolio experiments |
 | `cairn action optimize-propose` | Generate optimize proposals |
+| `cairn action pricing-refresh-preview` | Preview price-table refresh (never downloads) |
+| `cairn action pricing-status` | Show offline model pricing provenance and staleness |
 | `cairn action rebuild-view` | Rebuild analyzer view |
+| `cairn action reflector-preview` | Preview optional LLM disclosure |
+| `cairn action reflector-run` | Run optional LLM reflector after preview consent |
+| `cairn action regression-compare` | Compare expected outcome to a recorded regression run |
+| `cairn action regression-create` | Create local regression artifact |
+| `cairn action regression-delete` | Delete local regression artifact |
+| `cairn action regression-export` | Export local regression zip |
+| `cairn action regression-import` | Import local regression zip |
+| `cairn action regression-run` | Record a regression run from an ingested trace (no execution) |
 | `cairn action server-stop` | Stop background server |
+| `cairn action source-drift-status` | Show reference-mode source drift status |
+| `cairn action storage-strip` | Strip retained span text per storage mode |
 | `cairn action sync` | Sync agent logs |
+| `cairn action verification-rebuild` | Rebuild verification receipts |
 | `cairn action workspace-scan` | Scan workspace for adapters |
 | `cairn adapter doctor` | Compare a live log sample with an adapter's expected shape. |
 | `cairn adapter new` | Scaffold a new ingest adapter module, fixture, and test. |
+| `cairn archive export` | Write a portable workspace archive (or preview with --dry-run). |
+| `cairn archive import` | Import archive into the workspace DB (dry-run by default). |
+| `cairn archive inspect` | Inspect archive envelope, checksums, and OTLP-loss notes. |
 | `cairn check` | CI quality gate — exits non-zero on failure. |
-| `cairn config set` |  |
+| `cairn config get` | Print one resolved value, its source, and redaction status. |
+| `cairn config list` | List resolved typed values with source metadata and secret redaction. |
+| `cairn config set` | Validate and atomically set one typed configuration value. |
+| `cairn config unset` | Remove one file-backed value so lower-precedence sources apply. |
 | `cairn demo` | Seed a deterministic local demo workspace. |
 | `cairn doctor` | Verify install, environment, and workspace readiness. |
 | `cairn experiments ls` |  |
 | `cairn experiments revert` |  |
-| `cairn export` | Export a scrubbed trace bundle. |
+| `cairn export session` | Export one session as scrubbed self-contained HTML. |
+| `cairn export` | Export a scrubbed trace bundle (default) or static snapshot. |
+| `cairn guard` | List instruction-file Guard events and non-causal associations. |
+| `cairn handoff` | Print an offline handoff capsule (fact / inference / recommendation). |
 | `cairn insights` | List insights. |
 | `cairn mcp install` | Install Cairn MCP config for Claude Code, Cursor, or Codex. |
 | `cairn mcp` | Run the Cairn MCP stdio server. |
+| `cairn optimize evaluate` | Opportunistically re-evaluate due portfolio experiments (no daemon). |
 | `cairn optimize export-effects` | Write a scrubbed local JSON of measured rule effects. |
+| `cairn optimize llm-preview` | Show exactly what an optional LLM backend would receive; make no request. |
+| `cairn optimize llm-run` | Run the optional reflector only after an exact preview has been accepted. |
 | `cairn optimize revert` | Revert one applied optimization from its exact backup. |
-| `cairn optimize` | Generate optimization proposals when no subcommand is given. |
+| `cairn optimize` | Generate local optimization proposals when no subcommand is given. |
+| `cairn privacy` | Show privacy posture for local Cairn data (modes and paths). |
 | `cairn rebuild` | Rebuild an incremental analyzer view. |
 | `cairn recap` | Show a one-screen weekly spend, waste, quality, and experiment recap. |
+| `cairn receipt` | Print a deterministic verification receipt for a session. |
+| `cairn regression compare` | Compare expected outcome (or another run) to a recorded run. |
+| `cairn regression create` | Create a scrubbed local regression artifact from a recorded session. |
+| `cairn regression delete` | Delete a local regression artifact directory. |
+| `cairn regression export` | Export a regression directory as a portable zip (metadata only). |
+| `cairn regression import` | Import a portable regression zip after hostile-path checks. |
+| `cairn regression ls` | List local regression artifacts under ``.cairn/regressions``. |
+| `cairn regression run` | Record an observed run from an ingested trace (never executes commands). |
+| `cairn regression show` | Show a local regression artifact. |
+| `cairn regression validate` | Validate schema and honesty constraints; does not run commands. |
+| `cairn resource` | Show local Cairn disk inventory, soft budget, and descriptive growth forecast. |
+| `cairn review` | List highest-priority sessions for human review (advisory, not ranking people). |
 | `cairn setup-prompt` | Print the short agent bootstrap prompt for README copy-paste. |
 | `cairn show` | Print a text waterfall for a trace. |
+| `cairn stats` | Show current-month budget burn, projections, and spend shares. |
 | `cairn stop` | Stop a running Cairn UI server (by port). |
 | `cairn sync` | Sync agent logs into the local store. |
+| `cairn top` | Show recent sessions by spend (refreshes on a TTY until Ctrl-C). |
 | `cairn traces ls` | List recent traces as a plain table. |
 | `cairn traces show` | Alias for `cairn show`. |
 | `cairn ui` | Start the Cairn web UI server. |
 | `cairn upgrade` | Upgrade Cairn to the latest published release. |
+| `cairn verify next` | Preview the smallest repository-grounded next check without executing it. |
+| `cairn why` | Print a deterministic postmortem for a session (diagnose localization, not causality). |
 
 ## Action registry
 
@@ -57,18 +118,82 @@ Run with `cairn action <name> [--params-json '{}']`.
 | Action | Category | Title | Async |
 |--------|----------|-------|-------|
 | `annotate` | annotate | Annotate trace or span | no |
+| `archive_export` | export | Export versioned cairn.archive.v1 ZIP | yes |
+| `archive_import` | export | Import cairn.archive.v1 ZIP (dry-run default) | yes |
+| `archive_inspect` | export | Inspect cairn.archive.v1 ZIP without applying | no |
 | `backfill` | ingest | Backfill historical logs | yes |
 | `check` | ci | Run CI quality gate | no |
-| `config_set` | config | Set runtime config | no |
+| `circuit_resume` | privacy | Resume paused ingest adapters (explicit) | no |
+| `circuit_status` | privacy | Show ingest circuit-breaker / quarantine status | no |
+| `config_set` | config | Manage typed configuration | no |
+| `corrections_rebuild` | analyze | Rebuild session correction ledgers | no |
+| `db_backup` | privacy | Backup cairn.db under .cairn/backups/manual | no |
+| `db_backup_list` | privacy | List cairn.db backups under .cairn/backups/manual | no |
+| `db_compact` | privacy | Checkpoint WAL and VACUUM cairn.db (confirmed) | yes |
+| `db_integrity` | privacy | Check cairn.db integrity (quick_check + FK) | no |
+| `db_restore` | privacy | Restore cairn.db from a .cairn backup (confirmed) | no |
 | `demo_seed` | setup | Seed deterministic demo workspace | no |
+| `egress_export` | privacy | Export egress ledger JSON (secret-free) | no |
+| `egress_status` | privacy | Show privacy-minimized egress ledger status | no |
 | `experiment_apply` | improve | Apply experiment | no |
 | `experiment_measure` | improve | Measure experiment | no |
 | `experiment_revert` | improve | Revert experiment | no |
 | `export_bundle` | export | Export trace bundle | no |
+| `export_session_html` | export | Export scrubbed session HTML | no |
+| `git_exclude_cairn` | privacy | Add .cairn/ to local git exclude (approved) | no |
 | `insight_set_state` | insights | Set insight lifecycle state | no |
+| `insight_snooze` | insights | Snooze insight | no |
+| `lifecycle_cleanup` | privacy | Run data lifecycle cleanup (confirmed) | yes |
+| `lifecycle_plan` | privacy | Dry-run data lifecycle cleanup plan | no |
 | `mcp_install` | setup | Install MCP server config | no |
+| `optimize_evaluate` | improve | Re-evaluate due portfolio experiments | no |
 | `optimize_propose` | improve | Generate optimize proposals | no |
+| `pricing_refresh_preview` | config | Preview price-table refresh (never downloads) | no |
+| `pricing_status` | config | Show offline model pricing provenance and staleness | no |
 | `rebuild_view` | analyze | Rebuild analyzer view | yes |
+| `reflector_preview` | privacy | Preview optional LLM disclosure | no |
+| `reflector_run` | privacy | Run optional LLM reflector after preview consent | no |
+| `regression_compare` | export | Compare expected outcome to a recorded regression run | no |
+| `regression_create` | export | Create local regression artifact | no |
+| `regression_delete` | export | Delete local regression artifact | no |
+| `regression_export` | export | Export local regression zip | no |
+| `regression_import` | export | Import local regression zip | no |
+| `regression_run` | export | Record a regression run from an ingested trace (no execution) | no |
 | `server_stop` | server | Stop background server | no |
+| `source_drift_status` | privacy | Show reference-mode source drift status | no |
+| `storage_strip` | privacy | Strip retained span text per storage mode | yes |
 | `sync` | ingest | Sync agent logs | yes |
+| `verification_rebuild` | analyze | Rebuild verification receipts | no |
 | `workspace_scan` | setup | Scan workspace for adapters | yes |
+
+## Stable JSON schemas
+
+Read-only `--json` commands emit a versioned envelope:
+
+| Command | `schema` | Payload |
+|---------|----------|---------|
+| `cairn stats --json` | `cairn.stats.v1` | Budget burn body (spend, projections, shares, ledger) |
+| `cairn guard --json` | `cairn.guard.v1` | Guard analytics body (days, ledger, events) |
+| `cairn top --json` | `cairn.top.v1` | `{days, limit, rows[]}` session spend snapshot |
+| `cairn why --json` | `cairn.why.v1` | `{trace_id, available, message, postmortem}` |
+| `cairn receipt --json` | `cairn.receipt.v1` | Verification receipt body (status, debt, timeline) |
+| `cairn handoff --json` | `cairn.handoff.v1` | Offline handoff capsule |
+| `cairn review --json` | `cairn.review.v1` | Advisory review queue (not employee ranking) |
+| `cairn verify next --json` | `cairn.verify.next.v1` | Next-check preview (never executes) |
+| `cairn resource --json` | `cairn.resource.v1` | Partial local footprint inventory |
+| `cairn privacy --json` | `cairn.privacy.v1` | Local-first privacy posture |
+| `cairn regression * --json` | `cairn.regression.v1` | Artifact / validate / import-export bodies |
+
+Every envelope includes `schema` and `generated_at` (UTC ISO-8601). Field bodies match the
+corresponding API/payload models unless noted.
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Generic failure (missing resource, failed gate, updater error, server stop miss) |
+| `2` | `cairn why` missing postmortem; `cairn regression validate` schema/honesty errors |
+
+`cairn top` exits `0` on Ctrl-C after a clean shutdown. Non-TTY stdout forces a single snapshot
+(same as `--once`).

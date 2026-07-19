@@ -29,6 +29,40 @@ Run with `cairn action <name> [--params-json '{}']`.
 |--------|----------|-------|-------|
 """
 
+CONTRACTS = """
+## Stable JSON schemas
+
+Read-only `--json` commands emit a versioned envelope:
+
+| Command | `schema` | Payload |
+|---------|----------|---------|
+| `cairn stats --json` | `cairn.stats.v1` | Budget burn body (spend, projections, shares, ledger) |
+| `cairn guard --json` | `cairn.guard.v1` | Guard analytics body (days, ledger, events) |
+| `cairn top --json` | `cairn.top.v1` | `{days, limit, rows[]}` session spend snapshot |
+| `cairn why --json` | `cairn.why.v1` | `{trace_id, available, message, postmortem}` |
+| `cairn receipt --json` | `cairn.receipt.v1` | Verification receipt body (status, debt, timeline) |
+| `cairn handoff --json` | `cairn.handoff.v1` | Offline handoff capsule |
+| `cairn review --json` | `cairn.review.v1` | Advisory review queue (not employee ranking) |
+| `cairn verify next --json` | `cairn.verify.next.v1` | Next-check preview (never executes) |
+| `cairn resource --json` | `cairn.resource.v1` | Partial local footprint inventory |
+| `cairn privacy --json` | `cairn.privacy.v1` | Local-first privacy posture |
+| `cairn regression * --json` | `cairn.regression.v1` | Artifact / validate / import-export bodies |
+
+Every envelope includes `schema` and `generated_at` (UTC ISO-8601). Field bodies match the
+corresponding API/payload models unless noted.
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Generic failure (missing resource, failed gate, updater error, server stop miss) |
+| `2` | `cairn why` missing postmortem; `cairn regression validate` schema/honesty errors |
+
+`cairn top` exits `0` on Ctrl-C after a clean shutdown. Non-TTY stdout forces a single snapshot
+(same as `--once`).
+"""
+
 
 def _command_label(cmd: object) -> str | None:
     name = getattr(cmd, "name", None)
@@ -82,6 +116,7 @@ def render() -> str:
     lines.append(ACTION_HEADER.rstrip())
     for name, category, title, async_flag in _action_rows():
         lines.append(f"| `{name}` | {category} | {title} | {async_flag} |")
+    lines.append(CONTRACTS.rstrip())
     lines.append("")
     return "\n".join(lines)
 

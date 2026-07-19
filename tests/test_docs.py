@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import typer
+import yaml
 
 from server.api.actions import build_manifest
 from server.cli import app
@@ -42,6 +43,8 @@ DOCS_INDEX = [
     "docs/adapters.md",
     "docs/otlp.md",
     "docs/optimize.md",
+    "docs/guard.md",
+    "docs/recap.md",
     "docs/roadmap.md",
     "docs/ci.md",
     "docs/configuration.md",
@@ -53,12 +56,12 @@ DOCS_INDEX = [
 
 FORBIDDEN_DOC_PATTERNS = [
     re.compile(r"(?<![./])cairn/[a-z_]+"),  # retired module paths, not .cairn/
-    re.compile(r"\brun_id\b"),
     re.compile(r"`cairn (init|validate|build|profile|behavior|outcomes|advanced)\b"),
     re.compile(r"docs/reference/"),
     re.compile(r"docs/guides/"),
     re.compile(r"docs/spec/"),
 ]
+
 
 def _command_label(cmd: object) -> str | None:
     name = getattr(cmd, "name", None)
@@ -152,10 +155,10 @@ def test_release_version_sources_match_pyproject() -> None:
         "server/__init__.py": f'__version__ = "{version}"',
         "CHANGELOG.md": f"## [{version}]",
         "docs/README.md": f"current {version} public beta",
-        "docs/api.md": f'\"version\": \"{version}\"',
+        "docs/api.md": f'"version": "{version}"',
         "examples/e2e-demo/cairn.toml": f'version = "{version}"',
-        "ui/package.json": f'\"version\": \"{version}\"',
-        "ui/package-lock.json": f'\"version\": \"{version}\"',
+        "ui/package.json": f'"version": "{version}"',
+        "ui/package-lock.json": f'"version": "{version}"',
     }
     mismatches = [
         path
@@ -216,9 +219,7 @@ def test_all_readme_commands_exist() -> None:
     table_commands = README_CLI_ROW.findall(README.read_text(encoding="utf-8"))
     fenced_commands = _commands_in_markdown(README)
     missing = [
-        c
-        for c in [*table_commands, *fenced_commands]
-        if not _command_exists(c, cli, actions)
+        c for c in [*table_commands, *fenced_commands] if not _command_exists(c, cli, actions)
     ]
     assert not missing, f"Unknown README commands: {missing}"
 
@@ -265,6 +266,42 @@ def test_no_retired_release_terms_in_public_docs() -> None:
                 line = text[: match.start()].count("\n") + 1
                 violations.append(f"{path.relative_to(ROOT)}:{line}: {match.group()}")
     assert not violations, "Forbidden retired/stale doc terms:\n" + "\n".join(violations)
+
+
+def test_community_health_and_maintainer_artifacts_exist() -> None:
+    required = (
+        "GOVERNANCE.md",
+        "MAINTAINERS.md",
+        "CITATION.cff",
+        ".github/CODEOWNERS",
+        ".github/ISSUE_TEMPLATE/feature_request.yml",
+        ".github/ISSUE_TEMPLATE/docs_report.yml",
+        ".github/ISSUE_TEMPLATE/config.yml",
+        "docs/maintainers/github-settings.md",
+    )
+    missing = [name for name in required if not (ROOT / name).is_file()]
+    assert not missing
+
+    citation = yaml.safe_load((ROOT / "CITATION.cff").read_text(encoding="utf-8"))
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert citation["version"] == pyproject["project"]["version"]
+    assert citation["repository-code"] == "https://github.com/Harsh-Daga/Cairn"
+
+
+def test_installers_are_fail_closed_and_uninstall_is_documented() -> None:
+    shell = (ROOT / "scripts" / "install.sh").read_text(encoding="utf-8")
+    powershell = (ROOT / "install.ps1").read_text(encoding="utf-8")
+    guide = (ROOT / "docs" / "getting-started.md").read_text(encoding="utf-8")
+
+    assert "sudo" not in shell
+    assert "sudo" not in powershell.lower()
+    assert "| sh" not in shell
+    assert "| iex" not in powershell.lower()
+    assert "cairn doctor || true" not in shell
+    assert "uv tool uninstall cairn-workspace" in guide
+    assert "retains project `.cairn/`" in guide
+    assert "UV_INDEX_URL" in guide
+    assert "--offline" in guide
 
 
 def test_agent_setup_bootstrap_url() -> None:

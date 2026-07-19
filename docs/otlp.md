@@ -40,3 +40,11 @@ Successful requests return `partialSuccess` and one result per trace. Re-sending
 ```
 
 Cairn stores standard span names, timestamps, parent relationships, status, common attributes, and `gen_ai.*` token/model attributes. Unsupported fields are retained only when they are represented by the supported ingest mapping; validate an exporter against your own telemetry before relying on it for production reporting.
+
+## Cairn → OTLP round-trip loss
+
+OTLP is interoperable telemetry, not a lossless Cairn archive. Evidence that does **not** round-trip
+through OTLP/OTel GenAI alone includes verification receipts/claims, session corrections, outcomes
+and quality labels, diagnostics, data-quality/`cost_source` provenance, Cairn span-link handoff
+semantics, policy/regressions/privacy manifests, and storage retention mode. Use
+[`cairn archive`](archive.md) (`cairn.archive.v1`) for portable Cairn-native evidence.

@@ -32,6 +32,42 @@ missing, outside-workspace, never-read, and not-yet-hot files return `should_rea
 specific reason. When content was unavailable at analysis time, Cairn falls back to read-count
 and last-read metadata instead of inventing a summary.
 
+## Context budget
+
+`cairn_context_budget` returns a read-only composition of the current or selected session's
+recorded `context_regions`:
+
+- region token/cost shares;
+- largest removable or stale regions (user region is never offered);
+- one conservative trim suggestion with an explicit non-mutation limitation;
+- `data_as_of` and `estimate_status` (`measured` when region rows exist, `estimated` when only
+  trace rollups exist, otherwise `unavailable`).
+
+Pass `trace_id` (or `session_id`) when more than one active session makes auto-detection
+ambiguous. Missing traces, empty ledgers, and sessions without region rows return structured
+errors or partial payloads — Cairn does not invent composition or call a provider.
+
+## Handoff capsule
+
+`cairn_handoff` returns a compact offline continuation packet (`cairn.handoff.v1`) for the current
+or selected session: goal, decisions, blockers, files, tools, tests, corrections, verification
+debt, and recommended next checks. Every statement is tagged `fact`, `inference`, or
+`recommendation`. Paths and secrets are scrubbed; the raw transcript is omitted. No provider or
+network call is made.
+
+## Evidence tools
+
+Additional read-only tools (no mutation, no provider call; consultation markers recorded):
+
+| Tool | Purpose |
+|------|---------|
+| `cairn_verification_status` | Receipt status, active debt, remaining checks |
+| `cairn_policy_check` | Advisory eval of proposed path/command (`enforcement_source`) |
+| `cairn_regression_context` | Local regression acceptance criteria |
+| `cairn_next_evidence` | Smallest next check preview with approval class (never executes) |
+
+Pass `trace_id` / `regression_id` when auto-detection would be ambiguous.
+
 ## Consultation visibility
 
 Every successful or failed Cairn MCP tool invocation appends a minimal event to

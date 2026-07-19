@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 import sqlite3
-import subprocess
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from server.analyze.events import spans_to_events
+from server.analyze.git_local import files_for_commit as _files_for_commit
+from server.analyze.git_local import git_log_shas as _git_log
+from server.analyze.git_local import is_dirty as _is_dirty
+from server.analyze.git_local import is_git_repo as _is_git_repo
+from server.analyze.git_local import parse_iso as _parse_iso
+from server.analyze.git_local import run_git as _run_git
+from server.analyze.git_local import stash_count as _stash_count
+from server.analyze.git_local import until_with_buffer as _until_with_buffer
 from server.analyze.outcome_labels import derive_outcome_label
 from server.analyze.outcome_tests import TestResult, run_tests, test_command_for
 from server.analyze.views import IncrementalView, trace_input_hash
@@ -20,7 +27,6 @@ from server.store.repos.outcomes import OutcomeRepo
 from server.store.repos.spans import SpanRepo
 from server.store.repos.traces import TraceRepo
 
-_GIT_TIMEOUT_SECONDS = 5
 _CONTEXT_ROT_PENALTY = 1.0
 
 _DEFAULT_QUALITY_WEIGHTS = {
@@ -85,8 +91,10 @@ def agent_quality_score(
         or tests_failed is not None
         or build_status not in (None, "unknown")
     )
-    tests_succeeded = tests_ran and (tests_failed or 0) == 0 and (
-        (tests_passed or 0) > 0 or build_status in {"passed", "success", "ok"}
+    tests_succeeded = (
+        tests_ran
+        and (tests_failed or 0) == 0
+        and ((tests_passed or 0) > 0 or build_status in {"passed", "success", "ok"})
     )
     success = 0.0
     if commit_landed:
@@ -227,75 +235,6 @@ def capture_followup_signals(
     )
 
 
-def _run_git(repo: Path, args: list[str]) -> subprocess.CompletedProcess[str] | None:
-    try:
-        return subprocess.run(
-            args,
-            cwd=repo,
-            capture_output=True,
-            text=True,
-            timeout=_GIT_TIMEOUT_SECONDS,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-
-
-def _is_git_repo(repo: Path) -> bool:
-    result = _run_git(repo, ["git", "rev-parse", "--is-inside-work-tree"])
-    return bool(result and result.returncode == 0 and result.stdout.strip() == "true")
-
-
-def _git_log(repo: Path, since: str, until: str) -> list[str]:
-    args = ["git", "log", "--format=%H"]
-    if since:
-        args.append(f"--since={since}")
-    if until:
-        args.append(f"--until={until}")
-    result = _run_git(repo, args)
-    if result is None or result.returncode != 0:
-        return []
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
-
-
-def _files_for_commit(repo: Path, sha: str) -> list[str]:
-    diff_result = _run_git(repo, ["git", "diff", "--stat", "--name-only", f"{sha}^", sha])
-    if diff_result is not None and diff_result.returncode == 0:
-        return [line.strip() for line in diff_result.stdout.splitlines() if line.strip()]
-    show_result = _run_git(repo, ["git", "show", "--stat", "--name-only", "--format=", sha])
-    if show_result is None:
-        return []
-    return [line.strip() for line in show_result.stdout.splitlines() if line.strip()]
-
-
-def _is_dirty(repo: Path) -> bool:
-    result = _run_git(repo, ["git", "status", "--porcelain"])
-    return bool(result and result.returncode == 0 and result.stdout.strip())
-
-
-def _stash_count(repo: Path) -> int:
-    result = _run_git(repo, ["git", "stash", "list"])
-    if result is None or result.returncode != 0:
-        return 0
-    return len([line for line in result.stdout.splitlines() if line.strip()])
-
-
-def _until_with_buffer(ended_at: str | None) -> str:
-    if not ended_at:
-        return ""
-    parsed = _parse_iso(ended_at)
-    if parsed is None:
-        return ended_at
-    return (parsed + timedelta(hours=1)).isoformat()
-
-
-def _parse_iso(timestamp: str) -> datetime | None:
-    try:
-        return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-    except (ValueError, TypeError):
-        return None
-
-
 def _run_tests_if_configured(cwd: str | None, project: str | None) -> TestResult:
     cmd = test_command_for(project)
     if not cmd:
@@ -380,9 +319,7 @@ class OutcomesView(IncrementalView):
             status=str(trace.status or "completed"),
             events=events,
         )
-        is_success = git.commit_landed and (
-            quality.components["success"] >= 0.75
-        )
+        is_success = git.commit_landed and (quality.components["success"] >= 0.75)
         existing = OutcomeRepo.get(conn, key)
 
         OutcomeRepo.upsert(

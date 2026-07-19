@@ -6,7 +6,9 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 .venv/
-uv.lock
+.coverage
+.commandcode/
+.playwright-mcp/
 .cairn/
 .claude/
 spike/demo/.cairn/
@@ -25,5 +27,11 @@ cairn-demo-live/*
 cairn-e2e-test/
 ui/node_modules/
 ui/dist/
+ui/coverage/
+ui/playwright-report/
+ui/test-results/
+test-results/
 server/static/*
 !server/static/.gitkeep
+server/static_file/*
+!server/static_file/.gitkeep

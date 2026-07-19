@@ -22,14 +22,17 @@ Start the server with `cairn ui` (default `http://127.0.0.1:8787`).
 
 | Method | Path | Query params | Description |
 |--------|------|--------------|-------------|
-| GET | `/api/overview` | `days` (default 30) | KPIs, narrative sentences, sparkline data |
-| GET | `/api/agents` | `days` | Per-agent usage and handoff matrix |
-| GET | `/api/behavior` | `days` | Fingerprint series and drift points |
-| GET | `/api/quality` | `days` | Outcome scores, cost-per-success |
-| GET | `/api/analytics/usage` | `days`, `group_by` | Usage grouped by day/model/source/project/actor |
-| GET | `/api/analytics/regions` | `days` | Context region breakdown |
-| GET | `/api/analytics/waste` | `days` | Waste taxonomy totals |
-| GET | `/api/analytics/tail` | `days` | Tail latency / long-span stats |
+| GET | `/api/overview` | time range | KPIs, narrative sentences, sparkline data |
+| GET | `/api/agents` | time range | Per-agent usage and handoff matrix |
+| GET | `/api/behavior` | time range | Fingerprint series and drift points |
+| GET | `/api/quality` | time range | Outcome scores, cost-per-success |
+| GET | `/api/analytics/usage` | time range, `group_by` | Usage grouped by day/model/source/project/actor |
+| GET | `/api/analytics/regions` | time range | Context region breakdown |
+| GET | `/api/analytics/waste` | time range | Waste taxonomy totals |
+| GET | `/api/analytics/tail` | time range | Tail latency / long-span stats |
+
+“Time range” means one of `preset`, complete `start`/`end` plus `timezone`, or legacy `days`. See
+[Time ranges and timezones](time-ranges.md) for exact half-open and prior-period semantics.
 
 ## Traces
 
@@ -37,10 +40,15 @@ Prefix: `/api/traces`
 
 | Method | Path | Query params | Description |
 |--------|------|--------------|-------------|
-| GET | `/api/traces` | `days`, `source`, `project`, `actor`, `q`, `limit`, `offset` | Paginated trace list |
+| GET | `/api/traces` | time range, `source`, `project`, `actor`, `q`, `sort`, `limit`, `offset` | Paginated enriched trace list |
 | GET | `/api/traces/{trace_id}` | — | Trace detail, span tree, quality outcome, metadata |
 | PUT | `/api/traces/{trace_id}/human-label` | JSON body | Store/clear thumbs label and note |
 | GET | `/api/traces/{trace_id}/replay` | `seq` | Spans visible at replay sequence (scrubber) |
+| GET | `/api/traces/{trace_id}/receipt` | — | Deterministic verification receipt v1 |
+| GET | `/api/traces/{trace_id}/corrections` | — | Conservative correction ledger (`cairn.corrections.v1`) |
+| PUT | `/api/traces/{trace_id}/corrections/{id}/relabel` | body | Local incorrect-classification override |
+| GET | `/api/traces/{trace_id}/handoff` | — | Offline handoff capsule (`cairn.handoff.v1`) |
+| GET | `/api/traces/{trace_id}/postmortem` | — | Diagnose-cascade postmortem when eligible |
 
 ## Insights
 
@@ -66,9 +74,14 @@ Prefix: `/api/search`
 
 | Method | Path | Query params | Description |
 |--------|------|--------------|-------------|
-| GET | `/api/search` | `q`, `limit` | Full-text search across span payloads |
+| GET | `/api/search` | `q`, `limit`, `offset` | Bounded grouped search across traces and spans |
 
-Example queries: `pytest`, `tool:read`, `source:claude_code`, `is:error`.
+Sessions and Search use one typed grammar. Its generated machine-readable operator manifest is
+[`docs/api/filter-grammar.json`](api/filter-grammar.json). Examples include `pytest`,
+`tool:read`, `source:claude_code`, `is:error`, `cost:>1`, `file:"src/app.py"`, and
+`verification:debt`. Quoted values and backslash escaping are supported. Invalid and
+recognized-but-unavailable filters are returned in `filter_errors` and produce no rows, so a
+malformed privacy or evidence constraint never broadens a query.
 
 ## Actions (mutations)
 
@@ -103,9 +116,15 @@ Registered actions (from `server/api/actions.py`):
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/live/events` | Server-sent events stream (ingest, insight, job updates) |
+| GET | `/api/live/events` | Server-sent events stream (ingest, insight, job, cost-tick updates) |
 
 The UI connects via `ui/src/lib/sse.ts` when **Watch** is enabled on the Live page.
+
+Named events include `trace-updated`, `views-updated`, `insight-updated`, `job-progress`,
+`heartbeat`, and coalesced `session_cost_tick`. Cost ticks carry absolute `cost`, token totals,
+`cost_source`, and `estimate_kind` (`measured` / `estimated` / `unavailable`). The server publishes
+at most one tick per session every two seconds, coalesces bursts to the latest totals, suppresses
+duplicate totals, and uses the shared drop-oldest SSE queue (size 64).
 
 ## OTLP ingest
 
@@ -131,4 +150,4 @@ HTTP errors return JSON:
 { "error": { "code": "not_found", "message": "…" } }
 ```
 
-FastAPI validation errors use standard `detail` arrays.
+Validation errors use the same envelope with code `validation_error` and a bounded `details` list.

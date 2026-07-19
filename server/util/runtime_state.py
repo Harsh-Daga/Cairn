@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from server.util.private_files import ensure_private_dir, write_private_text
+
 
 @dataclass(frozen=True)
 class ServerRecord:
@@ -29,8 +31,7 @@ def state_dir() -> Path:
     else:
         base = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
     path = base / "cairn"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    return ensure_private_dir(path)
 
 
 def pid_file(port: int) -> Path:
@@ -69,7 +70,7 @@ def write_server_record(
         workspace=str(workspace.resolve()) if workspace else None,
     )
     path = pid_file(port)
-    path.write_text(json.dumps(record.__dict__, indent=2), encoding="utf-8")
+    write_private_text(path, json.dumps(record.__dict__, indent=2))
     return path
 
 

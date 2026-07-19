@@ -1,0 +1,78 @@
+{
+  "cold_start_ms": 733.397,
+  "endpoints": {
+    "health": {
+      "p50_ms": 1.153,
+      "p95_ms": 1.212,
+      "payload_bytes": 33
+    },
+    "overview_30d": {
+      "p50_ms": 131.829,
+      "p95_ms": 147.295,
+      "payload_bytes": 8310
+    },
+    "quality_30d": {
+      "p50_ms": 81.845,
+      "p95_ms": 88.803,
+      "payload_bytes": 318537
+    },
+    "regions_30d": {
+      "p50_ms": 440.486,
+      "p95_ms": 466.075,
+      "payload_bytes": 16278
+    },
+    "search_pytest": {
+      "p50_ms": 207.136,
+      "p95_ms": 212.777,
+      "payload_bytes": 8533
+    },
+    "traces_200": {
+      "p50_ms": 36.531,
+      "p95_ms": 37.617,
+      "payload_bytes": 116477
+    },
+    "wide_trace_detail": {
+      "p50_ms": 246.933,
+      "p95_ms": 418.115,
+      "payload_bytes": 3288308
+    },
+    "wide_trace_replay": {
+      "p50_ms": 129.781,
+      "p95_ms": 129.999,
+      "payload_bytes": 2408127
+    }
+  },
+  "environment": {
+    "cpu_count": 8,
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.11.15"
+  },
+  "fixture": {
+    "database_bytes": 33816576,
+    "generation_seconds": 2.143,
+    "generation_traces_per_second": 4666.3,
+    "span_count": 52495,
+    "trace_count": 10000,
+    "wide_trace_spans": 2500
+  },
+  "ingest": {
+    "first_ingest_ms": 50.144,
+    "first_ingest_parsed": true,
+    "incremental_ingest_ms": 2.02,
+    "incremental_ingest_parsed": false
+  },
+  "peak_rss_mib": 133.19,
+  "profile": "large",
+  "static_export": {
+    "bytes": 85168969,
+    "diff_pair_count": 10,
+    "out_dir": "/private/tmp/cairn-bench-large/static-export",
+    "payload_count": 5091,
+    "peak_rss_mib": 133.19,
+    "seconds": 35.61,
+    "sources": 4,
+    "total_trace_count": 10001,
+    "trace_count": 1000
+  }
+}

@@ -10,6 +10,7 @@ export const CHART_SERIES = [
   "var(--s-error)",
   "var(--s-good)",
 ] as const;
+export const MAX_VISIBLE_SERIES = 7;
 
 export function seriesColor(index: number): string {
   const i = index % CHART_SERIES.length;
@@ -30,4 +31,21 @@ export const chartColors = {
 
 export function defaultMargin(top = 8, right = 8, bottom = 24, left = 32) {
   return { top, right, bottom, left };
+}
+
+export function aggregateOtherSeries(
+  data: ReadonlyArray<Record<string, number | string>>,
+  keys: ReadonlyArray<string>,
+  maximum = MAX_VISIBLE_SERIES,
+): { data: Array<Record<string, number | string>>; keys: string[] } {
+  if (keys.length <= maximum) return { data: data.map((row) => ({ ...row })), keys: [...keys] };
+  const retained = keys.slice(0, Math.max(1, maximum - 1));
+  const remainder = keys.slice(retained.length);
+  return {
+    keys: [...retained, "other"],
+    data: data.map((row) => ({
+      ...row,
+      other: remainder.reduce((sum, key) => sum + Number(row[key] ?? 0), 0),
+    })),
+  };
 }

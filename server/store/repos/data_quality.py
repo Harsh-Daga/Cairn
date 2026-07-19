@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 from server.models.data_quality import DataQuality
+from server.store.pagination import bounded_page
 from server.store.repos._crud import delete_where, fetch_all, fetch_one, insert, update, upsert
 
 _TABLE = "data_quality"
@@ -33,6 +34,7 @@ class DataQualityRepo:
         limit: int = 100,
         offset: int = 0,
     ) -> list[DataQuality]:
+        limit, offset = bounded_page(limit, offset)
         return fetch_all(
             conn,
             f"SELECT * FROM {_TABLE} ORDER BY computed_at DESC LIMIT ? OFFSET ?",

@@ -14,6 +14,10 @@ _SKIP_LINE_TYPES = frozenset(
         "permission-mode",
         "queue-operation",
         "last-prompt",
+        # Metadata / UI bookkeeping — not trajectory events.
+        "mode",
+        "ai-title",
+        "pr-link",
     }
 )
 

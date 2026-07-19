@@ -52,10 +52,15 @@ Preference order:
 If none exist, bootstrap uv (no sudo):
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh
+sh /tmp/uv-install.sh && rm -f /tmp/uv-install.sh
 export PATH="$HOME/.local/bin:$PATH"
 uv tool install cairn-workspace
 ```
+
+For a reviewed preinstalled uv, set `INSTALL_UV=0` when using Cairn's installer. Respect
+`UV_INDEX_URL`, `PIP_INDEX_URL`, and proxy variables. On an offline host, use a warm uv cache with
+`--offline` or install a previously verified wheel. Never disable TLS verification.
 
 Ensure `cairn` is on PATH:
 
@@ -125,4 +130,11 @@ Commands to remember: cairn | cairn stop | cairn insights
 | Python < 3.11 | Install Python 3.11+; recreate venv |
 | No logs / 0 adapters yet | Run an agent session, then `cairn sync` again |
 | Browser won't open (WSL) | Use `--no-open` and open URL manually |
-| PyPI blocked | Use `UV_INDEX` mirror or offline wheel via `pip install ./dist/*.whl` |
+| PyPI blocked | Use `UV_INDEX_URL` mirror or offline wheel via `pip install ./dist/*.whl` |
+
+## Uninstall and retained data
+
+Use `uv tool uninstall cairn-workspace`, `pipx uninstall cairn-workspace`, or
+`python -m pip uninstall cairn-workspace` according to the install method. This removes the tool,
+not project `.cairn/` databases/exports/backups or user config/state; retain or delete those only
+with the user's explicit approval.

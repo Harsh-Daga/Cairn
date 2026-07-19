@@ -1,0 +1,53 @@
+name: Performance trends
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  UV_VERSION: "0.11.12"
+  UV_FROZEN: "1"
+
+jobs:
+  large-profile:
+    name: Large deterministic profile
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: uv sync --frozen --extra dev
+      - run: npm ci
+        working-directory: ui
+      - run: uv run python scripts/build_ui.py build
+      - run: uv run python scripts/check_bundle_size.py
+      - name: Record large backend and static-export trend
+        run: >-
+          uv run python scripts/benchmark.py run
+          --profile large
+          --workspace test-results/benchmark-workspace
+          --samples 7
+          --include-static
+          --output-json test-results/performance.json
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: performance-${{ runner.os }}-${{ github.run_id }}
+          path: test-results/performance.json
+          if-no-files-found: error
+          retention-days: 30

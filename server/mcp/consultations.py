@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from server.util.ids import new_ulid
+from server.util.private_files import append_private_text
 
 if TYPE_CHECKING:
     from server.mcp.tools import ToolsContext
@@ -39,17 +40,13 @@ def record_consultation(ctx: ToolsContext, tool_name: str) -> None:
     }
     path = ctx.workspace_root / _SIDECAR
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(event, separators=(",", ":")) + "\n")
+        append_private_text(path, json.dumps(event, separators=(",", ":")) + "\n")
     except OSError:
         # Observability must never make an MCP tool unavailable.
         return
 
 
-def import_consultations(
-    conn: sqlite3.Connection, workspace_root: Path, workspace_id: str
-) -> int:
+def import_consultations(conn: sqlite3.Connection, workspace_root: Path, workspace_id: str) -> int:
     """Idempotently import sidecar events through Cairn's normal writer path."""
     path = workspace_root / _SIDECAR
     if not path.is_file():
