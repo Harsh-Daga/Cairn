@@ -12,6 +12,17 @@ on:
     - cron: "0 6 * * 1"
   workflow_dispatch:
 
+concurrency:
+  group: install-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UV_VERSION: "0.11.12"
+  UV_FROZEN: "1"
+
 jobs:
   install-unix:
     strategy:
@@ -20,22 +31,27 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
         run: uv python install 3.12
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
 
       - name: Build wheel locally
         shell: bash
         run: |
+          uv sync --frozen --extra dev
           uv run python scripts/build_ui.py
           uv build
           mkdir -p dist-local
@@ -48,7 +64,7 @@ jobs:
           uv tool install --force "cairn-workspace@file://${WHEEL}"
           export PATH="$(uv tool dir --bin):$PATH"
           cairn --version
-          cairn doctor --json || true
+          cairn doctor --json
 
       - name: Health check after ui start
         shell: bash
@@ -62,22 +78,27 @@ jobs:
   install-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
         run: uv python install 3.12
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
 
       - name: Build wheel locally
         shell: bash
         run: |
+          uv sync --frozen --extra dev
           uv run python scripts/build_ui.py
           uv build
           mkdir -p dist-local
@@ -91,8 +112,6 @@ jobs:
           $env:Path = "$(uv tool dir --bin);$env:Path"
           cairn --version
           cairn doctor --json
-          if ($LASTEXITCODE -ne 0) { Write-Warning "doctor reported issues (non-fatal in CI)" }
-          $LASTEXITCODE = 0
 
       - name: Health check after ui start
         shell: pwsh
