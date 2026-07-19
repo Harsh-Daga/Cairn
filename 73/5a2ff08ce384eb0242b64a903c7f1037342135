@@ -1,0 +1,49 @@
+tests/test_query_filters.py
+  s_1b322965a76443::t_6544578c3f361b 1-62
+server/models/time_range.py
+  s_1b322965a76443::t_4e5afe7b9c03be 1-21
+server/store/benchmark.py
+  s_1b322965a76443::t_5b14bf3ce526a1 1-267
+server/store/db.py
+  s_1b322965a76443::t_746c9fefa483cb 13,24,30,83
+server/store/migrate.py
+  s_1b322965a76443::t_d7180ce3be9b56 9-10,24-30,57,65-80,82,84-132,140-147,149-160
+server/store/migrations/0007_query_indexes_and_fts_retirement.sql
+  s_1b322965a76443::t_7824a1a61f457e 1-26
+server/store/repos/annotations.py
+  s_1b322965a76443::t_c5f1d02be32f74 8,48
+server/store/repos/data_quality.py
+  s_1b322965a76443::t_2b2c4b056f2f5c 8,37
+server/store/repos/diagnostics.py
+  s_1b322965a76443::t_3dcd08509eb030 8,34
+server/store/repos/evidence.py
+  s_1b322965a76443::t_b9038a7ad41c48 8,38,48
+server/store/repos/experiments.py
+  s_1b322965a76443::t_aa03a365a835f2 6,9,51,66-87
+server/store/repos/fingerprints.py
+  s_1b322965a76443::t_81216a95992a6c 8,40,87
+server/store/repos/outcomes.py
+  s_1b322965a76443::t_28b8f8d596c46c 8,32
+server/store/repos/rollup.py
+  s_1b322965a76443::t_fc58f2a726a23b 8,49-50,53-69
+tests/fixtures/db/pre_1_2_seed.sql
+  s_1b322965a76443::t_f2b36e35119106 1-20
+tests/test_performance_fixtures.py
+  s_1b322965a76443::t_d2ce698784af05 1-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "735a2ff08ce384eb0242b64a903c7f1037342135",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
