@@ -1,0 +1,33 @@
+docs/configuration-reference.md
+  s_2f3774c9a58583::t_54e1496f39db7b 1-53
+server/config.py
+  s_1b322965a76443::t_2f713fc4603799 1,5,7,9,11,14-17,20,34-40
+server/util/user_config.py
+  s_1b322965a76443::t_03f1569d4d8c88 1,9-12,15-17,26,30-31,35-36,39-42,54,56-59
+tests/test_configuration.py
+  s_1b322965a76443::t_59102eac9f7e6f 1-281
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "643cbb082af2f394c0714299eab273009203374c",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
