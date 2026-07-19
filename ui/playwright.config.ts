@@ -9,6 +9,15 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: "list",
+  webServer: process.env.CAIRN_E2E_BASE_URL
+    ? undefined
+    : {
+        command:
+          "cd .. && uv run python scripts/build_ui.py build && uv run python scripts/e2e_server.py",
+        url: `${baseURL}/api/health`,
+        reuseExistingServer: false,
+        timeout: 120_000,
+      },
   use: {
     baseURL,
     trace: "on-first-retry",
@@ -17,6 +26,16 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "firefox",
+      grep: /@cross-browser/,
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      grep: /@cross-browser/,
+      use: { ...devices["Desktop Safari"] },
     },
   ],
 });
