@@ -11,6 +11,7 @@ from server.models._row import (
     dump_json,
     parse_json_dict,
     row_float,
+    row_int,
     row_required_text,
     row_text,
 )
@@ -101,22 +102,46 @@ class InsightState(BaseModel):
     state: InsightLifecycle = "new"
     changed_at: str
     changed_by: str | None = None
+    snoozed_until: str | None = None
+    snooze_savings_baseline: float | None = None
+    see_count: int = 1
 
     INSERT_FIELDS: ClassVar[tuple[str, ...]] = (
         "insight_id",
         "state",
         "changed_at",
         "changed_by",
+        "snoozed_until",
+        "snooze_savings_baseline",
+        "see_count",
     )
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> InsightState:
+        keys = set(row.keys())
         return cls(
             insight_id=row_required_text(row, "insight_id"),
             state=row_required_text(row, "state"),  # type: ignore[arg-type]
             changed_at=row_required_text(row, "changed_at"),
             changed_by=row_text(row, "changed_by"),
+            snoozed_until=row_text(row, "snoozed_until") if "snoozed_until" in keys else None,
+            snooze_savings_baseline=(
+                row_float(row, "snooze_savings_baseline")
+                if "snooze_savings_baseline" in keys
+                else None
+            ),
+            see_count=(
+                int(row_int(row, "see_count", default=1) or 1) if "see_count" in keys else 1
+            ),
         )
 
-    def to_row(self) -> tuple[str, str, str, str | None]:
-        return (self.insight_id, self.state, self.changed_at, self.changed_by)
+    def to_row(self) -> tuple[object, ...]:
+        return (
+            self.insight_id,
+            self.state,
+            self.changed_at,
+            self.changed_by,
+            self.snoozed_until,
+            self.snooze_savings_baseline,
+            self.see_count,
+        )

@@ -50,24 +50,39 @@ def draft_from_legacy(rule_id: str, legacy: Any, *, detector_version: int = 1) -
         trace_ids.append(str(run_id))
     if run_ids := evidence.get("run_ids"):
         trace_ids.extend(str(r) for r in run_ids)
+    span_ids: list[str] = []
+    legacy_spans = getattr(legacy, "span_ids", None) or evidence.get("span_ids") or []
+    if isinstance(legacy_spans, list):
+        span_ids = [str(span) for span in legacy_spans if span]
     savings = getattr(legacy, "savings_estimate", None)
     fix_payload = getattr(legacy, "fix", None)
+    subject_key = getattr(legacy, "subject_key", None) or f"detector:{rule_id}"
+    family = getattr(legacy, "family", None)
     contract = {
         "savings_unavailable_reason": getattr(legacy, "savings_unavailable_reason", None),
         "fix": fix_payload.as_dict() if fix_payload is not None else None,
         "diagnostic": bool(getattr(legacy, "diagnostic", False)),
+        "family": family,
+        "estimate_kind": getattr(legacy, "estimate_kind", None)
+        or ("unavailable" if savings is None else "conservative"),
+        "confidence": getattr(legacy, "confidence", None),
+        "coverage": getattr(legacy, "coverage", None),
+        "subject_key": subject_key,
+        "alias_ids": list(getattr(legacy, "alias_ids", None) or []),
     }
     ci = None
     if savings is not None and savings > 0:
         ci = {"low": round(savings * 0.5, 2), "high": round(savings * 1.5, 2)}
+    fingerprint = str(subject_key) if family else f"{rule_id}"
     return InsightDraft(
-        fingerprint=f"{rule_id}",
+        fingerprint=fingerprint,
         detector=rule_id,
         detector_version=detector_version,
         severity=cast(InsightSeverity, getattr(legacy, "severity", "info")),
         title=str(getattr(legacy, "title", "")),
         body=str(getattr(legacy, "body", "")),
         trace_ids=trace_ids,
+        span_ids=span_ids or None,
         metrics={**dict(evidence), "insight_contract": contract},
         savings_estimate=savings,
         savings_ci=ci,

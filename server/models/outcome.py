@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -23,9 +23,7 @@ def _float_dict(values: dict[str, object] | None) -> dict[str, float] | None:
     if values is None:
         return None
     return {
-        str(key): float(value)
-        for key, value in values.items()
-        if isinstance(value, (int, float))
+        str(key): float(value) for key, value in values.items() if isinstance(value, (int, float))
     }
 
 
@@ -50,7 +48,7 @@ class Outcome(BaseModel):
     fixup_within_window: bool = False
     outcome_label: str | None = None
     label_source: str | None = None
-    human_label: str | None = None
+    human_label: Literal["up", "down"] | None = None
     human_note: str | None = None
     human_labeled_at: str | None = None
     captured_at: str | None = None
@@ -86,6 +84,12 @@ class Outcome(BaseModel):
         weights_raw = row["quality_weights_json"]
         components = parse_json_dict(components_raw) if components_raw is not None else None
         weights = parse_json_dict(weights_raw) if weights_raw is not None else None
+        human_label_raw = row_text(row, "human_label")
+        human_label: Literal["up", "down"] | None = None
+        if human_label_raw == "up":
+            human_label = "up"
+        elif human_label_raw == "down":
+            human_label = "down"
         return cls(
             trace_id=row_required_text(row, "trace_id"),
             commit_sha=row_text(row, "commit_sha"),
@@ -103,7 +107,7 @@ class Outcome(BaseModel):
             fixup_within_window=row_bool_int(row, "fixup_within_window"),
             outcome_label=row_text(row, "outcome_label"),
             label_source=row_text(row, "label_source"),
-            human_label=row_text(row, "human_label"),
+            human_label=human_label,
             human_note=row_text(row, "human_note"),
             human_labeled_at=row_text(row, "human_labeled_at"),
             captured_at=row_text(row, "captured_at"),

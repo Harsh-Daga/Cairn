@@ -9,6 +9,9 @@ from server.models.span import Span
 from server.store.repos.spans import SpanRepo
 from server.store.repos.traces import TraceRepo
 
+MAX_DIFF_SPANS_PER_SIDE = 2_000
+MAX_LCS_CELLS = 1_000_000
+
 
 @dataclass(frozen=True)
 class _AlignedTurn:
@@ -43,6 +46,19 @@ def align_turns_lcs(a_spans: list[Span], b_spans: list[Span]) -> list[_AlignedTu
     """Align two turn sequences using LCS over (kind, name)."""
     n = len(a_spans)
     m = len(b_spans)
+    if n * m > MAX_LCS_CELLS:
+        bounded_out: list[_AlignedTurn] = []
+        for index in range(max(n, m)):
+            span_a = a_spans[index] if index < n else None
+            span_b = b_spans[index] if index < m else None
+            if span_a is not None and span_b is not None and _turn_key(span_a) == _turn_key(span_b):
+                bounded_out.append(_AlignedTurn(op="match", a=span_a, b=span_b))
+            else:
+                if span_a is not None:
+                    bounded_out.append(_AlignedTurn(op="delete", a=span_a, b=None))
+                if span_b is not None:
+                    bounded_out.append(_AlignedTurn(op="insert", a=None, b=span_b))
+        return bounded_out
     a_keys = [_turn_key(span) for span in a_spans]
     b_keys = [_turn_key(span) for span in b_spans]
     dp = [[0] * (m + 1) for _ in range(n + 1)]
@@ -88,7 +104,10 @@ def build_trace_diff_payload(
         return None
     spans_a = SpanRepo.list_by_trace(conn, trace_id_a)
     spans_b = SpanRepo.list_by_trace(conn, trace_id_b)
-    aligned = align_turns_lcs(spans_a, spans_b)
+    aligned = align_turns_lcs(
+        spans_a[:MAX_DIFF_SPANS_PER_SIDE],
+        spans_b[:MAX_DIFF_SPANS_PER_SIDE],
+    )
 
     turns: list[dict[str, object]] = []
     for idx, item in enumerate(aligned, start=1):

@@ -6,10 +6,17 @@ import os
 import sqlite3
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
-from server.demo.seed import DEMO_MULTI_AGENT_TRACE_INDEX, seed_demo_workspace
+from server.demo.scenarios import (
+    DEMO_FAILURE_TRACE_INDEX,
+    DEMO_MULTI_AGENT_TRACE_INDEX,
+    DEMO_TAIL_TRACE_INDEX,
+    trace_scenarios,
+)
+from server.demo.seed import seed_demo_workspace
 
 
 def _connect(db_path: Path) -> sqlite3.Connection:
@@ -69,13 +76,27 @@ def test_seed_demo_workspace_is_deterministic(tmp_path: Path) -> None:
         ).fetchone()
         assert verdict is not None
         assert verdict["status"] == "verdict"
-        assert verdict["verdict"] == "win"
+        assert verdict["verdict"] == "improved"
 
         max_cost = conn.execute("SELECT MAX(cost) AS c FROM traces").fetchone()
         assert max_cost is not None
         assert float(max_cost["c"]) > 10.0
     finally:
         conn.close()
+
+
+def test_trace_scenario_stage_is_pure_and_pins_special_journeys() -> None:
+    anchor = datetime(2026, 7, 18, 12, tzinfo=UTC)
+
+    first = trace_scenarios(anchor)
+    second = trace_scenarios(anchor)
+
+    assert first == second
+    assert len(first) == 120
+    assert first[DEMO_FAILURE_TRACE_INDEX].status == "error"
+    assert first[DEMO_MULTI_AGENT_TRACE_INDEX].index == DEMO_MULTI_AGENT_TRACE_INDEX
+    assert first[DEMO_TAIL_TRACE_INDEX].cost == 14.75
+    assert first[DEMO_TAIL_TRACE_INDEX].waste_tokens == 3100
 
 
 def test_cli_demo_seed_uses_home_workspace(tmp_path: Path) -> None:

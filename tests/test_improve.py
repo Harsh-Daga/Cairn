@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import random
 import sqlite3
 from pathlib import Path
@@ -133,6 +134,9 @@ def test_apply_and_revert_preserves_outside_block(tmp_path: Path) -> None:
     applied = target.read_text(encoding="utf-8")
     assert "cairn:begin sha256=" in applied
     assert backup.read_text(encoding="utf-8") == "# Human\n\nKeep this line.\n"
+    if os.name != "nt":
+        assert backup.parent.stat().st_mode & 0o777 == 0o700
+        assert backup.stat().st_mode & 0o777 == 0o600
 
     target.write_text(applied.replace("# Human", "# Human edited") + "Outside tail.\n")
     apply_entries(

@@ -6,9 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-RuleEffectVerdict = Literal[
-    "improved", "regressed", "no_effect", "inconclusive", "confounded"
-]
+RuleEffectVerdict = Literal["improved", "regressed", "no_effect", "inconclusive", "confounded"]
 
 
 class RuleEffect(BaseModel):

@@ -5,7 +5,9 @@ from __future__ import annotations
 import sqlite3
 
 from server.improve.context import build_context
+from server.improve.detectors._types import Insight as DetectorInsight
 from server.improve.detectors._types import validate_insight_contract
+from server.improve.detectors.families import consolidate_family_insights
 from server.improve.detectors.rules import ALL_RULES
 from server.improve.evidence import draft_from_legacy
 from server.improve.lifecycle import mark_stale_fixed, upsert_insight
@@ -18,15 +20,29 @@ def evaluate(
     workspace_id: str,
     days: int = 14,
 ) -> list[Insight]:
-    """Evaluate all detector rules and upsert insights."""
+    """Evaluate detector rules, consolidate ADR-04 families, and upsert insights."""
     ctx = build_context(conn, workspace_id=workspace_id, days=days)
-    drafts = []
+    producer_results: list[DetectorInsight] = []
     for rule in ALL_RULES:
         result = rule(ctx)
         if result is not None:
             validate_insight_contract(result)
-            drafts.append(draft_from_legacy(result.id, result))
+            producer_results.append(result)
 
+    family_results = consolidate_family_insights(ctx)
+    for result in family_results:
+        validate_insight_contract(result)
+
+    # When a family card exists, drop its alias producers from the board upsert set.
+    suppressed_aliases = {alias for family in family_results for alias in family.alias_ids}
+
+    board: list[DetectorInsight] = list(family_results)
+    for producer in producer_results:
+        if producer.id in suppressed_aliases:
+            continue
+        board.append(producer)
+
+    drafts = [draft_from_legacy(result.id, result) for result in board]
     insights: list[Insight] = []
     active_fps = {d.fingerprint for d in drafts}
     for draft in drafts:

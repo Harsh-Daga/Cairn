@@ -13,6 +13,7 @@ from server.improve.reflector import (
     Proposal,
     ReflectorError,
     parse_proposals,
+    preview_backend,
     reflect,
     reflect_if_available,
     resolve_backend,
@@ -225,7 +226,7 @@ def test_reflect_raises_when_backend_fails() -> None:
         ),
         pytest.raises(ReflectorError, match="offline"),
     ):
-        reflect("", pack, "provider:openai")
+        reflect("", pack, "provider:openai", allow_network=True)
 
 
 def test_run_backend_openai_provider(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -236,7 +237,7 @@ def test_run_backend_openai_provider(monkeypatch: pytest.MonkeyPatch) -> None:
         request=httpx.Request("POST", "https://api.openai.com/v1/chat/completions"),
     )
     with patch("server.improve.reflector.httpx.post", return_value=response) as post:
-        result = run_backend("provider:openai", "prompt")
+        result = run_backend("provider:openai", "prompt", allow_network=True)
     assert result.ok is True
     assert result.text == '{"proposals":[]}'
     post.assert_called_once()
@@ -262,6 +263,23 @@ def test_reflect_parses_provider_response(monkeypatch: pytest.MonkeyPatch) -> No
     )
     with patch("server.improve.reflector.httpx.post", return_value=response):
         pack = _sample_pack()
-        proposals = reflect("", pack, "provider:openai")
+        proposals = reflect("", pack, "provider:openai", allow_network=True)
     assert len(proposals) == 1
     assert proposals[0].entry_id == "r1"
+
+
+def test_provider_requires_explicit_consent_and_preview_has_no_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-private-key")
+    denied = run_backend("provider:openai", "private evidence")
+    preview = preview_backend("provider:openai", "private evidence")
+
+    assert denied.ok is False
+    assert denied.error == "explicit provider consent required"
+    assert preview.destination_origin == "https://api.openai.com"
+    assert preview.content == "private evidence"
+    assert preview.content_chars == len("private evidence")
+    assert preview.remote is True
+    assert "sk-private-key" not in repr(preview)
+    assert len(preview.consent_token) == 64
