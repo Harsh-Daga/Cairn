@@ -19,7 +19,15 @@ from server.util.runtime_state import (
 
 def test_stop_trusts_pid_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
-    write_server_record(pid=12345, host="127.0.0.1", port=59993, workspace=tmp_path)
+    record_path = write_server_record(
+        pid=12345,
+        host="127.0.0.1",
+        port=59993,
+        workspace=tmp_path,
+    )
+    if os.name != "nt":
+        assert record_path.parent.stat().st_mode & 0o777 == 0o700
+        assert record_path.stat().st_mode & 0o777 == 0o600
 
     killed: list[tuple[int, int]] = []
     alive = {12345: True}
