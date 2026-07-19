@@ -1,0 +1,22 @@
+server/cli_commands/regression.py
+  s_2f3774c9a58583::t_f13cbd0368404c 23
+server/ingest/adapters/opencode_db.py
+  s_2f3774c9a58583::t_3ba86e60b4da27 500
+  s_2f3774c9a58583::t_d12a76e97d5599 378-383
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "cbbc994ef3394adf120a734fa8bc92b72d8b896c",
+  "prompts": {},
+  "sessions": {
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
