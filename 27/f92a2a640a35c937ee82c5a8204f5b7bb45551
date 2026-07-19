@@ -1,0 +1,19 @@
+examples/otlp-ingest/sample_trace.json
+  s_2f3774c9a58583::t_9093660c695cd5 1-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "27f92a2a640a35c937ee82c5a8204f5b7bb45551",
+  "prompts": {},
+  "sessions": {
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
