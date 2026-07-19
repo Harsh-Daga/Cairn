@@ -10,6 +10,7 @@ from pathlib import Path
 from server.export.scrub import scrub_text
 from server.models.rule_effect import RuleEffect, RuleEffectExport
 from server.store.repos.experiments import ExperimentRepo
+from server.util.private_files import write_private_text
 
 _SAFE_AGENT = re.compile(r"^[a-z0-9_+.-]{1,80}$")
 _EXPORTABLE_VERDICTS = {
@@ -21,12 +22,10 @@ _EXPORTABLE_VERDICTS = {
 }
 
 
-def build_rule_effect_export(
-    conn: sqlite3.Connection, workspace_root: Path
-) -> RuleEffectExport:
+def build_rule_effect_export(conn: sqlite3.Connection, workspace_root: Path) -> RuleEffectExport:
     """Build an allowlisted payload; incomplete legacy experiments are omitted."""
     effects: list[RuleEffect] = []
-    for experiment in ExperimentRepo.list_all(conn, limit=10_000):
+    for experiment in ExperimentRepo.iter_all(conn):
         if (
             experiment.status != "verdict"
             or experiment.effect_estimate is None
@@ -68,7 +67,6 @@ def export_rule_effects(
         stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         output = workspace_root / ".cairn" / "exports" / f"rule-effects-{stamp}.json"
     destination = output.expanduser().resolve()
-    destination.parent.mkdir(parents=True, exist_ok=True)
     payload = build_rule_effect_export(conn, workspace_root)
-    destination.write_text(payload.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    write_private_text(destination, payload.model_dump_json(indent=2) + "\n")
     return destination

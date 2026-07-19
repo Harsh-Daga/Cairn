@@ -115,9 +115,7 @@ def build_share_card_data(
         failure_pattern=failure_pattern,
         archetype=_archetype(
             read_write_ratio=float(fingerprint["read_write_ratio"] or 0) if fingerprint else 0,
-            exploration_ratio=(
-                float(fingerprint["exploration_ratio"] or 0) if fingerprint else 0
-            ),
+            exploration_ratio=(float(fingerprint["exploration_ratio"] or 0) if fingerprint else 0),
             retry_rate=float(fingerprint["retry_rate"] or 0) if fingerprint else 0,
             tool_entropy=float(fingerprint["tool_entropy"] or 0) if fingerprint else 0,
         ),
@@ -162,10 +160,7 @@ def _render_svg(data: ShareCardData) -> str:
         '<circle cx="160" cy="650" r="230" fill="#4de2c5" opacity=".10"/>',
         '<text x="70" y="75" class="label">CAIRN · AGENT WRAPPED</text>',
         repo,
-        (
-            '<text x="70" y="145" class="body">'
-            "Your local coding-agent week, measured.</text>"
-        ),
+        ('<text x="70" y="145" class="body">Your local coding-agent week, measured.</text>'),
         '<text x="70" y="235" class="label">TOTAL SPEND</text>',
         f'<text x="70" y="300" class="value">${data.total_spend_usd:,.2f}</text>',
         '<text x="430" y="235" class="label">EST. WASTE</text>',

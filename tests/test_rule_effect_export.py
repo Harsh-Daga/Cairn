@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -94,6 +95,9 @@ def test_rule_effect_export_is_strictly_scrubbed(tmp_path: Path) -> None:
     assert effect["effect_metric"] == "waste_rate"
     for secret in ("secret-repo", "/Users/alice", "private.py", "print(", "internal.example"):
         assert secret not in serialized
+    if os.name != "nt":
+        assert output.parent.stat().st_mode & 0o777 == 0o700
+        assert output.stat().st_mode & 0o777 == 0o600
     db.close()
 
 
@@ -131,6 +135,42 @@ def test_generic_export_scrubber_removes_sensitive_fields(tmp_path: Path) -> Non
         "cost": 1.25,
         "note": "See <path> at <url>",
     }
+
+
+def test_generic_export_scrubber_removes_common_credentials(tmp_path: Path) -> None:
+    root = tmp_path / "private-project"
+    root.mkdir()
+    scrubbed = scrub_export_value(
+        {
+            "note": (
+                "Authorization: Bearer private-token-123456 "
+                "api_key=sk-super-secret-value "
+                "AWS=AKIA1234567890ABCDEF"
+            )
+        },
+        root,
+    )
+    serialized = str(scrubbed)
+    for value in ("private-token-123456", "sk-super-secret-value", "AKIA1234567890ABCDEF"):
+        assert value not in serialized
+
+
+def test_generic_export_scrubber_preserves_safe_relational_ids_only(tmp_path: Path) -> None:
+    root = tmp_path / "private-project"
+    root.mkdir()
+    scrubbed = scrub_export_value(
+        {
+            "trace_id": "ca435ab4-d3a6-57bc-9453-0a88236c2030",
+            "span_id": "SPAN_123",
+            "parent_span_id": None,
+            "event_id": "sk-super-secret-value",
+        },
+        root,
+    )
+    assert scrubbed["trace_id"] == "ca435ab4-d3a6-57bc-9453-0a88236c2030"
+    assert scrubbed["span_id"] == "SPAN_123"
+    assert scrubbed["parent_span_id"] is None
+    assert scrubbed["event_id"] == "<redacted credential>"
 
 
 def test_optimize_export_effects_cli_writes_only_local_file(tmp_path: Path) -> None:
