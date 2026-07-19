@@ -34,9 +34,7 @@ def assess_content_dedup(
             (workspace_id,),
         ).fetchall()
     else:
-        rows = conn.execute(
-            "SELECT text_inline, text_hash, args_hash FROM spans"
-        ).fetchall()
+        rows = conn.execute("SELECT text_inline, text_hash, args_hash FROM spans").fetchall()
 
     span_count = len(rows)
     text_counter: Counter[str] = Counter()

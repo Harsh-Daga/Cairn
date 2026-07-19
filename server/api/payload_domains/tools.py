@@ -286,9 +286,7 @@ def _tools_limitations(*, sampled: int, total: int) -> list[str]:
         "allocated per tool unless a declared tool inventory exists.",
         "Estimated cost share is token-proportional among tool_call spans.",
     ]
-    _append_truncation(
-        limitations, truncation_limitation("Tool analytics", sampled, total)
-    )
+    _append_truncation(limitations, truncation_limitation("Tool analytics", sampled, total))
     return limitations
 
 

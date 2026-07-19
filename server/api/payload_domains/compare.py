@@ -178,9 +178,7 @@ def build_compare_analytics(
         "uses revert/fixup flags and reverted/partial labels.",
         *confound_warnings,
     ]
-    _append_truncation(
-        limitations, truncation_limitation("Compare sessions", len(rows), row_total)
-    )
+    _append_truncation(limitations, truncation_limitation("Compare sessions", len(rows), row_total))
     return CompareAnalyticsResponse(
         days=days,
         resolved_range=_resolved(days=days, since=since, end=end, time_range=time_range),

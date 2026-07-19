@@ -62,7 +62,11 @@ class OpenCodeAdapter(FileAdapterBase):
 
     def parse_path(self, path: Path) -> ParsedSession | None:
         if path.suffix == ".opencode-session" or path.name.endswith(".opencode-session"):
-            parsed = parse_opencode_session_stub(path, repo_root=self.workspace_root)
-            return _wrap_parse(self.legacy_source, parsed)
-        parsed = parse_opencode_jsonl(path, repo_root=self.workspace_root)
-        return _wrap_parse(self.legacy_source, parsed)
+            return _wrap_parse(
+                self.legacy_source,
+                parse_opencode_session_stub(path, repo_root=self.workspace_root),
+            )
+        return _wrap_parse(
+            self.legacy_source,
+            parse_opencode_jsonl(path, repo_root=self.workspace_root),
+        )

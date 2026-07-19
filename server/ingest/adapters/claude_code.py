@@ -249,7 +249,8 @@ class _ParserState:
             if isinstance(block, dict) and block.get("type") == "tool_use"
         ]
 
-        raw_usage = message.get("usage") if isinstance(message.get("usage"), dict) else {}
+        usage_obj = message.get("usage")
+        raw_usage: dict[str, Any] = usage_obj if isinstance(usage_obj, dict) else {}
         observed = estimate_claude_turn(
             raw_usage,
             assistant_text=text,
@@ -468,9 +469,7 @@ def _usage_observation_quality(raw_usage: dict[str, Any]) -> int:
     """Rank usage rows so inflated exact duplicates lose to cache-backed ones."""
     raw_input = int(raw_usage.get("input_tokens") or raw_usage.get("inputTokens") or 0)
     cache_read = int(
-        raw_usage.get("cache_read_input_tokens")
-        or raw_usage.get("cacheReadInputTokens")
-        or 0
+        raw_usage.get("cache_read_input_tokens") or raw_usage.get("cacheReadInputTokens") or 0
     )
     cache_creation = int(
         raw_usage.get("cache_creation_input_tokens")
@@ -488,9 +487,7 @@ def _subtract_usage(total: ObservedUsage, other: ObservedUsage) -> None:
     total.input_tokens = max(0, total.input_tokens - other.input_tokens)
     total.output_tokens = max(0, total.output_tokens - other.output_tokens)
     total.cache_read_tokens = max(0, total.cache_read_tokens - other.cache_read_tokens)
-    total.cache_creation_tokens = max(
-        0, total.cache_creation_tokens - other.cache_creation_tokens
-    )
+    total.cache_creation_tokens = max(0, total.cache_creation_tokens - other.cache_creation_tokens)
     total.reasoning_tokens = max(0, total.reasoning_tokens - other.reasoning_tokens)
     if total.cost is not None and other.cost is not None:
         total.cost = max(0.0, total.cost - other.cost)

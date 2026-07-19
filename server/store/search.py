@@ -19,9 +19,7 @@ class SearchRows:
 
 def like_pattern(value: str) -> str:
     """Escape LIKE metacharacters so user input matches literally."""
-    escaped = (
-        value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    )
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     return f"%{escaped}%"
 
 

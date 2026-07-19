@@ -229,9 +229,7 @@ def _files_limitations(*, sampled: int, total: int, file_cap: int) -> list[str]:
         "Estimated cost share is token-proportional among path-bearing spans.",
         f"Hotspot list shows at most {file_cap} paths after aggregation (sorted by re-read/edit).",
     ]
-    _append_truncation(
-        limitations, truncation_limitation("File analytics", sampled, total)
-    )
+    _append_truncation(limitations, truncation_limitation("File analytics", sampled, total))
     return limitations
 
 

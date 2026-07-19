@@ -6,22 +6,27 @@ import statistics
 import sys
 import threading
 import time
+from types import ModuleType
 from typing import Any
 
 from fastapi.testclient import TestClient
 
 from server.api.sse import EventBus
 
+_resource_mod: ModuleType | None
 try:
-    import resource
+    import resource as _resource_imported
+
+    _resource_mod = _resource_imported
 except ImportError:  # pragma: no cover
-    resource = None  # type: ignore[assignment]
+    _resource_mod = None
 
 
 def _rss_bytes() -> int | None:
-    if resource is None:
+    mod = _resource_mod
+    if mod is None:
         return None
-    raw = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    raw = float(mod.getrusage(mod.RUSAGE_SELF).ru_maxrss)
     # macOS: bytes; Linux: KiB
     return int(raw) if sys.platform == "darwin" else int(raw * 1024)
 

@@ -418,8 +418,10 @@ def _function_args(payload: dict[str, Any]) -> dict[str, Any]:
     if isinstance(raw, dict):
         return raw
     if isinstance(raw, str):
-        if isinstance(name, str) and name == "apply_patch" and (
-            raw.lstrip().startswith("***") or "*** Begin Patch" in raw[:80]
+        if (
+            isinstance(name, str)
+            and name == "apply_patch"
+            and (raw.lstrip().startswith("***") or "*** Begin Patch" in raw[:80])
         ):
             return {"patch": raw, "input": raw}
         try:

@@ -227,9 +227,7 @@ class IngestPipeline:
         self.watch_paths()
         if force:
             # Rebuild coverage from this pass only (single wipe, then re-record).
-            self._db.write(
-                lambda conn: reset_parse_health(conn, workspace_id=self.workspace_id)
-            )
+            self._db.write(lambda conn: reset_parse_health(conn, workspace_id=self.workspace_id))
         report = PipelineReport()
         requested_source = source.replace("-", "_") if source else None
         # Snapshot paths — background refresh/watch_paths may mutate `_path_adapter`.

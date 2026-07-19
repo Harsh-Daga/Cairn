@@ -419,8 +419,10 @@ class _ParserState:
             return
         if not isinstance(call_id, str) or not call_id:
             call_id = f"opencode:{self._seq_hint + 1}:{name}"
-        state = part.get("state") if isinstance(part.get("state"), dict) else {}
-        tool_input = state.get("input") if isinstance(state.get("input"), dict) else {}
+        state_obj = part.get("state")
+        state: dict[str, Any] = state_obj if isinstance(state_obj, dict) else {}
+        input_obj = state.get("input")
+        tool_input: dict[str, Any] = input_obj if isinstance(input_obj, dict) else {}
         output = state.get("output")
         status = state.get("status")
         seq = self._seq_hint + 1
@@ -473,8 +475,7 @@ class _ParserState:
                     "type": "tool_result",
                     "tool_use_id": call_id,
                     **result_payload(text if isinstance(text, str) else str(text)),
-                    "is_error": isinstance(status, str)
-                    and status.lower() in {"error", "failed"},
+                    "is_error": isinstance(status, str) and status.lower() in {"error", "failed"},
                 }
             )
 
