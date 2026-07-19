@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from server.api.bootstrap import AppRuntime
 from server.api.deps import get_runtime
+from server.api.params import OptionalState, PageLimit
 from server.api.payloads import build_evidence_chain, build_insights
 from server.api.schemas import EvidenceChainResponse, InsightsResponse
 
@@ -17,8 +18,8 @@ router = APIRouter(prefix="/insights", tags=["insights"])
 @router.get("", response_model=InsightsResponse)
 def list_insights(
     runtime: Annotated[AppRuntime, Depends(get_runtime)],
-    state: str | None = None,
-    limit: int = 100,
+    state: OptionalState = None,
+    limit: PageLimit = 100,
 ) -> InsightsResponse:
     return build_insights(runtime.database.reader, state=state, limit=limit)
 

@@ -9,6 +9,7 @@ from pathlib import Path
 from server.api.jobs import JobRunner
 from server.api.sse import EventBus
 from server.config import Settings
+from server.configuration import load_config
 from server.ingest.pipeline import IngestPipeline
 from server.models.workspace import Workspace
 from server.store.db import Database
@@ -59,7 +60,19 @@ def bootstrap_runtime(settings: Settings) -> AppRuntime:
         workspace_id = existing.workspace_id
 
     pipeline = IngestPipeline(database, workspace_id, root, bus)
-    jobs = JobRunner(database, bus)
+    jobs_cfg = load_config(root).jobs
+    jobs = JobRunner(
+        database,
+        bus,
+        max_workers=jobs_cfg.max_workers,
+        max_queued=jobs_cfg.max_queued,
+        result_ttl_sec=float(jobs_cfg.result_ttl_sec),
+        default_timeout_sec=(
+            float(jobs_cfg.default_timeout_sec)
+            if jobs_cfg.default_timeout_sec is not None
+            else None
+        ),
+    )
     return AppRuntime(
         database=database,
         workspace_id=workspace_id,

@@ -1,0 +1,6 @@
+/** Auto-generated from server.query_filters.FILTER_SPECS — do not edit. */
+/** Regenerate via `uv run python scripts/build_ui.py types`. */
+
+export const FILTER_SPECS = {"after": {"available": true, "example": "after:2026-07-01", "kind": "date"}, "agent": {"available": true, "example": "agent:codex", "kind": "text"}, "claim": {"available": false, "example": "claim:unsupported", "kind": "enum", "unavailable_reason": "Claim-level verification receipts are not available yet.", "values": ["unsupported"]}, "corrected": {"available": true, "example": "corrected:true", "kind": "boolean"}, "cost": {"available": true, "example": "cost:>1", "kind": "number"}, "file": {"available": true, "example": "file:src/", "kind": "text"}, "outcome": {"available": true, "example": "outcome:fail", "kind": "text"}, "risk": {"available": true, "example": "risk:high", "kind": "enum", "values": ["high"]}, "source": {"available": true, "example": "source:claude_code", "kind": "text"}, "status": {"available": true, "example": "is:error", "kind": "text"}, "tool": {"available": true, "example": "tool:read", "kind": "text"}, "verification": {"available": true, "example": "verification:debt", "kind": "enum", "values": ["debt", "failed", "verified", "unverified"]}} as const;
+
+export type FilterField = keyof typeof FILTER_SPECS;

@@ -1,0 +1,3838 @@
+{
+  "paths": {
+    "/api/actions": {
+      "get": {
+        "operation_id": "actions_manifest",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/actions/jobs/{job_id}": {
+      "get": {
+        "operation_id": "get_job",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/actions/jobs/{job_id}/cancel": {
+      "post": {
+        "operation_id": "cancel_job",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/actions/{name}": {
+      "post": {
+        "operation_id": "run_action",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/agents": {
+      "get": {
+        "operation_id": "agents",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/budget": {
+      "get": {
+        "operation_id": "analytics_budget",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/compare": {
+      "get": {
+        "operation_id": "analytics_compare",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/files": {
+      "get": {
+        "operation_id": "analytics_files",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/guard": {
+      "get": {
+        "operation_id": "analytics_guard",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/regions": {
+      "get": {
+        "operation_id": "analytics_regions",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/tail": {
+      "get": {
+        "operation_id": "analytics_tail",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/tools": {
+      "get": {
+        "operation_id": "analytics_tools",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/usage": {
+      "get": {
+        "operation_id": "analytics_usage",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/analytics/waste": {
+      "get": {
+        "operation_id": "analytics_waste",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/behavior": {
+      "get": {
+        "operation_id": "behavior",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/experiments": {
+      "get": {
+        "operation_id": "list_experiments",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/experiments/{experiment_id}": {
+      "get": {
+        "operation_id": "get_experiment",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operation_id": "health",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/insights": {
+      "get": {
+        "operation_id": "list_insights",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/insights/{insight_id}/evidence": {
+      "get": {
+        "operation_id": "insight_evidence",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/live/events": {
+      "get": {
+        "operation_id": "live_events",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/overview": {
+      "get": {
+        "operation_id": "overview",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/quality": {
+      "get": {
+        "operation_id": "quality",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/recap": {
+      "get": {
+        "operation_id": "recap",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/search": {
+      "get": {
+        "operation_id": "search",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces": {
+      "get": {
+        "operation_id": "list_traces",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/diff": {
+      "get": {
+        "operation_id": "diff_traces",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}": {
+      "get": {
+        "operation_id": "get_trace",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}/corrections": {
+      "get": {
+        "operation_id": "get_corrections",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}/corrections/{correction_id}/relabel": {
+      "put": {
+        "operation_id": "relabel_correction",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}/handoff": {
+      "get": {
+        "operation_id": "get_handoff",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}/human-label": {
+      "put": {
+        "operation_id": "set_human_label",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}/postmortem": {
+      "get": {
+        "operation_id": "get_postmortem",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}/receipt": {
+      "get": {
+        "operation_id": "get_receipt",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/traces/{trace_id}/replay": {
+      "get": {
+        "operation_id": "replay_trace",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/api/workspace": {
+      "get": {
+        "operation_id": "workspace",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/v1/traces": {
+      "post": {
+        "operation_id": "otlp_traces",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    },
+    "/{full_path}": {
+      "get": {
+        "operation_id": "spa_fallback",
+        "responses": [
+          "200",
+          "400",
+          "401",
+          "403",
+          "404",
+          "413",
+          "422"
+        ]
+      }
+    }
+  },
+  "schemas": {
+    "ActionManifestEntry": {
+      "enum": null,
+      "properties": [
+        "async_job",
+        "category",
+        "name",
+        "params_schema",
+        "title"
+      ],
+      "required": [
+        "async_job",
+        "category",
+        "name",
+        "params_schema",
+        "title"
+      ]
+    },
+    "ActionResultResponse": {
+      "enum": null,
+      "properties": [
+        "job_id",
+        "ok",
+        "result"
+      ],
+      "required": [
+        "ok"
+      ]
+    },
+    "ActionsManifestResponse": {
+      "enum": null,
+      "properties": [
+        "actions"
+      ],
+      "required": [
+        "actions"
+      ]
+    },
+    "AdapterWarning": {
+      "enum": null,
+      "properties": [
+        "adapter_id",
+        "issue_url",
+        "message"
+      ],
+      "required": [
+        "adapter_id",
+        "issue_url",
+        "message"
+      ]
+    },
+    "AgentAggregate": {
+      "enum": null,
+      "properties": [
+        "actor_id",
+        "actor_name",
+        "agent_id",
+        "cost",
+        "error_sessions",
+        "fingerprint_samples",
+        "fingerprint_thumbnail",
+        "input_tokens",
+        "models",
+        "output_tokens",
+        "quality_mean",
+        "quality_samples",
+        "sample_size",
+        "sources",
+        "traces",
+        "waste_tokens"
+      ],
+      "required": [
+        "actor_id",
+        "actor_name",
+        "agent_id",
+        "cost",
+        "input_tokens",
+        "output_tokens",
+        "traces"
+      ]
+    },
+    "AgentParseCoverage": {
+      "enum": null,
+      "properties": [
+        "attempts",
+        "degraded",
+        "fully_parsed",
+        "limitation",
+        "parse_success_pct",
+        "sessions",
+        "skipped",
+        "source"
+      ],
+      "required": [
+        "attempts",
+        "degraded",
+        "fully_parsed",
+        "limitation",
+        "parse_success_pct",
+        "sessions",
+        "skipped",
+        "source"
+      ]
+    },
+    "AgentTrendPoint": {
+      "enum": null,
+      "properties": [
+        "agent_id",
+        "cost",
+        "day",
+        "traces",
+        "waste_tokens"
+      ],
+      "required": [
+        "agent_id",
+        "cost",
+        "day",
+        "traces",
+        "waste_tokens"
+      ]
+    },
+    "AgentsLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "agent_count",
+        "conclusion",
+        "handoffs",
+        "limitation",
+        "multi_agent_sessions",
+        "next_action",
+        "next_action_href",
+        "sample_size"
+      ],
+      "required": [
+        "agent_count",
+        "conclusion",
+        "handoffs",
+        "limitation",
+        "multi_agent_sessions",
+        "next_action",
+        "next_action_href",
+        "sample_size"
+      ]
+    },
+    "AgentsResponse": {
+      "enum": null,
+      "properties": [
+        "agents",
+        "coverage",
+        "days",
+        "handoff_matrix",
+        "ledger",
+        "limitations",
+        "resolved_range",
+        "trend"
+      ],
+      "required": [
+        "agents",
+        "coverage",
+        "days",
+        "handoff_matrix",
+        "ledger",
+        "limitations",
+        "resolved_range",
+        "trend"
+      ]
+    },
+    "BaselineProgress": {
+      "enum": null,
+      "properties": [
+        "collected",
+        "note",
+        "ready",
+        "required"
+      ],
+      "required": [
+        "collected",
+        "note",
+        "ready",
+        "required"
+      ]
+    },
+    "BehaviorLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "baseline_collected",
+        "baseline_ready",
+        "baseline_required",
+        "conclusion",
+        "drift_events",
+        "fingerprint_sessions",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "primary_axis"
+      ],
+      "required": [
+        "baseline_collected",
+        "baseline_ready",
+        "baseline_required",
+        "conclusion",
+        "drift_events",
+        "fingerprint_sessions",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "primary_axis"
+      ]
+    },
+    "BehaviorRadar": {
+      "enum": null,
+      "properties": [
+        "axes",
+        "cov_inv",
+        "mean_vector",
+        "model",
+        "n",
+        "project",
+        "week"
+      ],
+      "required": [
+        "axes",
+        "cov_inv",
+        "mean_vector",
+        "model",
+        "n",
+        "project",
+        "week"
+      ]
+    },
+    "BehaviorResponse": {
+      "enum": null,
+      "properties": [
+        "baseline_progress",
+        "data_notes",
+        "days",
+        "drift",
+        "ledger",
+        "limitations",
+        "radar",
+        "resolved_range",
+        "series"
+      ],
+      "required": [
+        "baseline_progress",
+        "data_notes",
+        "days",
+        "drift",
+        "ledger",
+        "limitations",
+        "radar",
+        "resolved_range",
+        "series"
+      ]
+    },
+    "BehaviorSeriesPoint": {
+      "enum": null,
+      "properties": [
+        "model",
+        "project",
+        "trace_id",
+        "ts",
+        "vector"
+      ],
+      "required": [
+        "model",
+        "project",
+        "trace_id",
+        "ts",
+        "vector"
+      ]
+    },
+    "BudgetBurnLedger": {
+      "enum": null,
+      "properties": [
+        "budget_state",
+        "conclusion",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "projection_state"
+      ],
+      "required": [
+        "budget_state",
+        "conclusion",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "projection_state"
+      ]
+    },
+    "BudgetBurnResponse": {
+      "enum": null,
+      "properties": [
+        "agent_shares",
+        "budget_state",
+        "calendar_days_elapsed",
+        "daily_limit_usd",
+        "day_spend_usd",
+        "days_in_month",
+        "explanation",
+        "ledger",
+        "limitations",
+        "linear_projected_usd",
+        "model_shares",
+        "month_end",
+        "month_spend_usd",
+        "month_start",
+        "monthly_limit_usd",
+        "now",
+        "observed_active_days",
+        "projected_overrun_date",
+        "projection_state",
+        "timezone",
+        "trailing_7d_projected_usd",
+        "week_spend_usd",
+        "weekly_limit_usd"
+      ],
+      "required": [
+        "budget_state",
+        "calendar_days_elapsed",
+        "day_spend_usd",
+        "days_in_month",
+        "explanation",
+        "ledger",
+        "month_end",
+        "month_spend_usd",
+        "month_start",
+        "now",
+        "observed_active_days",
+        "projection_state",
+        "timezone",
+        "week_spend_usd"
+      ]
+    },
+    "BudgetShareRow": {
+      "enum": null,
+      "properties": [
+        "key",
+        "sessions",
+        "share_pct",
+        "spend_usd"
+      ],
+      "required": [
+        "key",
+        "sessions",
+        "share_pct",
+        "spend_usd"
+      ]
+    },
+    "BudgetSummary": {
+      "enum": null,
+      "properties": [
+        "daily_limit_usd",
+        "day_spend_usd",
+        "explanation",
+        "month_spend_usd",
+        "monthly_limit_usd",
+        "projected_overrun_date",
+        "projected_usd",
+        "state",
+        "trailing_7d_projected_usd",
+        "week_spend_usd",
+        "weekly_limit_usd"
+      ],
+      "required": [
+        "explanation",
+        "month_spend_usd",
+        "state"
+      ]
+    },
+    "CacheTrendPoint": {
+      "enum": null,
+      "properties": [
+        "cache_creation_tokens",
+        "cache_read_tokens",
+        "day",
+        "estimated_savings_usd",
+        "hit_ratio",
+        "input_tokens",
+        "limitation",
+        "measured_sessions",
+        "total_sessions"
+      ],
+      "required": [
+        "cache_creation_tokens",
+        "cache_read_tokens",
+        "day",
+        "estimated_savings_usd",
+        "hit_ratio",
+        "input_tokens",
+        "limitation",
+        "measured_sessions",
+        "total_sessions"
+      ]
+    },
+    "CollectionStatus": {
+      "enum": null,
+      "properties": [
+        "auto_sync_active",
+        "label",
+        "limitation",
+        "live_updates_note",
+        "mode",
+        "poll_interval_sec",
+        "refresh_enabled",
+        "refresh_interval_sec",
+        "watcher_enabled"
+      ],
+      "required": [
+        "auto_sync_active",
+        "label",
+        "limitation",
+        "mode",
+        "poll_interval_sec",
+        "refresh_enabled",
+        "refresh_interval_sec",
+        "watcher_enabled"
+      ]
+    },
+    "CompareAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "cells",
+        "confound_warnings",
+        "days",
+        "ledger",
+        "limitations",
+        "pairwise",
+        "resolved_range"
+      ],
+      "required": [
+        "cells",
+        "confound_warnings",
+        "days",
+        "ledger",
+        "limitations",
+        "pairwise",
+        "resolved_range"
+      ]
+    },
+    "CompareCell": {
+      "enum": null,
+      "properties": [
+        "agent_id",
+        "correction_burden_rate",
+        "cost_per_session",
+        "cost_per_success",
+        "difficulty_bucket",
+        "limitation",
+        "models",
+        "quality_mean",
+        "retry_rate",
+        "sessions",
+        "sources",
+        "tokens_per_session",
+        "verification_debt_rate",
+        "verified_success_rate",
+        "waste_tokens_per_session"
+      ],
+      "required": [
+        "agent_id",
+        "correction_burden_rate",
+        "cost_per_session",
+        "cost_per_success",
+        "difficulty_bucket",
+        "limitation",
+        "quality_mean",
+        "retry_rate",
+        "sessions",
+        "tokens_per_session",
+        "verification_debt_rate",
+        "verified_success_rate",
+        "waste_tokens_per_session"
+      ]
+    },
+    "CompareLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "buckets_with_evidence",
+        "cells_sufficient",
+        "cells_total",
+        "conclusion",
+        "declared_winner",
+        "limitation",
+        "min_sample",
+        "next_action",
+        "next_action_href"
+      ],
+      "required": [
+        "buckets_with_evidence",
+        "cells_sufficient",
+        "cells_total",
+        "conclusion",
+        "declared_winner",
+        "limitation",
+        "min_sample",
+        "next_action",
+        "next_action_href"
+      ]
+    },
+    "CompareMetricInterval": {
+      "enum": null,
+      "properties": [
+        "ci_high",
+        "ci_low",
+        "limitation",
+        "sample_size",
+        "sufficient",
+        "value"
+      ],
+      "required": [
+        "ci_high",
+        "ci_low",
+        "sample_size",
+        "sufficient",
+        "value"
+      ]
+    },
+    "ComparePairwise": {
+      "enum": null,
+      "properties": [
+        "agent_a",
+        "agent_b",
+        "ci_high",
+        "ci_low",
+        "confound_warnings",
+        "delta",
+        "difficulty_bucket",
+        "limitation",
+        "metric",
+        "sample_a",
+        "sample_b",
+        "verdict"
+      ],
+      "required": [
+        "agent_a",
+        "agent_b",
+        "ci_high",
+        "ci_low",
+        "delta",
+        "difficulty_bucket",
+        "limitation",
+        "metric",
+        "sample_a",
+        "sample_b",
+        "verdict"
+      ]
+    },
+    "ContextAgentAggregate": {
+      "enum": null,
+      "properties": [
+        "agent_id",
+        "cost",
+        "sessions",
+        "spans",
+        "tokens",
+        "top_region"
+      ],
+      "required": [
+        "agent_id",
+        "cost",
+        "sessions",
+        "spans",
+        "tokens",
+        "top_region"
+      ]
+    },
+    "ContextCoverage": {
+      "enum": null,
+      "properties": [
+        "cache_coverage_pct",
+        "cache_measured_sessions",
+        "dropped_events",
+        "limitation",
+        "region_coverage_pct",
+        "region_sessions",
+        "sessions",
+        "source",
+        "timestamp_sessions"
+      ],
+      "required": [
+        "cache_coverage_pct",
+        "cache_measured_sessions",
+        "dropped_events",
+        "limitation",
+        "region_coverage_pct",
+        "region_sessions",
+        "sessions",
+        "source",
+        "timestamp_sessions"
+      ]
+    },
+    "ContextEvidence": {
+      "enum": null,
+      "properties": [
+        "label",
+        "region",
+        "span_id",
+        "trace_id"
+      ],
+      "required": [
+        "label",
+        "region",
+        "span_id",
+        "trace_id"
+      ]
+    },
+    "ContextLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "cache_savings_available",
+        "conclusion",
+        "estimated_rebilled_tokens",
+        "limitation",
+        "mapped_region_cost",
+        "mapped_region_tokens",
+        "next_action",
+        "next_action_href",
+        "primary_region",
+        "region_coverage_pct",
+        "repetition_intensity",
+        "schema_overhead_tokens",
+        "sessions_total",
+        "sessions_with_regions",
+        "tool_result_share"
+      ],
+      "required": [
+        "cache_savings_available",
+        "conclusion",
+        "estimated_rebilled_tokens",
+        "limitation",
+        "mapped_region_cost",
+        "mapped_region_tokens",
+        "next_action",
+        "next_action_href",
+        "primary_region",
+        "region_coverage_pct",
+        "repetition_intensity",
+        "schema_overhead_tokens",
+        "sessions_total",
+        "sessions_with_regions",
+        "tool_result_share"
+      ]
+    },
+    "ContextRegion": {
+      "enum": null,
+      "properties": [
+        "content_hash",
+        "cost",
+        "first_turn",
+        "last_seen_turn",
+        "region",
+        "span_id",
+        "still_in_window",
+        "tokens"
+      ],
+      "required": [
+        "region",
+        "span_id"
+      ]
+    },
+    "CorrectionEvent": {
+      "enum": null,
+      "properties": [
+        "classification",
+        "confidence",
+        "correction_id",
+        "excerpt",
+        "kind",
+        "original_class",
+        "recovery_span_id",
+        "recovery_status",
+        "seq",
+        "signal",
+        "span_id",
+        "user_relabel"
+      ],
+      "required": [
+        "classification",
+        "confidence",
+        "correction_id",
+        "excerpt",
+        "original_class",
+        "recovery_status",
+        "seq",
+        "signal",
+        "span_id"
+      ]
+    },
+    "CorrectionRelabelRequest": {
+      "enum": null,
+      "properties": [
+        "note",
+        "relabel_class"
+      ],
+      "required": [
+        "relabel_class"
+      ]
+    },
+    "CorrectionsResponse": {
+      "enum": null,
+      "properties": [
+        "builder_version",
+        "content_hash",
+        "correction_count",
+        "corrections",
+        "limitations",
+        "persisted",
+        "ranking_forbidden",
+        "schema_version",
+        "trace_id",
+        "unresolved_count"
+      ],
+      "required": [
+        "builder_version",
+        "content_hash",
+        "correction_count",
+        "schema_version",
+        "trace_id",
+        "unresolved_count"
+      ]
+    },
+    "CostPerSuccessPoint": {
+      "enum": null,
+      "properties": [
+        "cost_per_success",
+        "day",
+        "trace_id"
+      ],
+      "required": [
+        "cost_per_success",
+        "day",
+        "trace_id"
+      ]
+    },
+    "DataNote": {
+      "enum": null,
+      "properties": [
+        "help_url",
+        "issue",
+        "message",
+        "sessions",
+        "source"
+      ],
+      "required": [
+        "issue",
+        "message",
+        "sessions",
+        "source"
+      ]
+    },
+    "DataQuality": {
+      "enum": null,
+      "properties": [
+        "computed_at",
+        "cost_source",
+        "dropped_events",
+        "notes",
+        "parser_version",
+        "pct_tokens_estimated",
+        "pct_tokens_measured",
+        "timestamps_present",
+        "trace_id"
+      ],
+      "required": [
+        "trace_id"
+      ]
+    },
+    "Diagnostic": {
+      "enum": null,
+      "properties": [
+        "cascade_blast_tokens",
+        "cascade_root_span_id",
+        "computed_at",
+        "failure_origin_span_id",
+        "failure_signature",
+        "ideal_path_savings_tokens",
+        "primary_category",
+        "secondary_category",
+        "trace_id"
+      ],
+      "required": [
+        "trace_id"
+      ]
+    },
+    "DriftAxis": {
+      "enum": null,
+      "properties": [
+        "axis",
+        "axis_label",
+        "bounds",
+        "ewma",
+        "weeks_outside"
+      ],
+      "required": [
+        "axis",
+        "axis_label",
+        "bounds",
+        "ewma",
+        "weeks_outside"
+      ]
+    },
+    "DriftEvent": {
+      "enum": null,
+      "properties": [
+        "axes",
+        "data_notes",
+        "distance",
+        "drift",
+        "drifted_at",
+        "kind",
+        "magnitude",
+        "model",
+        "per_dim_deltas",
+        "project",
+        "sample_size",
+        "threshold",
+        "trace_id"
+      ],
+      "required": [
+        "kind"
+      ]
+    },
+    "ErrorDetail": {
+      "enum": null,
+      "properties": [
+        "code",
+        "details",
+        "message"
+      ],
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "ErrorResponse": {
+      "enum": null,
+      "properties": [
+        "error"
+      ],
+      "required": [
+        "error"
+      ]
+    },
+    "EvidenceChainResponse": {
+      "enum": null,
+      "properties": [
+        "evidence_id",
+        "insight_id",
+        "metrics",
+        "produced_at",
+        "producer",
+        "span_ids",
+        "spans",
+        "trace_ids"
+      ],
+      "required": [
+        "evidence_id",
+        "insight_id",
+        "metrics",
+        "produced_at",
+        "producer",
+        "span_ids",
+        "spans",
+        "trace_ids"
+      ]
+    },
+    "Experiment": {
+      "enum": null,
+      "properties": [
+        "agent_type",
+        "applied_at",
+        "baseline_metric",
+        "baseline_n_effective",
+        "baseline_n_raw",
+        "block_key",
+        "confound_flag",
+        "confound_notes",
+        "content",
+        "created_at",
+        "decay_state",
+        "effect_ci_high",
+        "effect_ci_low",
+        "effect_estimate",
+        "effect_history",
+        "eval_interval_days",
+        "evidence_id",
+        "experiment_id",
+        "guard_event_id",
+        "kind",
+        "last_evaluated_at",
+        "measured_at",
+        "min_holdout",
+        "outcome_metric",
+        "outcome_n_effective",
+        "outcome_n_raw",
+        "plain_verdict",
+        "proposal_source",
+        "regression_outside_interval",
+        "status",
+        "target_file",
+        "test_method",
+        "verdict",
+        "verdict_history"
+      ],
+      "required": [
+        "block_key",
+        "content",
+        "created_at",
+        "evidence_id",
+        "experiment_id",
+        "kind",
+        "target_file"
+      ]
+    },
+    "ExperimentDetailResponse": {
+      "enum": null,
+      "properties": [
+        "experiment",
+        "guard_limitation",
+        "preview",
+        "write_safety"
+      ],
+      "required": [
+        "experiment",
+        "guard_limitation",
+        "write_safety"
+      ]
+    },
+    "ExperimentRow": {
+      "enum": null,
+      "properties": [
+        "applied_at",
+        "confound_flag",
+        "confound_notes",
+        "created_at",
+        "decay_state",
+        "effect_ci_high",
+        "effect_ci_low",
+        "effect_history",
+        "eval_interval_days",
+        "experiment_id",
+        "guard_event_id",
+        "in_portfolio",
+        "last_evaluated_at",
+        "lift_pct",
+        "measured_at",
+        "min_holdout",
+        "outcome_n_effective",
+        "outcome_n_raw",
+        "plain_verdict",
+        "proposal_source",
+        "regression_outside_interval",
+        "sample_size",
+        "status",
+        "target_file",
+        "verdict",
+        "verdict_history"
+      ],
+      "required": [
+        "applied_at",
+        "created_at",
+        "effect_ci_high",
+        "effect_ci_low",
+        "experiment_id",
+        "lift_pct",
+        "measured_at",
+        "min_holdout",
+        "outcome_n_effective",
+        "status",
+        "target_file",
+        "verdict"
+      ]
+    },
+    "ExperimentsResponse": {
+      "enum": null,
+      "properties": [
+        "experiments",
+        "ledger",
+        "limitations"
+      ],
+      "required": [
+        "experiments",
+        "ledger",
+        "limitations"
+      ]
+    },
+    "FileChurnPoint": {
+      "enum": null,
+      "properties": [
+        "day",
+        "edits",
+        "re_reads",
+        "reads"
+      ],
+      "required": [
+        "day",
+        "edits",
+        "re_reads",
+        "reads"
+      ]
+    },
+    "FileEvidence": {
+      "enum": null,
+      "properties": [
+        "label",
+        "span_id",
+        "trace_id"
+      ],
+      "required": [
+        "label",
+        "span_id",
+        "trace_id"
+      ]
+    },
+    "FileHotspot": {
+      "enum": null,
+      "properties": [
+        "deletes",
+        "edits",
+        "estimate_kind",
+        "estimated_cost_share",
+        "evidence",
+        "ignored",
+        "limitation",
+        "path_rel",
+        "re_reads",
+        "reads",
+        "revert_fixup_sessions",
+        "sessions",
+        "tokens"
+      ],
+      "required": [
+        "deletes",
+        "edits",
+        "estimate_kind",
+        "estimated_cost_share",
+        "evidence",
+        "ignored",
+        "limitation",
+        "path_rel",
+        "re_reads",
+        "reads",
+        "revert_fixup_sessions",
+        "sessions",
+        "tokens"
+      ]
+    },
+    "FilesAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "churn",
+        "days",
+        "files",
+        "ledger",
+        "limitations",
+        "resolved_range"
+      ],
+      "required": [
+        "churn",
+        "days",
+        "files",
+        "ledger",
+        "limitations",
+        "resolved_range"
+      ]
+    },
+    "FilesLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "conclusion",
+        "distinct_files",
+        "edits",
+        "ignored_files",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "re_reads",
+        "reads",
+        "revert_fixup_sessions"
+      ],
+      "required": [
+        "conclusion",
+        "distinct_files",
+        "edits",
+        "ignored_files",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "re_reads",
+        "reads",
+        "revert_fixup_sessions"
+      ]
+    },
+    "GuardAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "days",
+        "events",
+        "ledger",
+        "limitations",
+        "resolved_range"
+      ],
+      "required": [
+        "days",
+        "events",
+        "ledger",
+        "limitations",
+        "resolved_range"
+      ]
+    },
+    "GuardAssociation": {
+      "enum": null,
+      "properties": [
+        "confound_notes",
+        "effect_ci_high",
+        "effect_ci_low",
+        "effect_estimate",
+        "language",
+        "limitation",
+        "metric",
+        "post_n",
+        "pre_n",
+        "verdict"
+      ],
+      "required": [
+        "effect_ci_high",
+        "effect_ci_low",
+        "effect_estimate",
+        "language",
+        "limitation",
+        "metric",
+        "post_n",
+        "pre_n",
+        "verdict"
+      ]
+    },
+    "GuardEventRow": {
+      "enum": null,
+      "properties": [
+        "after_hash",
+        "association",
+        "before_hash",
+        "commit_sha",
+        "confound_notes",
+        "diff_summary",
+        "event_href",
+        "event_id",
+        "event_kind",
+        "git_state",
+        "linked_experiment_id",
+        "occurred_at",
+        "optimize_href",
+        "parent_sha",
+        "path_rel",
+        "source"
+      ],
+      "required": [
+        "after_hash",
+        "before_hash",
+        "commit_sha",
+        "diff_summary",
+        "event_href",
+        "event_id",
+        "event_kind",
+        "git_state",
+        "linked_experiment_id",
+        "occurred_at",
+        "parent_sha",
+        "path_rel",
+        "source"
+      ]
+    },
+    "GuardLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "associated_count",
+        "conclusion",
+        "confounded_count",
+        "event_count",
+        "git_state",
+        "limitation",
+        "next_action",
+        "next_action_href"
+      ],
+      "required": [
+        "associated_count",
+        "conclusion",
+        "confounded_count",
+        "event_count",
+        "git_state",
+        "limitation",
+        "next_action",
+        "next_action_href"
+      ]
+    },
+    "HandoffResponse": {
+      "enum": null,
+      "properties": [
+        "builder_version",
+        "char_budget",
+        "content_hash",
+        "limitations",
+        "markdown",
+        "schema_version",
+        "sections",
+        "trace_id",
+        "truncated"
+      ],
+      "required": [
+        "builder_version",
+        "char_budget",
+        "content_hash",
+        "schema_version",
+        "trace_id",
+        "truncated"
+      ]
+    },
+    "HandoffRow": {
+      "enum": null,
+      "properties": [
+        "from_agent",
+        "from_span_id",
+        "link_type",
+        "to_agent",
+        "to_span_id"
+      ],
+      "required": [
+        "from_agent",
+        "from_span_id",
+        "link_type",
+        "to_agent",
+        "to_span_id"
+      ]
+    },
+    "HandoffSection": {
+      "enum": null,
+      "properties": [
+        "id",
+        "items",
+        "title"
+      ],
+      "required": [
+        "id",
+        "title"
+      ]
+    },
+    "HandoffStatement": {
+      "enum": null,
+      "properties": [
+        "kind",
+        "span_id",
+        "text"
+      ],
+      "required": [
+        "kind",
+        "text"
+      ]
+    },
+    "HumanLabelAgreement": {
+      "enum": null,
+      "properties": [
+        "agreements",
+        "labeled_sessions",
+        "rate"
+      ],
+      "required": [
+        "agreements",
+        "labeled_sessions",
+        "rate"
+      ]
+    },
+    "HumanLabelRequest": {
+      "enum": null,
+      "properties": [
+        "label",
+        "note"
+      ],
+      "required": [
+        "label"
+      ]
+    },
+    "HumanLabelResponse": {
+      "enum": null,
+      "properties": [
+        "label",
+        "labeled_at",
+        "note",
+        "trace_id"
+      ],
+      "required": [
+        "label",
+        "labeled_at",
+        "note",
+        "trace_id"
+      ]
+    },
+    "InsightFix": {
+      "enum": null,
+      "properties": [
+        "kind",
+        "label",
+        "value"
+      ],
+      "required": [
+        "kind",
+        "label",
+        "value"
+      ]
+    },
+    "InsightRow": {
+      "enum": null,
+      "properties": [
+        "action",
+        "body",
+        "confidence",
+        "detector",
+        "diagnostic",
+        "fingerprint",
+        "fix",
+        "impact",
+        "insight_id",
+        "last_seen_at",
+        "rank_score",
+        "recurrence",
+        "savings_estimate",
+        "savings_unavailable_reason",
+        "severity",
+        "snoozed_until",
+        "state",
+        "suppressed_duplicate",
+        "title"
+      ],
+      "required": [
+        "action",
+        "body",
+        "detector",
+        "diagnostic",
+        "fingerprint",
+        "fix",
+        "insight_id",
+        "last_seen_at",
+        "savings_estimate",
+        "savings_unavailable_reason",
+        "severity",
+        "state",
+        "title"
+      ]
+    },
+    "InsightsLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "conclusion",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "open_count",
+        "ranked_count",
+        "snoozed_count",
+        "suppressed_duplicates",
+        "top_insight_id"
+      ],
+      "required": [
+        "conclusion",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "open_count",
+        "ranked_count",
+        "snoozed_count",
+        "suppressed_duplicates",
+        "top_insight_id"
+      ]
+    },
+    "InsightsResponse": {
+      "enum": null,
+      "properties": [
+        "insights",
+        "ledger",
+        "limitations",
+        "total"
+      ],
+      "required": [
+        "insights",
+        "ledger",
+        "limitations",
+        "total"
+      ]
+    },
+    "JsonValue": {
+      "enum": null,
+      "properties": [],
+      "required": []
+    },
+    "McpConsultation": {
+      "enum": null,
+      "properties": [
+        "after_seq",
+        "called_at",
+        "event_id",
+        "tool_name",
+        "trace_id"
+      ],
+      "required": [
+        "after_seq",
+        "called_at",
+        "event_id",
+        "tool_name",
+        "trace_id"
+      ]
+    },
+    "MetricDelta": {
+      "enum": null,
+      "properties": [
+        "current",
+        "delta_pct",
+        "previous",
+        "state"
+      ],
+      "required": [
+        "current",
+        "delta_pct",
+        "previous",
+        "state"
+      ]
+    },
+    "MoneySummary": {
+      "enum": null,
+      "properties": [
+        "period_days",
+        "primary_action",
+        "spend_estimated",
+        "top_causes",
+        "total_spend_usd",
+        "waste_estimated",
+        "wasted_spend_pct",
+        "wasted_spend_usd"
+      ],
+      "required": [
+        "period_days",
+        "primary_action",
+        "spend_estimated",
+        "top_causes",
+        "total_spend_usd",
+        "waste_estimated",
+        "wasted_spend_pct",
+        "wasted_spend_usd"
+      ]
+    },
+    "MonthEndProjection": {
+      "enum": null,
+      "properties": [
+        "calendar_days_elapsed",
+        "days_in_month",
+        "explanation",
+        "month_spend_usd",
+        "observed_active_days",
+        "projected_overrun_date",
+        "projected_usd",
+        "state",
+        "trailing_7d_projected_usd"
+      ],
+      "required": [
+        "calendar_days_elapsed",
+        "days_in_month",
+        "explanation",
+        "month_spend_usd",
+        "observed_active_days",
+        "state"
+      ]
+    },
+    "NarrativeSentence": {
+      "enum": null,
+      "properties": [
+        "filter",
+        "text"
+      ],
+      "required": [
+        "text"
+      ]
+    },
+    "OptimizeLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "active_count",
+        "conclusion",
+        "decayed_count",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "portfolio_count",
+        "proposed_count"
+      ],
+      "required": [
+        "active_count",
+        "conclusion",
+        "decayed_count",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "portfolio_count",
+        "proposed_count"
+      ]
+    },
+    "Outcome": {
+      "enum": null,
+      "properties": [
+        "build_status",
+        "captured_at",
+        "commit_landed",
+        "commit_sha",
+        "cost_per_success",
+        "files_changed",
+        "fixup_within_window",
+        "human_label",
+        "human_labeled_at",
+        "human_note",
+        "label_source",
+        "outcome_label",
+        "quality_components",
+        "quality_score",
+        "quality_weights",
+        "reverted_within_window",
+        "tests_failed",
+        "tests_passed",
+        "tests_run",
+        "trace_id"
+      ],
+      "required": [
+        "trace_id"
+      ]
+    },
+    "OverviewAttentionCategory": {
+      "enum": null,
+      "properties": [
+        "category",
+        "count",
+        "items",
+        "label",
+        "limitation",
+        "state",
+        "summary"
+      ],
+      "required": [
+        "category",
+        "count",
+        "label",
+        "state",
+        "summary"
+      ]
+    },
+    "OverviewAttentionItem": {
+      "enum": null,
+      "properties": [
+        "action_path",
+        "detail",
+        "item_id",
+        "title"
+      ],
+      "required": [
+        "action_path",
+        "detail",
+        "item_id",
+        "title"
+      ]
+    },
+    "OverviewEvidence": {
+      "enum": null,
+      "properties": [
+        "label",
+        "path_rel",
+        "span_id",
+        "trace_id",
+        "waste_tokens"
+      ],
+      "required": [
+        "label",
+        "trace_id"
+      ]
+    },
+    "OverviewHero": {
+      "enum": null,
+      "properties": [
+        "budget",
+        "cost_per_success_usd",
+        "deltas",
+        "projection",
+        "quality_mean",
+        "quality_sessions",
+        "quality_sparkline",
+        "successful_sessions"
+      ],
+      "required": [
+        "budget",
+        "cost_per_success_usd",
+        "deltas",
+        "projection",
+        "quality_mean",
+        "quality_sessions",
+        "successful_sessions"
+      ]
+    },
+    "OverviewResponse": {
+      "enum": null,
+      "properties": [
+        "annotations",
+        "attention",
+        "data_notes",
+        "days",
+        "hero",
+        "kpis",
+        "money",
+        "narrative",
+        "resolved_range",
+        "shields",
+        "tail_risk"
+      ],
+      "required": [
+        "annotations",
+        "data_notes",
+        "days",
+        "hero",
+        "kpis",
+        "money",
+        "narrative",
+        "resolved_range",
+        "shields",
+        "tail_risk"
+      ]
+    },
+    "PlanWindowGauge": {
+      "enum": null,
+      "properties": [
+        "by_source",
+        "exceeded",
+        "limit",
+        "total_tokens",
+        "window_hours"
+      ],
+      "required": [
+        "by_source",
+        "exceeded",
+        "limit",
+        "total_tokens",
+        "window_hours"
+      ]
+    },
+    "PostmortemResponse": {
+      "enum": null,
+      "properties": [
+        "eligible",
+        "failure_signature",
+        "limitation",
+        "markdown",
+        "outcome_label",
+        "primary_category",
+        "quality_score",
+        "reflector",
+        "secondary_category",
+        "source",
+        "span_links",
+        "steps",
+        "trace_id",
+        "uncertainty"
+      ],
+      "required": [
+        "eligible",
+        "limitation",
+        "markdown",
+        "source",
+        "trace_id"
+      ]
+    },
+    "PostmortemSpanLink": {
+      "enum": null,
+      "properties": [
+        "href",
+        "label",
+        "span_id"
+      ],
+      "required": [
+        "href",
+        "label",
+        "span_id"
+      ]
+    },
+    "PostmortemStep": {
+      "enum": null,
+      "properties": [
+        "attributed_cost_usd",
+        "cascade_blast_tokens",
+        "items",
+        "kind",
+        "label",
+        "retry_span_ids",
+        "retry_waste_tokens",
+        "seq",
+        "span_id",
+        "summary",
+        "waste_tokens"
+      ],
+      "required": [
+        "kind",
+        "label",
+        "summary"
+      ]
+    },
+    "QualityCalibration": {
+      "enum": null,
+      "properties": [
+        "coverage_pct",
+        "human_agreement_rate",
+        "human_agreements",
+        "human_labeled",
+        "limitation",
+        "outcome_sessions",
+        "scored_sessions"
+      ],
+      "required": [
+        "coverage_pct",
+        "human_agreement_rate",
+        "human_agreements",
+        "human_labeled",
+        "limitation",
+        "outcome_sessions",
+        "scored_sessions"
+      ]
+    },
+    "QualityComponentSummary": {
+      "enum": null,
+      "properties": [
+        "mean",
+        "name",
+        "samples",
+        "weight"
+      ],
+      "required": [
+        "mean",
+        "name",
+        "samples",
+        "weight"
+      ]
+    },
+    "QualityHistogramBucket": {
+      "enum": null,
+      "properties": [
+        "bucket",
+        "count"
+      ],
+      "required": [
+        "bucket",
+        "count"
+      ]
+    },
+    "QualityInvestigation": {
+      "enum": null,
+      "properties": [
+        "human_label",
+        "kind",
+        "limitation",
+        "outcome_label",
+        "quality_score",
+        "reason",
+        "trace_id"
+      ],
+      "required": [
+        "human_label",
+        "kind",
+        "limitation",
+        "outcome_label",
+        "quality_score",
+        "reason",
+        "trace_id"
+      ]
+    },
+    "QualityLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "conclusion",
+        "limitation",
+        "lucky_pass_count",
+        "mean_cost_per_success",
+        "next_action",
+        "next_action_href",
+        "outcome_sessions",
+        "quality_mean",
+        "scored_sessions",
+        "unlucky_fail_count",
+        "unsupported_claim_rate",
+        "verification_debt_rate",
+        "verified_completion_rate"
+      ],
+      "required": [
+        "conclusion",
+        "limitation",
+        "lucky_pass_count",
+        "mean_cost_per_success",
+        "next_action",
+        "next_action_href",
+        "outcome_sessions",
+        "quality_mean",
+        "scored_sessions",
+        "unlucky_fail_count",
+        "unsupported_claim_rate",
+        "verification_debt_rate",
+        "verified_completion_rate"
+      ]
+    },
+    "QualityOutcome": {
+      "enum": null,
+      "properties": [
+        "build_status",
+        "captured_at",
+        "commit_landed",
+        "commit_sha",
+        "cost",
+        "cost_per_success",
+        "day",
+        "files_changed",
+        "fixup_within_window",
+        "human_label",
+        "human_labeled_at",
+        "human_note",
+        "label_source",
+        "outcome_label",
+        "quality_components",
+        "quality_score",
+        "quality_weights",
+        "reverted_within_window",
+        "tests_failed",
+        "tests_passed",
+        "tests_run",
+        "trace_id",
+        "verification_state"
+      ],
+      "required": [
+        "cost",
+        "trace_id"
+      ]
+    },
+    "QualityResponse": {
+      "enum": null,
+      "properties": [
+        "calibration",
+        "components",
+        "cost_per_success",
+        "data_notes",
+        "days",
+        "histogram",
+        "investigations",
+        "ledger",
+        "limitations",
+        "outcomes",
+        "resolved_range",
+        "trend"
+      ],
+      "required": [
+        "calibration",
+        "components",
+        "cost_per_success",
+        "data_notes",
+        "days",
+        "histogram",
+        "investigations",
+        "ledger",
+        "limitations",
+        "outcomes",
+        "resolved_range",
+        "trend"
+      ]
+    },
+    "QualityTrend": {
+      "enum": null,
+      "properties": [
+        "current_mean",
+        "current_sessions",
+        "delta",
+        "previous_mean",
+        "previous_sessions"
+      ],
+      "required": [
+        "current_mean",
+        "current_sessions",
+        "delta",
+        "previous_mean",
+        "previous_sessions"
+      ]
+    },
+    "QualityTrendPoint": {
+      "enum": null,
+      "properties": [
+        "day",
+        "debt_rate",
+        "human_down",
+        "human_up",
+        "mean_cost_per_success",
+        "quality_mean",
+        "quality_samples",
+        "verified_rate"
+      ],
+      "required": [
+        "day",
+        "debt_rate",
+        "quality_mean",
+        "quality_samples",
+        "verified_rate"
+      ]
+    },
+    "QueryFilterError": {
+      "enum": null,
+      "properties": [
+        "message",
+        "token"
+      ],
+      "required": [
+        "message",
+        "token"
+      ]
+    },
+    "QueryFilterToken": {
+      "enum": null,
+      "properties": [
+        "available",
+        "comparison",
+        "field",
+        "raw",
+        "value"
+      ],
+      "required": [
+        "available",
+        "comparison",
+        "field",
+        "raw",
+        "value"
+      ]
+    },
+    "RadarAxis": {
+      "enum": null,
+      "properties": [
+        "axis",
+        "value"
+      ],
+      "required": [
+        "axis",
+        "value"
+      ]
+    },
+    "RebilledBlock": {
+      "enum": null,
+      "properties": [
+        "block_id",
+        "cost",
+        "estimated_rebilled_tokens",
+        "evidence",
+        "limitation",
+        "occurrences",
+        "region",
+        "sessions",
+        "suggested_fix",
+        "tokens"
+      ],
+      "required": [
+        "block_id",
+        "cost",
+        "estimated_rebilled_tokens",
+        "evidence",
+        "limitation",
+        "occurrences",
+        "region",
+        "sessions",
+        "suggested_fix",
+        "tokens"
+      ]
+    },
+    "RecapDecayedRule": {
+      "enum": null,
+      "properties": [
+        "decay_state",
+        "experiment_id",
+        "href",
+        "plain_verdict",
+        "target_file"
+      ],
+      "required": [
+        "decay_state",
+        "experiment_id",
+        "href",
+        "plain_verdict",
+        "target_file"
+      ]
+    },
+    "RecapGuardEvent": {
+      "enum": null,
+      "properties": [
+        "event_id",
+        "event_kind",
+        "href",
+        "occurred_at",
+        "path_rel"
+      ],
+      "required": [
+        "event_id",
+        "event_kind",
+        "href",
+        "occurred_at",
+        "path_rel"
+      ]
+    },
+    "RecapRecommendedAction": {
+      "enum": null,
+      "properties": [
+        "href",
+        "label",
+        "reason"
+      ],
+      "required": [
+        "href",
+        "label",
+        "reason"
+      ]
+    },
+    "RecapResponse": {
+      "enum": null,
+      "properties": [
+        "best_session",
+        "cost_per_success_trend",
+        "decayed_rules",
+        "experiment_verdicts",
+        "generated_at",
+        "guard_events",
+        "limitations",
+        "money",
+        "period_days",
+        "period_end",
+        "period_kind",
+        "period_start",
+        "quality_trend",
+        "recommended_action",
+        "timezone",
+        "worst_session"
+      ],
+      "required": [
+        "cost_per_success_trend",
+        "experiment_verdicts",
+        "generated_at",
+        "money",
+        "period_days",
+        "period_end",
+        "period_start",
+        "quality_trend"
+      ]
+    },
+    "RecapSessionHighlight": {
+      "enum": null,
+      "properties": [
+        "href",
+        "metric",
+        "title",
+        "trace_id",
+        "value"
+      ],
+      "required": [
+        "href",
+        "metric",
+        "title",
+        "trace_id",
+        "value"
+      ]
+    },
+    "RecapVerdict": {
+      "enum": null,
+      "properties": [
+        "effect_ci_high",
+        "effect_ci_low",
+        "effect_estimate",
+        "experiment_id",
+        "measured_at",
+        "verdict"
+      ],
+      "required": [
+        "effect_ci_high",
+        "effect_ci_low",
+        "effect_estimate",
+        "experiment_id",
+        "measured_at",
+        "verdict"
+      ]
+    },
+    "ReceiptClaim": {
+      "enum": null,
+      "properties": [
+        "id",
+        "span_ids",
+        "status",
+        "text"
+      ],
+      "required": [
+        "id",
+        "status",
+        "text"
+      ]
+    },
+    "ReceiptDebt": {
+      "enum": null,
+      "properties": [
+        "components",
+        "explanation",
+        "score"
+      ],
+      "required": [
+        "components",
+        "explanation",
+        "score"
+      ]
+    },
+    "ReceiptDebtComponent": {
+      "enum": null,
+      "properties": [
+        "active",
+        "id",
+        "reason",
+        "weight"
+      ],
+      "required": [
+        "active",
+        "id",
+        "reason",
+        "weight"
+      ]
+    },
+    "ReceiptEvidenceRef": {
+      "enum": null,
+      "properties": [
+        "kind",
+        "label",
+        "span_id"
+      ],
+      "required": [
+        "kind",
+        "label"
+      ]
+    },
+    "ReceiptIntent": {
+      "enum": null,
+      "properties": [
+        "limitation",
+        "present",
+        "span_id",
+        "summary"
+      ],
+      "required": [
+        "present"
+      ]
+    },
+    "ReceiptOutcomeSummary": {
+      "enum": null,
+      "properties": [
+        "build_status",
+        "human_label",
+        "label",
+        "quality_score",
+        "tests_failed",
+        "tests_passed",
+        "tests_run"
+      ],
+      "required": []
+    },
+    "ReceiptRequirement": {
+      "enum": null,
+      "properties": [
+        "id",
+        "span_id",
+        "status",
+        "text"
+      ],
+      "required": [
+        "id",
+        "status",
+        "text"
+      ]
+    },
+    "ReceiptResponse": {
+      "enum": null,
+      "properties": [
+        "builder_version",
+        "claims",
+        "claims_limitation",
+        "content_hash",
+        "debt",
+        "evidence",
+        "intent",
+        "limitations",
+        "markdown",
+        "outcome",
+        "persisted",
+        "requirements",
+        "risk_policy",
+        "schema_version",
+        "status",
+        "timeline",
+        "trace_id"
+      ],
+      "required": [
+        "builder_version",
+        "claims_limitation",
+        "content_hash",
+        "debt",
+        "intent",
+        "outcome",
+        "risk_policy",
+        "schema_version",
+        "status",
+        "trace_id"
+      ]
+    },
+    "ReceiptRiskFinding": {
+      "enum": null,
+      "properties": [
+        "enforcement_source",
+        "evidence",
+        "message",
+        "risk",
+        "rule_id"
+      ],
+      "required": [
+        "enforcement_source",
+        "message",
+        "risk",
+        "rule_id"
+      ]
+    },
+    "ReceiptRiskPolicy": {
+      "enum": null,
+      "properties": [
+        "enforcement_note",
+        "evaluated",
+        "findings",
+        "limitation",
+        "review_risk"
+      ],
+      "required": [
+        "evaluated",
+        "limitation"
+      ]
+    },
+    "ReceiptTimelineEvent": {
+      "enum": null,
+      "properties": [
+        "at",
+        "kind",
+        "span_id",
+        "summary"
+      ],
+      "required": [
+        "at",
+        "kind",
+        "summary"
+      ]
+    },
+    "RegionAggregate": {
+      "enum": null,
+      "properties": [
+        "cost",
+        "region",
+        "spans",
+        "tokens"
+      ],
+      "required": [
+        "region",
+        "spans",
+        "tokens"
+      ]
+    },
+    "RegionTrendPoint": {
+      "enum": null,
+      "properties": [
+        "cost",
+        "day",
+        "region",
+        "tokens"
+      ],
+      "required": [
+        "cost",
+        "day",
+        "region",
+        "tokens"
+      ]
+    },
+    "RegionsAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "agents",
+        "cache_trend",
+        "coverage",
+        "days",
+        "ledger",
+        "limitations",
+        "rebilled_blocks",
+        "regions",
+        "resolved_range",
+        "schema_overhead_cost",
+        "schema_overhead_tokens",
+        "trend"
+      ],
+      "required": [
+        "agents",
+        "cache_trend",
+        "coverage",
+        "days",
+        "ledger",
+        "limitations",
+        "rebilled_blocks",
+        "regions",
+        "resolved_range",
+        "schema_overhead_cost",
+        "schema_overhead_tokens",
+        "trend"
+      ]
+    },
+    "ReplayCheckpoint": {
+      "enum": null,
+      "properties": [
+        "seq",
+        "spans",
+        "summary"
+      ],
+      "required": [
+        "seq",
+        "spans",
+        "summary"
+      ]
+    },
+    "ReplayResponse": {
+      "enum": null,
+      "properties": [
+        "checkpoints",
+        "max_seq",
+        "seq",
+        "spans",
+        "step",
+        "summary",
+        "trace_id"
+      ],
+      "required": [
+        "trace_id"
+      ]
+    },
+    "ReplaySummary": {
+      "enum": null,
+      "properties": [
+        "agents",
+        "context_tokens",
+        "cost",
+        "cost_estimated",
+        "files_read",
+        "turn"
+      ],
+      "required": [
+        "agents",
+        "context_tokens",
+        "cost",
+        "cost_estimated",
+        "files_read",
+        "turn"
+      ]
+    },
+    "ResolvedTimeRange": {
+      "enum": null,
+      "properties": [
+        "duration_days",
+        "end",
+        "legacy_days",
+        "preset",
+        "prior_end",
+        "prior_start",
+        "semantics",
+        "start",
+        "timezone"
+      ],
+      "required": [
+        "duration_days",
+        "end",
+        "legacy_days",
+        "preset",
+        "prior_end",
+        "prior_start",
+        "semantics",
+        "start",
+        "timezone"
+      ]
+    },
+    "ResourceBudgetStatus": {
+      "enum": null,
+      "properties": [
+        "message",
+        "ratio",
+        "soft_budget_bytes",
+        "status"
+      ],
+      "required": [
+        "message",
+        "status"
+      ]
+    },
+    "ResourceDiskInventory": {
+      "enum": null,
+      "properties": [
+        "backups_bytes",
+        "cairn_dir",
+        "database_bytes",
+        "exports_bytes",
+        "regressions_bytes",
+        "total_bytes",
+        "wal_bytes"
+      ],
+      "required": [
+        "cairn_dir",
+        "total_bytes"
+      ]
+    },
+    "ResourceForecast": {
+      "enum": null,
+      "properties": [
+        "estimated_bytes_per_day",
+        "kind",
+        "limitation",
+        "projected_total_in_30d",
+        "traces_ingested",
+        "window_days"
+      ],
+      "required": [
+        "estimated_bytes_per_day",
+        "limitation",
+        "traces_ingested",
+        "window_days"
+      ]
+    },
+    "ResourceStatus": {
+      "enum": null,
+      "properties": [
+        "budget",
+        "collection_mode",
+        "disk",
+        "forecast",
+        "limitation",
+        "process_rss_bytes"
+      ],
+      "required": [
+        "budget",
+        "disk",
+        "forecast",
+        "limitation"
+      ]
+    },
+    "SearchFacet": {
+      "enum": null,
+      "properties": [
+        "count",
+        "value"
+      ],
+      "required": [
+        "count",
+        "value"
+      ]
+    },
+    "SearchHit": {
+      "enum": null,
+      "properties": [
+        "kind",
+        "snippet",
+        "span_id",
+        "title",
+        "trace_id"
+      ],
+      "required": [
+        "kind",
+        "snippet",
+        "span_id",
+        "title",
+        "trace_id"
+      ]
+    },
+    "SearchResponse": {
+      "enum": null,
+      "properties": [
+        "facets",
+        "filter_errors",
+        "filter_phrase",
+        "filter_tokens",
+        "hits",
+        "limit",
+        "offset",
+        "q",
+        "search_limitation",
+        "search_mode",
+        "total"
+      ],
+      "required": [
+        "hits",
+        "q",
+        "total"
+      ]
+    },
+    "SessionShield": {
+      "enum": null,
+      "properties": [
+        "action_label",
+        "action_path",
+        "facts",
+        "limitation",
+        "shield",
+        "state",
+        "summary"
+      ],
+      "required": [
+        "action_label",
+        "action_path",
+        "facts",
+        "limitation",
+        "shield",
+        "state",
+        "summary"
+      ]
+    },
+    "ShieldSummary": {
+      "enum": null,
+      "properties": [
+        "action_label",
+        "action_path",
+        "facts",
+        "limitation",
+        "shield",
+        "state",
+        "summary"
+      ],
+      "required": [
+        "action_label",
+        "action_path",
+        "facts",
+        "limitation",
+        "shield",
+        "state",
+        "summary"
+      ]
+    },
+    "Span": {
+      "enum": null,
+      "properties": [
+        "agent_id",
+        "agent_lane",
+        "args_hash",
+        "attrs_json",
+        "cache_creation_tokens",
+        "cache_read_tokens",
+        "context_tokens_after",
+        "duration_ms",
+        "ended_at",
+        "input_estimated",
+        "input_tokens",
+        "kind",
+        "model",
+        "name",
+        "output_estimated",
+        "output_tokens",
+        "parent_span_id",
+        "path_rel",
+        "seq",
+        "span_id",
+        "started_at",
+        "status",
+        "text_hash",
+        "text_inline",
+        "trace_id",
+        "waste_category",
+        "waste_tokens"
+      ],
+      "required": [
+        "kind",
+        "seq",
+        "span_id",
+        "trace_id"
+      ]
+    },
+    "SpanLink": {
+      "enum": null,
+      "properties": [
+        "from_span_id",
+        "link_type",
+        "to_span_id"
+      ],
+      "required": [
+        "from_span_id",
+        "link_type",
+        "to_span_id"
+      ]
+    },
+    "SpanNode": {
+      "enum": null,
+      "properties": [
+        "children",
+        "span"
+      ],
+      "required": [
+        "span"
+      ]
+    },
+    "TailAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "days",
+        "exceedances",
+        "resolved_range",
+        "tail_risk"
+      ],
+      "required": [
+        "days",
+        "exceedances",
+        "resolved_range",
+        "tail_risk"
+      ]
+    },
+    "TailRisk": {
+      "enum": null,
+      "properties": [
+        "exceedance_count",
+        "expected_worst_cost",
+        "threshold"
+      ],
+      "required": []
+    },
+    "ToolAggregate": {
+      "enum": null,
+      "properties": [
+        "cancelled_count",
+        "display_name",
+        "error_count",
+        "error_rate",
+        "estimate_kind",
+        "estimated_cost_share",
+        "family",
+        "invocations",
+        "limitation",
+        "median_latency_ms",
+        "p95_latency_ms",
+        "result_tokens",
+        "retry_rate",
+        "sessions",
+        "success_count",
+        "success_rate",
+        "tool_id",
+        "trend",
+        "worst_session"
+      ],
+      "required": [
+        "cancelled_count",
+        "display_name",
+        "error_count",
+        "error_rate",
+        "estimate_kind",
+        "estimated_cost_share",
+        "family",
+        "invocations",
+        "limitation",
+        "median_latency_ms",
+        "p95_latency_ms",
+        "result_tokens",
+        "retry_rate",
+        "sessions",
+        "success_count",
+        "success_rate",
+        "tool_id",
+        "trend",
+        "worst_session"
+      ]
+    },
+    "ToolCoverage": {
+      "enum": null,
+      "properties": [
+        "distinct_tools",
+        "limitation",
+        "mapped_tools",
+        "sessions",
+        "source",
+        "tool_coverage_pct",
+        "tool_sessions"
+      ],
+      "required": [
+        "distinct_tools",
+        "limitation",
+        "mapped_tools",
+        "sessions",
+        "source",
+        "tool_coverage_pct",
+        "tool_sessions"
+      ]
+    },
+    "ToolEvidence": {
+      "enum": null,
+      "properties": [
+        "label",
+        "span_id",
+        "trace_id"
+      ],
+      "required": [
+        "label",
+        "span_id",
+        "trace_id"
+      ]
+    },
+    "ToolFailureSample": {
+      "enum": null,
+      "properties": [
+        "detail",
+        "display_name",
+        "duration_ms",
+        "evidence",
+        "status",
+        "tool_id"
+      ],
+      "required": [
+        "detail",
+        "display_name",
+        "duration_ms",
+        "evidence",
+        "status",
+        "tool_id"
+      ]
+    },
+    "ToolTrendPoint": {
+      "enum": null,
+      "properties": [
+        "day",
+        "errors",
+        "invocations"
+      ],
+      "required": [
+        "day",
+        "errors",
+        "invocations"
+      ]
+    },
+    "ToolsAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "coverage",
+        "days",
+        "failures",
+        "ledger",
+        "limitations",
+        "resolved_range",
+        "schema_overhead_tokens",
+        "tools"
+      ],
+      "required": [
+        "coverage",
+        "days",
+        "failures",
+        "ledger",
+        "limitations",
+        "resolved_range",
+        "schema_overhead_tokens",
+        "tools"
+      ]
+    },
+    "ToolsLedgerSummary": {
+      "enum": null,
+      "properties": [
+        "conclusion",
+        "distinct_tools",
+        "error_rate",
+        "invocations",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "retry_rate",
+        "schema_overhead_tokens",
+        "schema_tax_estimated",
+        "sessions_total",
+        "sessions_with_tools"
+      ],
+      "required": [
+        "conclusion",
+        "distinct_tools",
+        "error_rate",
+        "invocations",
+        "limitation",
+        "next_action",
+        "next_action_href",
+        "retry_rate",
+        "schema_overhead_tokens",
+        "schema_tax_estimated",
+        "sessions_total",
+        "sessions_with_tools"
+      ]
+    },
+    "Trace": {
+      "enum": null,
+      "properties": [
+        "actor_id",
+        "cache_creation_tokens",
+        "cache_read_tokens",
+        "context_window",
+        "cost",
+        "cost_source",
+        "cwd",
+        "difficulty",
+        "difficulty_bucket",
+        "ended_at",
+        "external_id",
+        "git_branch",
+        "git_commit",
+        "input_tokens",
+        "model",
+        "output_tokens",
+        "peak_context_pct",
+        "project",
+        "reasoning_tokens",
+        "source",
+        "span_count",
+        "started_at",
+        "status",
+        "title",
+        "tool_calls",
+        "tool_errors",
+        "trace_id",
+        "waste_tokens",
+        "workspace_id"
+      ],
+      "required": [
+        "source",
+        "trace_id",
+        "workspace_id"
+      ]
+    },
+    "TraceDetailResponse": {
+      "enum": null,
+      "properties": [
+        "corrections",
+        "diagnostics",
+        "handoff",
+        "links",
+        "mcp_consultations",
+        "outcome",
+        "postmortem",
+        "quality",
+        "receipt",
+        "regions",
+        "shields",
+        "spans",
+        "trace",
+        "tree"
+      ],
+      "required": [
+        "diagnostics",
+        "links",
+        "mcp_consultations",
+        "outcome",
+        "quality",
+        "regions",
+        "spans",
+        "trace",
+        "tree"
+      ]
+    },
+    "TraceDiffAnalysis": {
+      "enum": null,
+      "properties": [
+        "alignment_limitation",
+        "alignment_mode",
+        "alignment_truncated",
+        "comparability",
+        "delta_duration_ms",
+        "delta_tokens",
+        "diagnostic_a",
+        "diagnostic_b",
+        "duration_ms_a",
+        "duration_ms_b",
+        "evidence",
+        "models_a",
+        "models_b",
+        "outcome_a",
+        "outcome_b",
+        "regions",
+        "tokens_a",
+        "tokens_b",
+        "what_changed"
+      ],
+      "required": [
+        "alignment_limitation",
+        "alignment_mode",
+        "alignment_truncated",
+        "comparability",
+        "delta_duration_ms",
+        "delta_tokens",
+        "diagnostic_a",
+        "diagnostic_b",
+        "duration_ms_a",
+        "duration_ms_b",
+        "evidence",
+        "models_a",
+        "models_b",
+        "outcome_a",
+        "outcome_b",
+        "regions",
+        "tokens_a",
+        "tokens_b",
+        "what_changed"
+      ]
+    },
+    "TraceDiffChange": {
+      "enum": null,
+      "properties": [
+        "basis",
+        "evidence",
+        "statement"
+      ],
+      "required": [
+        "basis",
+        "statement"
+      ]
+    },
+    "TraceDiffComparability": {
+      "enum": null,
+      "properties": [
+        "facts",
+        "limitation",
+        "reasons",
+        "state"
+      ],
+      "required": [
+        "facts",
+        "limitation",
+        "reasons",
+        "state"
+      ]
+    },
+    "TraceDiffEvidence": {
+      "enum": null,
+      "properties": [
+        "evidence_type",
+        "label",
+        "side",
+        "span_id",
+        "trace_id"
+      ],
+      "required": [
+        "label",
+        "side",
+        "trace_id"
+      ]
+    },
+    "TraceDiffRegion": {
+      "enum": null,
+      "properties": [
+        "cost_a",
+        "cost_b",
+        "delta_cost",
+        "delta_tokens",
+        "region",
+        "tokens_a",
+        "tokens_b"
+      ],
+      "required": [
+        "cost_a",
+        "cost_b",
+        "delta_cost",
+        "delta_tokens",
+        "region",
+        "tokens_a",
+        "tokens_b"
+      ]
+    },
+    "TraceDiffResponse": {
+      "enum": null,
+      "properties": [
+        "a",
+        "analysis",
+        "b",
+        "summary",
+        "turns"
+      ],
+      "required": [
+        "a",
+        "analysis",
+        "b",
+        "summary",
+        "turns"
+      ]
+    },
+    "TraceDiffSummary": {
+      "enum": null,
+      "properties": [
+        "cost_a",
+        "cost_b",
+        "delta_cost",
+        "delta_quality",
+        "delta_waste_tokens",
+        "quality_a",
+        "quality_b",
+        "waste_a",
+        "waste_b"
+      ],
+      "required": [
+        "cost_a",
+        "cost_b",
+        "delta_cost",
+        "delta_quality",
+        "delta_waste_tokens",
+        "quality_a",
+        "quality_b",
+        "waste_a",
+        "waste_b"
+      ]
+    },
+    "TraceDiffTurn": {
+      "enum": null,
+      "properties": [
+        "a",
+        "b",
+        "delta_quality",
+        "delta_tokens",
+        "delta_waste_tokens",
+        "index",
+        "op"
+      ],
+      "required": [
+        "a",
+        "b",
+        "delta_quality",
+        "delta_tokens",
+        "delta_waste_tokens",
+        "index",
+        "op"
+      ]
+    },
+    "TraceRow": {
+      "enum": null,
+      "properties": [
+        "actor_id",
+        "cost",
+        "cost_source",
+        "data_quality_state",
+        "difficulty",
+        "duration_ms",
+        "ended_at",
+        "first_user_request",
+        "input_tokens",
+        "model",
+        "outcome_label",
+        "output_tokens",
+        "project",
+        "quality_score",
+        "source",
+        "span_count",
+        "started_at",
+        "status",
+        "title",
+        "token_flow",
+        "top_files",
+        "trace_id",
+        "verification_state",
+        "waste_tokens"
+      ],
+      "required": [
+        "actor_id",
+        "cost",
+        "cost_source",
+        "difficulty",
+        "ended_at",
+        "input_tokens",
+        "model",
+        "output_tokens",
+        "project",
+        "source",
+        "span_count",
+        "started_at",
+        "status",
+        "title",
+        "trace_id",
+        "waste_tokens"
+      ]
+    },
+    "TracesListResponse": {
+      "enum": null,
+      "properties": [
+        "filter_errors",
+        "filter_phrase",
+        "filter_tokens",
+        "limit",
+        "offset",
+        "resolved_range",
+        "total",
+        "traces"
+      ],
+      "required": [
+        "limit",
+        "offset",
+        "total",
+        "traces"
+      ]
+    },
+    "TrendAnnotation": {
+      "enum": null,
+      "properties": [
+        "action_path",
+        "kind",
+        "label",
+        "occurred_at"
+      ],
+      "required": [
+        "action_path",
+        "kind",
+        "label",
+        "occurred_at"
+      ]
+    },
+    "UsageAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "days",
+        "group_by",
+        "resolved_range",
+        "series"
+      ],
+      "required": [
+        "days",
+        "group_by",
+        "resolved_range",
+        "series"
+      ]
+    },
+    "UsageSeriesPoint": {
+      "enum": null,
+      "properties": [
+        "cost",
+        "input_tokens",
+        "key",
+        "output_tokens",
+        "traces",
+        "waste_tokens"
+      ],
+      "required": [
+        "cost",
+        "input_tokens",
+        "key",
+        "output_tokens",
+        "traces",
+        "waste_tokens"
+      ]
+    },
+    "VerdictHistoryEntry": {
+      "enum": null,
+      "properties": [
+        "at",
+        "decay_state",
+        "effect_ci_high",
+        "effect_ci_low",
+        "effect_estimate",
+        "outcome_n_raw",
+        "plain_verdict",
+        "regression_outside_interval",
+        "sample_size",
+        "verdict"
+      ],
+      "required": [
+        "at"
+      ]
+    },
+    "VerdictPreviewData": {
+      "enum": null,
+      "properties": [
+        "expected_days_to_verdict",
+        "n_effective_needed",
+        "traces_per_day",
+        "traffic_unknown"
+      ],
+      "required": [
+        "expected_days_to_verdict",
+        "n_effective_needed",
+        "traces_per_day",
+        "traffic_unknown"
+      ]
+    },
+    "WasteAnalyticsResponse": {
+      "enum": null,
+      "properties": [
+        "categories",
+        "days",
+        "resolved_range",
+        "total_waste_tokens"
+      ],
+      "required": [
+        "categories",
+        "days",
+        "resolved_range",
+        "total_waste_tokens"
+      ]
+    },
+    "WasteCategory": {
+      "enum": null,
+      "properties": [
+        "category",
+        "events",
+        "tokens"
+      ],
+      "required": [
+        "category",
+        "events",
+        "tokens"
+      ]
+    },
+    "WasteCause": {
+      "enum": null,
+      "properties": [
+        "category",
+        "cause",
+        "confidence",
+        "confidence_explanation",
+        "estimated_savings_usd",
+        "evidence",
+        "evidence_count",
+        "fix",
+        "waste_tokens"
+      ],
+      "required": [
+        "category",
+        "cause",
+        "estimated_savings_usd",
+        "fix",
+        "waste_tokens"
+      ]
+    },
+    "WorkspaceAdapter": {
+      "enum": null,
+      "properties": [
+        "attempts",
+        "cursor_updated_at",
+        "degraded",
+        "fully_parsed",
+        "issue_url",
+        "last_success_at",
+        "parse_coverage",
+        "skipped",
+        "source",
+        "streams",
+        "unknown_fields",
+        "warning"
+      ],
+      "required": [
+        "attempts",
+        "cursor_updated_at",
+        "degraded",
+        "fully_parsed",
+        "issue_url",
+        "last_success_at",
+        "parse_coverage",
+        "skipped",
+        "source",
+        "streams",
+        "unknown_fields",
+        "warning"
+      ]
+    },
+    "WorkspaceHealth": {
+      "enum": null,
+      "properties": [
+        "adapter_warnings",
+        "fts_available",
+        "human_label_agreement",
+        "insight_count",
+        "trace_count"
+      ],
+      "required": [
+        "adapter_warnings",
+        "fts_available",
+        "human_label_agreement",
+        "insight_count",
+        "trace_count"
+      ]
+    },
+    "WorkspaceResponse": {
+      "enum": null,
+      "properties": [
+        "adapters",
+        "collection",
+        "gauge",
+        "health",
+        "name",
+        "resources",
+        "root_path",
+        "workspace_id"
+      ],
+      "required": [
+        "adapters",
+        "health",
+        "name",
+        "root_path",
+        "workspace_id"
+      ]
+    }
+  }
+}
