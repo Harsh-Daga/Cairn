@@ -1,0 +1,35 @@
+.github/workflows/ci.yml
+  s_2f3774c9a58583::t_25cd3817583d5d 5,7-11,16-19,22,24,26,28,30-33,35,37-44,47-54,57,59,61-67,70-73,75,77,79-133,135-150,152,155-161,164-180,182-183,185,188-194,197-212
+.github/workflows/publish.yml
+  s_2f3774c9a58583::t_dc0013c0378892 1,5,7-11,15-18,21-22,24-28,30-38,41-51,53-81,83-110,112-132,134-139,141-162
+.github/workflows/install.yml
+  s_1b322965a76443::t_98e733238763d3 15-25,34-36,39-41,47,54,67,81-83,86-88,94,101
+.github/workflows/performance.yml
+  s_1b322965a76443::t_4a0f404c347190 1-53
+.github/workflows/security.yml
+  s_1b322965a76443::t_389da0d8f6ad49 1-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "a223d8f88e66fbe04ddb3e5030b95a9f4fa27268",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
