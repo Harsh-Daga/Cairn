@@ -1,0 +1,43 @@
+scripts/check_coverage.py
+  s_1b322965a76443::t_26296cf6568965 1-144
+scripts/e2e_server.py
+  s_1b322965a76443::t_8478e3aacd4031 1-27
+scripts/validate_release_tag.py
+  s_1b322965a76443::t_55c4b4ab6fda12 1-41
+tests/test_coverage_gate.py
+  s_1b322965a76443::t_5c471cc5c6133a 1-77
+tests/test_release_scripts.py
+  s_2f3774c9a58583::t_20e7ae44ac6a28 1-76
+scripts/check_reproducibility.py
+  s_1b322965a76443::t_1a0e5fc810d76d 1-65
+scripts/extract_release_notes.py
+  s_1b322965a76443::t_8b3110309fbd0f 1-42
+scripts/generate_config_reference.py
+  s_1b322965a76443::t_fe11853e9797c1 1-31
+scripts/prepare_e2e_static.py
+  s_1b322965a76443::t_e28e18b5868d53 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "64c6ebec1defed45880572bd220303dc26e8d7e1",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
