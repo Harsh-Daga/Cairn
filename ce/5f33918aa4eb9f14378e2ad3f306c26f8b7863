@@ -1,0 +1,37 @@
+server/static/.gitkeep
+  s_2f3774c9a58583::t_ef2fc70dd3e30e 1
+server/static_file/.gitkeep
+  s_2f3774c9a58583::t_c51c1154e5d2ef 1
+uv.lock
+  s_1b322965a76443::t_315b94740a96d9 1-2135
+packaging/homebrew/README.md
+  s_1b322965a76443::t_c9a00e6ddfcc8f 3-4,6-8
+scripts/hatch_build.py
+  s_1b322965a76443::t_2f5ccb8c06b392 9,15,19,26,29-31,35
+scripts/install.sh
+  s_1b322965a76443::t_5ba93b47c16341 4-5,29-30,32,34,38-40,89,102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "ce5f33918aa4eb9f14378e2ad3f306c26f8b7863",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
