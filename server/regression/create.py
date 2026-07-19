@@ -152,7 +152,7 @@ def create_regression_from_trace(
             "Verification command names are inferred from spans and are not executed.",
             "Prohibited changes are empty until manually edited.",
             "No arbitrary command execution is performed when creating this artifact.",
-            "Use `cairn regression run` to record a later observed session; compare never executes.",
+            "Use `cairn regression run` to record a later session; compare never executes.",
         ],
     )
     body = artifact.model_dump(mode="json")

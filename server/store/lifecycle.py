@@ -321,7 +321,9 @@ def restore_database(
     if not source.is_file():
         raise ValueError(f"Backup not found: {source}")
     backup_integrity = verify_integrity(source)
-    live_integrity = verify_integrity(dest) if dest.is_file() else {"ok": False, "error": "no_live_db"}
+    live_integrity = (
+        verify_integrity(dest) if dest.is_file() else {"ok": False, "error": "no_live_db"}
+    )
     would_pre_restore = bool(dest.is_file() and live_integrity.get("ok"))
     if dry_run:
         return {
