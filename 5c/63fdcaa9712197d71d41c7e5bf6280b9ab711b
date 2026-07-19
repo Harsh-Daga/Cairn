@@ -1,0 +1,26 @@
+server/configuration.py
+  s_2f3774c9a58583::t_d9ac10949260ca 605-606
+tests/test_coverage_gate.py
+  s_2f3774c9a58583::t_9731159f76012d 13,17,19-26
+scripts/check_coverage.py
+  s_2f3774c9a58583::t_8b293c6fcc64c5 102-114,120,122,124-126,136-137
+  s_2f3774c9a58583::t_5f6d1340fa03c7 6
+docs/plans/v1.2.0-coverage-baseline.json
+  s_2f3774c9a58583::t_98abf954ba7214 3,13-14,18-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "5c63fdcaa9712197d71d41c7e5bf6280b9ab711b",
+  "prompts": {},
+  "sessions": {
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
