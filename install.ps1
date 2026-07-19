@@ -1,5 +1,5 @@
 # Cairn installer for Windows (PowerShell)
-# Usage: irm https://raw.githubusercontent.com/Harsh-Daga/Cairn/main/install.ps1 | iex
+# Download this file, inspect it, then run: & .\install.ps1
 #
 # Environment:
 #   $env:CAIRN_VERSION = "<published-version>"   Pin a published PyPI version
@@ -21,7 +21,14 @@ function Ensure-Uv {
         throw "uv is required but INSTALL_UV=0 and uv was not found"
     }
     Write-Host "==> Installing uv..." -ForegroundColor Cyan
-    irm https://astral.sh/uv/install.ps1 | iex
+    $installer = Join-Path ([IO.Path]::GetTempPath()) ("cairn-uv-" + [guid]::NewGuid() + ".ps1")
+    try {
+        Invoke-WebRequest https://astral.sh/uv/install.ps1 -OutFile $installer
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $installer
+    }
+    finally {
+        Remove-Item $installer -Force -ErrorAction SilentlyContinue
+    }
     $env:Path = "$env:USERPROFILE\.local\bin;$env:Path"
     if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
         throw "uv install finished but uv is not on PATH"
@@ -56,7 +63,7 @@ function Install-Cairn {
         pip install --user --upgrade $spec
         return
     }
-    throw "No installer found. Install uv: irm https://astral.sh/uv/install.ps1 | iex"
+    throw "No installer found. Install uv from https://docs.astral.sh/uv/"
 }
 
 Ensure-Uv
