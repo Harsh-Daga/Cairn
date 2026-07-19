@@ -1,0 +1,31 @@
+docs/privacy.md
+  s_2f3774c9a58583::t_04c42603b06ab2 1-40
+server/ingest/circuit_breakers.py
+  s_2f3774c9a58583::t_1e6cef885ba130 1-310
+server/util/egress.py
+  s_3d6681631cd8f8::t_b34573aa1a3bb1 1-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "ddcbb30d4dc970f04001db1af90ab52fbdca4591",
+  "prompts": {},
+  "sessions": {
+    "s_2f3774c9a58583": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6de58528-aa25-4674-8b96-ecf34e7cf858",
+        "model": "grok-4.5"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    },
+    "s_3d6681631cd8f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5dfe00d-8319-46ea-835e-ab8f19abbfe1",
+        "model": "unknown"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
