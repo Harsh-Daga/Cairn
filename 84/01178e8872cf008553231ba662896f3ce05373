@@ -1,0 +1,23 @@
+server/mcp/consultations.py
+  s_1b322965a76443::t_7b222fd85ceafa 12,43,49
+server/mcp/install.py
+  s_1b322965a76443::t_ce8abf515d06ed 10-11,90,106,120,122
+tests/test_mcp_install.py
+  s_1b322965a76443::t_885f7c94fce003 6,47-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "8401178e8872cf008553231ba662896f3ce05373",
+  "prompts": {},
+  "sessions": {
+    "s_1b322965a76443": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7094-7ae9-7ee3-b613-12d3aebfe02c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Harsh Daga <hs108699@gmail.com>"
+    }
+  }
+}
