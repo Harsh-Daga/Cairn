@@ -9,7 +9,13 @@ import type {
   OverviewResponse,
   RecapResponse,
   QualityResponse,
+  ReceiptResponse,
   RegionsAnalyticsResponse,
+  BudgetBurnResponse,
+  CompareAnalyticsResponse,
+  GuardAnalyticsResponse,
+  FilesAnalyticsResponse,
+  ToolsAnalyticsResponse,
   ReplayResponse,
   SearchResponse,
   TailAnalyticsResponse,
@@ -19,7 +25,10 @@ import type {
   UsageAnalyticsResponse,
   WasteAnalyticsResponse,
   WorkspaceResponse,
-} from "./types";
+} from "./generated/api-types";
+import type * as View from "./types";
+import type { TimeRangeRequest } from "./types";
+import { timeRangeParams } from "./timeRange";
 
 const API_BASE = "/api";
 const STATIC_API_BASE = "./api";
@@ -28,6 +37,7 @@ const STATIC_SLUG_RE = /[^A-Za-z0-9._-]+/g;
 declare global {
   interface Window {
     __CAIRN_STATIC__?: boolean;
+    __CAIRN_STATIC_DATA__?: Record<string, unknown>;
   }
 }
 
@@ -61,6 +71,20 @@ export interface HealthResponse {
   version: string;
 }
 
+export interface StaticManifest {
+  schema_version: number;
+  producer_version: string;
+  captured_at: string;
+  data_bounds: { start: string | null; end: string | null; timezone: string };
+  available_days: number[];
+  supported_queries: Record<string, unknown>;
+  custom_range_behavior: "rejected";
+  mutations: false;
+  live_updates: false;
+  privacy: "scrubbed";
+  unsupported: string[];
+}
+
 export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch(`${API_BASE}/health`);
   if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
@@ -73,6 +97,16 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     throw new Error("This is a read-only static snapshot.");
   }
   const url = isStaticMode() ? staticJsonPath(path) : `${API_BASE}${path}`;
+  if (isStaticMode()) {
+    const payloads = window.__CAIRN_STATIC_DATA__;
+    if (!payloads || !Object.prototype.hasOwnProperty.call(payloads, url)) {
+      throw new Error(
+        "This static snapshot does not include that view, filter, or page. " +
+          "Use a captured preset or open the live local app.",
+      );
+    }
+    return payloads[url] as T;
+  }
   const res = await fetch(url, init);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -85,23 +119,18 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
   return res.json() as Promise<T>;
 }
 
-export function timeRangeDays(range: string): number {
-  switch (range) {
-    case "24h":
-      return 1;
-    case "7d":
-      return 7;
-    case "30d":
-      return 30;
-    case "90d":
-      return 90;
-    default:
-      return 30;
-  }
+export function fetchStaticManifest(): Promise<StaticManifest> {
+  return fetchJson("/static-manifest");
 }
 
-export function fetchOverview(days: number): Promise<OverviewResponse> {
-  return fetchJson(`/overview?days=${days}`);
+export { timeRangeDays } from "./timeRange";
+
+function rangeQuery(range: TimeRangeRequest | number): string {
+  return timeRangeParams(range, isStaticMode()).toString();
+}
+
+export function fetchOverview(range: TimeRangeRequest | number): Promise<OverviewResponse> {
+  return fetchJson(`/overview?${rangeQuery(range)}`);
 }
 
 export function fetchRecap(): Promise<RecapResponse> {
@@ -110,15 +139,21 @@ export function fetchRecap(): Promise<RecapResponse> {
 
 export function fetchTraces(params: {
   days?: number;
+  range?: TimeRangeRequest;
   source?: string;
   agent?: string;
   q?: string;
-  sort?: "recent" | "waste" | "cost";
+  sort?: "recent" | "waste" | "cost" | "duration" | "tokens" | "quality";
   limit?: number;
   offset?: number;
 }): Promise<TracesListResponse> {
   const qs = new URLSearchParams();
-  if (params.days) qs.set("days", String(params.days));
+  const rangeParams = params.range
+    ? timeRangeParams(params.range, isStaticMode())
+    : params.days
+      ? timeRangeParams(params.days)
+      : new URLSearchParams();
+  rangeParams.forEach((value, key) => qs.set(key, value));
   if (params.source) qs.set("source", params.source);
   if (params.agent) qs.set("agent", params.agent);
   if (params.q) qs.set("q", params.q);
@@ -128,8 +163,16 @@ export function fetchTraces(params: {
   return fetchJson(`/traces?${qs}`);
 }
 
-export function fetchTraceDetail(traceId: string): Promise<TraceDetailResponse> {
-  return fetchJson(`/traces/${encodeURIComponent(traceId)}`);
+export async function fetchTraceDetail(traceId: string): Promise<View.TraceDetailResponse> {
+  const transport = await fetchJson<TraceDetailResponse>(`/traces/${encodeURIComponent(traceId)}`);
+  return transport as unknown as View.TraceDetailResponse;
+}
+
+export async function fetchTraceReceipt(traceId: string): Promise<View.ReceiptResponse> {
+  const transport = await fetchJson<ReceiptResponse>(
+    `/traces/${encodeURIComponent(traceId)}/receipt`,
+  );
+  return transport as unknown as View.ReceiptResponse;
 }
 
 export function setHumanLabel(
@@ -144,17 +187,27 @@ export function setHumanLabel(
   });
 }
 
-export function fetchReplayCheckpoints(traceId: string): Promise<ReplayResponse> {
-  return fetchJson(`/traces/${encodeURIComponent(traceId)}/replay`);
+export async function fetchReplayCheckpoints(traceId: string): Promise<View.ReplayResponse> {
+  const transport = await fetchJson<ReplayResponse>(
+    `/traces/${encodeURIComponent(traceId)}/replay`,
+  );
+  return transport as unknown as View.ReplayResponse;
 }
 
-export function fetchReplay(traceId: string, seq: number): Promise<ReplayResponse> {
-  return fetchJson(`/traces/${encodeURIComponent(traceId)}/replay?seq=${seq}`);
+export async function fetchReplay(traceId: string, seq: number): Promise<View.ReplayResponse> {
+  const transport = await fetchJson<ReplayResponse>(
+    `/traces/${encodeURIComponent(traceId)}/replay?seq=${seq}`,
+  );
+  return transport as unknown as View.ReplayResponse;
 }
 
-export function fetchTraceDiff(traceIdA: string, traceIdB: string): Promise<TraceDiffResponse> {
+export async function fetchTraceDiff(
+  traceIdA: string,
+  traceIdB: string,
+): Promise<View.TraceDiffResponse> {
   const qs = new URLSearchParams({ a: traceIdA, b: traceIdB });
-  return fetchJson(`/traces/diff?${qs}`);
+  const transport = await fetchJson<TraceDiffResponse>(`/traces/diff?${qs}`);
+  return transport as unknown as View.TraceDiffResponse;
 }
 
 export function fetchInsights(state?: string): Promise<InsightsResponse> {
@@ -170,7 +223,10 @@ export function fetchActions(): Promise<ActionsManifestResponse> {
   return fetchJson("/actions");
 }
 
-export function runAction(name: string, params: Record<string, unknown> = {}): Promise<{
+export function runAction(
+  name: string,
+  params: Record<string, unknown> = {},
+): Promise<{
   ok: boolean;
   result?: Record<string, unknown>;
   job_id?: string;
@@ -185,32 +241,106 @@ export function runAction(name: string, params: Record<string, unknown> = {}): P
   });
 }
 
-export function fetchAgents(days: number): Promise<AgentsResponse> {
-  return fetchJson(`/agents?days=${days}`);
+export type ActionJobStatus = {
+  job_id: string;
+  action: string;
+  status: string;
+  progress: number;
+  message: string | null;
+  error: string | null;
+  result: Record<string, unknown> | null;
+  created_at: string;
+  finished_at: string | null;
+};
+
+export function fetchActionJob(jobId: string): Promise<ActionJobStatus> {
+  return fetchJson(`/actions/jobs/${encodeURIComponent(jobId)}`);
 }
 
-export function fetchBehavior(days: number): Promise<BehaviorResponse> {
-  return fetchJson(`/behavior?days=${days}`);
+/** Poll an async action job until it finishes (or times out). */
+export async function waitForActionJob(
+  jobId: string,
+  {
+    intervalMs = 750,
+    timeoutMs = 10 * 60 * 1000,
+    onProgress,
+    signal,
+  }: {
+    intervalMs?: number;
+    timeoutMs?: number;
+    onProgress?: (job: ActionJobStatus) => void;
+    signal?: AbortSignal;
+  } = {},
+): Promise<ActionJobStatus> {
+  const started = Date.now();
+  for (;;) {
+    if (signal?.aborted) {
+      throw new Error(`Aborted waiting for job ${jobId}`);
+    }
+    const job = await fetchActionJob(jobId);
+    onProgress?.(job);
+    if (
+      job.status === "done" ||
+      job.status === "error" ||
+      job.status === "cancelled" ||
+      job.status === "rejected"
+    ) {
+      return job;
+    }
+    if (Date.now() - started > timeoutMs) {
+      throw new Error(`Timed out waiting for job ${jobId}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
 }
 
-export function fetchQuality(days: number): Promise<QualityResponse> {
-  return fetchJson(`/quality?days=${days}`);
+export function fetchAgents(range: TimeRangeRequest | number): Promise<AgentsResponse> {
+  return fetchJson(`/agents?${rangeQuery(range)}`);
 }
 
-export function fetchRegions(days: number): Promise<RegionsAnalyticsResponse> {
-  return fetchJson(`/analytics/regions?days=${days}`);
+export function fetchBehavior(range: TimeRangeRequest | number): Promise<BehaviorResponse> {
+  return fetchJson(`/behavior?${rangeQuery(range)}`);
 }
 
-export function fetchWaste(days: number): Promise<WasteAnalyticsResponse> {
-  return fetchJson(`/analytics/waste?days=${days}`);
+export function fetchQuality(range: TimeRangeRequest | number): Promise<QualityResponse> {
+  return fetchJson(`/quality?${rangeQuery(range)}`);
 }
 
-export function fetchUsage(days: number): Promise<UsageAnalyticsResponse> {
-  return fetchJson(`/analytics/usage?days=${days}&group_by=day`);
+export function fetchRegions(range: TimeRangeRequest | number): Promise<RegionsAnalyticsResponse> {
+  return fetchJson(`/analytics/regions?${rangeQuery(range)}`);
 }
 
-export function fetchTail(days: number): Promise<TailAnalyticsResponse> {
-  return fetchJson(`/analytics/tail?days=${days}`);
+export function fetchTools(range: TimeRangeRequest | number): Promise<ToolsAnalyticsResponse> {
+  return fetchJson(`/analytics/tools?${rangeQuery(range)}`);
+}
+
+export function fetchFiles(range: TimeRangeRequest | number): Promise<FilesAnalyticsResponse> {
+  return fetchJson(`/analytics/files?${rangeQuery(range)}`);
+}
+
+export function fetchCompare(range: TimeRangeRequest | number): Promise<CompareAnalyticsResponse> {
+  return fetchJson(`/analytics/compare?${rangeQuery(range)}`);
+}
+
+export function fetchGuard(range: TimeRangeRequest | number): Promise<GuardAnalyticsResponse> {
+  return fetchJson(`/analytics/guard?${rangeQuery(range)}`);
+}
+
+export function fetchBudget(range?: TimeRangeRequest | number): Promise<BudgetBurnResponse> {
+  const query = range == null ? "days=30" : rangeQuery(range);
+  return fetchJson(`/analytics/budget?${query}`);
+}
+
+export function fetchWaste(range: TimeRangeRequest | number): Promise<WasteAnalyticsResponse> {
+  return fetchJson(`/analytics/waste?${rangeQuery(range)}`);
+}
+
+export function fetchUsage(range: TimeRangeRequest | number): Promise<UsageAnalyticsResponse> {
+  return fetchJson(`/analytics/usage?${rangeQuery(range)}&group_by=day`);
+}
+
+export function fetchTail(range: TimeRangeRequest | number): Promise<TailAnalyticsResponse> {
+  return fetchJson(`/analytics/tail?${rangeQuery(range)}`);
 }
 
 export function fetchExperimentDetail(experimentId: string): Promise<ExperimentDetailResponse> {
@@ -221,8 +351,9 @@ export function fetchExperiments(): Promise<ExperimentsResponse> {
   return fetchJson("/experiments");
 }
 
-export function fetchSearch(q: string, limit = 20): Promise<SearchResponse> {
+export function fetchSearch(q: string, limit = 20, offset = 0): Promise<SearchResponse> {
   const qs = new URLSearchParams({ q, limit: String(limit) });
+  if (offset > 0) qs.set("offset", String(offset));
   return fetchJson(`/search?${qs}`);
 }
 

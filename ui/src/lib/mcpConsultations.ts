@@ -1,5 +1,5 @@
-import type { FlatRow } from "@/components/waterfall/Waterfall";
 import type { McpConsultation, Span } from "@/lib/types";
+import type { FlatRow } from "@/lib/waterfallTree";
 
 const FRIENDLY_TOOL_NAMES: Record<string, string> = {
   cairn_have_i_read: "have I read",
@@ -36,10 +36,14 @@ export function consultationSpan(event: McpConsultation): Span {
     cache_read_tokens: null,
     cache_creation_tokens: null,
     context_tokens_after: null,
-    text_inline: "Cairn was consulted through its local MCP server. Tool arguments are not recorded.",
+    text_inline:
+      "Cairn was consulted through its local MCP server. Tool arguments are not recorded.",
+    text_hash: null,
+    args_hash: null,
     path_rel: null,
     waste_category: null,
     waste_tokens: 0,
+    attrs_json: {},
   };
 }
 

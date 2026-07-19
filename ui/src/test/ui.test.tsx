@@ -37,9 +37,12 @@ const spans: Span[] = [
     cache_creation_tokens: null,
     context_tokens_after: 1000,
     text_inline: null,
+    text_hash: null,
+    args_hash: null,
     path_rel: null,
     waste_category: null,
     waste_tokens: 0,
+    attrs_json: {},
   },
   {
     span_id: "s2",
@@ -63,9 +66,12 @@ const spans: Span[] = [
     cache_creation_tokens: null,
     context_tokens_after: 2000,
     text_inline: null,
+    text_hash: null,
+    args_hash: null,
     path_rel: null,
     waste_category: null,
     waste_tokens: 0,
+    attrs_json: {},
   },
 ];
 
@@ -77,9 +83,7 @@ function wrap(ui: React.ReactNode) {
 describe("waterfall timeline sync", () => {
   it("timeline click selects span", () => {
     const onSelect = vi.fn();
-    wrap(
-      <ContextTimeline spans={spans} selectedId={null} onSelect={onSelect} />,
-    );
+    wrap(<ContextTimeline spans={spans} selectedId={null} onSelect={onSelect} />);
     fireEvent.click(screen.getByTitle("seq 2"));
     expect(onSelect).toHaveBeenCalledWith("s2");
   });

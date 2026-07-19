@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef } from "react";
-import type { Span, SpanNode } from "@/lib/types";
-import { formatTokens } from "@/lib/format";
+import type { Span } from "@/lib/types";
+import { formatCost, formatDuration, formatTokens } from "@/lib/format";
 import {
   formatTimeRulerLabel,
   parseIsoMs,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/waterfallLayout";
 import { LinkConnectors } from "@/components/waterfall/LinkConnectors";
 import { pairLinkConnectors, type SpanLinkRow } from "@/lib/spanLinks";
+import type { FlatRow } from "@/lib/waterfallTree";
 
 const KIND_COLORS: Record<string, string> = {
   user_msg: "bg-lapis/60",
@@ -24,29 +25,16 @@ const KIND_COLORS: Record<string, string> = {
   compaction: "bg-cinder/40",
   system: "bg-copper/40",
 };
-
-export interface FlatRow {
-  span: Span;
-  depth: number;
-}
-
-export function flattenTree(
-  nodes: SpanNode[],
-  depth = 0,
-  foldSubagents = false,
-): FlatRow[] {
-  const rows: FlatRow[] = [];
-  for (const node of nodes) {
-    rows.push({ span: node.span, depth });
-    if (node.children.length > 0) {
-      const skipChildren = foldSubagents && node.span.kind === "subagent";
-      if (!skipChildren) {
-        rows.push(...flattenTree(node.children, depth + 1, foldSubagents));
-      }
-    }
-  }
-  return rows;
-}
+const KIND_ICONS: Record<string, string> = {
+  user_msg: "U",
+  assistant_msg: "A",
+  tool_call: "↗",
+  tool_result: "↙",
+  llm_call: "◇",
+  subagent: "S",
+  compaction: "C",
+  system: "•",
+};
 
 interface WaterfallProps {
   rows: FlatRow[];
@@ -63,6 +51,7 @@ interface WaterfallProps {
   links?: SpanLinkRow[];
   highlightedLinkId?: string | null;
   onLinkHover?: (connectorId: string | null) => void;
+  traceCost?: number;
 }
 
 function barStyle(layout: BarLayout): React.CSSProperties {
@@ -88,14 +77,19 @@ export function Waterfall({
   links = [],
   highlightedLinkId = null,
   onLinkHover,
+  traceCost = 0,
 }: WaterfallProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const tokenMax =
     maxTokens ??
-    Math.max(
-      1,
-      ...rows.map((r) => (r.span.input_tokens ?? 0) + (r.span.output_tokens ?? 0)),
-    );
+    Math.max(1, ...rows.map((r) => (r.span.input_tokens ?? 0) + (r.span.output_tokens ?? 0)));
+  const totalTokens = Math.max(
+    1,
+    rows.reduce(
+      (total, row) => total + (row.span.input_tokens ?? 0) + (row.span.output_tokens ?? 0),
+      0,
+    ),
+  );
   const traceStartMs = parseIsoMs(traceStartedAt) ?? 0;
 
   const spanIndex = useMemo(() => {
@@ -104,10 +98,7 @@ export function Waterfall({
     return map;
   }, [rows]);
 
-  const connectors = useMemo(
-    () => pairLinkConnectors(links, spanIndex),
-    [links, spanIndex],
-  );
+  const connectors = useMemo(() => pairLinkConnectors(links, spanIndex), [links, spanIndex]);
 
   const highlightedSpanIds = useMemo(() => {
     if (!highlightedLinkId) return new Set<string>();
@@ -132,11 +123,23 @@ export function Waterfall({
 
   const domainStart = timeDomain?.startMs ?? traceStartMs;
   const domainEnd = timeDomain?.endMs ?? traceStartMs + traceDurationMs;
+  const moveSelection = (index: number, direction: -1 | 1) => {
+    const nextIndex = Math.max(0, Math.min(rows.length - 1, index + direction));
+    const next = rows[nextIndex];
+    if (!next) return;
+    onSelect(next.span.span_id);
+    virtualizer.scrollToIndex(nextIndex, { align: "auto" });
+    window.requestAnimationFrame(() => {
+      parentRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-span-id="${CSS.escape(next.span.span_id)}"]`)
+        ?.focus();
+    });
+  };
 
   return (
     <div
       ref={parentRef}
-      className={`h-full overflow-auto rounded-sm border border-quartz-vein bg-granite/20 ${
+      className={`h-[min(70vh,720px)] min-h-[280px] overflow-auto rounded-sm border border-quartz-vein bg-granite/20 ${
         connectors.length > 0 ? "pl-5" : ""
       }`}
     >
@@ -155,8 +158,8 @@ export function Waterfall({
           <div className="flex">
             <span className="w-[45%]">span</span>
             <span className="w-[30%]">bar</span>
-            <span className="w-[12%] text-right">in</span>
-            <span className="w-[13%] text-right">cost</span>
+            <span className="w-[12%] text-right">tokens</span>
+            <span className="w-[13%] text-right">duration / alloc.</span>
           </div>
         )}
       </div>
@@ -181,12 +184,15 @@ export function Waterfall({
           const estimated = span.input_estimated > 0 || span.output_estimated > 0;
           const wasted = blameMode && (span.waste_tokens > 0 || span.waste_category != null);
           const consultation = span.name?.startsWith("agent consulted Cairn here") ?? false;
+          const spanTokens = (span.input_tokens ?? 0) + (span.output_tokens ?? 0);
+          const allocatedCost = spanTokens > 0 ? (traceCost * spanTokens) / totalTokens : null;
 
           return (
             <button
               key={span.span_id}
               type="button"
               data-span-id={span.span_id}
+              aria-pressed={selected}
               className={`absolute left-0 flex w-full items-center border-b border-quartz-vein/40 px-3 py-1 text-left hover:bg-shale/60 ${
                 selected ? "border-l-2 border-l-copper bg-shale/80" : ""
               } ${linked ? "bg-patina/10 ring-1 ring-inset ring-patina/30" : ""} ${
@@ -197,19 +203,31 @@ export function Waterfall({
               style={{
                 height: item.size,
                 transform: `translateY(${item.start}px)`,
-                paddingLeft: `${12 + depth * 16}px`,
+                paddingLeft: `${12 + Math.min(depth, 24) * 16}px`,
               }}
               onClick={() => onSelect(span.span_id)}
               onDoubleClick={() => onZoomSpan?.(span)}
+              onKeyDown={(event) => {
+                if (event.key === "j" || event.key === "ArrowDown") {
+                  event.preventDefault();
+                  moveSelection(item.index, 1);
+                } else if (event.key === "k" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  moveSelection(item.index, -1);
+                }
+              }}
             >
               <span className="w-[45%] truncate font-mono text-[11px]">
+                <span aria-hidden="true" className="mr-1 inline-block w-3 text-center text-cinder">
+                  {KIND_ICONS[span.kind] ?? "·"}
+                </span>
                 {consultation ? span.name : `${span.kind} · ${span.name ?? "—"}`}
               </span>
               <span className="relative w-[30%] px-2">
                 <span
                   className={`block h-3 rounded-sm ${barClass} ${
                     layout.hatched
-                      ? "border border-dashed border-cinder bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.08)_0_4px,transparent_4px_8px)]"
+                      ? "border border-dashed border-cinder bg-[repeating-linear-gradient(135deg,rgb(var(--text-primary-rgb)/0.08)_0_4px,transparent_4px_8px)]"
                       : estimated
                         ? "border border-dashed border-cinder"
                         : ""
@@ -220,10 +238,15 @@ export function Waterfall({
                   }}
                 />
               </span>
-              <span className={`w-[12%] text-right font-mono text-[10px] ${estimated ? "estimated-chip" : ""}`}>
-                {formatTokens(span.input_tokens ?? 0)}
+              <span
+                className={`w-[12%] text-right font-mono text-[10px] ${estimated ? "estimated-chip" : ""}`}
+              >
+                {formatTokens((span.input_tokens ?? 0) + (span.output_tokens ?? 0))}
               </span>
-              <span className="w-[13%] text-right font-mono text-[10px] text-cinder">—</span>
+              <span className="w-[13%] text-right font-mono text-[10px] text-cinder">
+                {formatDuration(span.duration_ms)}
+                {allocatedCost != null ? ` / ~${formatCost(allocatedCost, 3)}` : ""}
+              </span>
             </button>
           );
         })}

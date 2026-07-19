@@ -15,13 +15,7 @@ export interface RadarProps {
   className?: string;
 }
 
-export function Radar({
-  points,
-  maxValue,
-  width = 240,
-  height = 240,
-  className,
-}: RadarProps) {
+export function Radar({ points, maxValue, width = 240, height = 240, className }: RadarProps) {
   const cx = width / 2;
   const cy = height / 2;
   const radius = Math.min(width, height) / 2 - 24;

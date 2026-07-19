@@ -1,10 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import {
-  DEFAULT_VIEW,
-  deleteSavedView,
-  loadSavedViews,
-  saveCurrentView,
-} from "@/lib/savedViews";
+import { DEFAULT_VIEW, deleteSavedView, loadSavedViews, saveCurrentView } from "@/lib/savedViews";
 
 describe("savedViews", () => {
   beforeEach(() => {

@@ -30,13 +30,18 @@ export function Gauge({
         className="overflow-hidden rounded-sm bg-granite"
         style={{ height: Math.max(5, height - 20) }}
         role="meter"
+        aria-label={label}
         aria-valuenow={pct}
         aria-valuemin={0}
         aria-valuemax={100}
+        aria-valuetext={`${pct.toFixed(0)} percent${detail ? `, ${detail}` : ""}`}
       >
         <div
           className={`h-full rounded-sm transition-[width] duration-200 ${warn ? "bg-cinnabar" : "bg-copper"}`}
-          style={{ width: `${pct}%`, backgroundColor: warn ? chartColors.fillWarn : chartColors.fill }}
+          style={{
+            width: `${pct}%`,
+            backgroundColor: warn ? chartColors.fillWarn : chartColors.fill,
+          }}
         />
       </div>
       {detail ? <div className="mt-1.5 font-mono text-[10px] text-bone">{detail}</div> : null}

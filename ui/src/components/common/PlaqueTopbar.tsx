@@ -3,25 +3,28 @@ import { Command, RefreshCw, Radio } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUiStore } from "@/state/ui";
 import { useToastStore } from "@/state/toast";
-import { fetchWorkspace, isStaticMode, runAction } from "@/lib/api";
+import { fetchWorkspace, runAction } from "@/lib/api";
 import { formatRelative } from "@/lib/format";
 import { connectLiveEvents } from "@/lib/sse";
-
-const RANGES = ["24h", "7d", "30d", "90d"] as const;
+import { useTimeRangeUrlState } from "@/hooks/useTimeRangeUrlState";
+import { TimeRangePicker } from "@/components/ui";
 
 export function PlaqueTopbar() {
   const queryClient = useQueryClient();
-  const timeRange = useUiStore((s) => s.timeRange);
-  const setTimeRange = useUiStore((s) => s.setTimeRange);
+  const { timeRange, customTimeRange, selectPreset, selectCustom, staticMode } =
+    useTimeRangeUrlState();
   const watchEnabled = useUiStore((s) => s.watchEnabled);
   const setWatch = useUiStore((s) => s.setWatch);
   const setPaletteOpen = useUiStore((s) => s.setPaletteOpen);
   const showToast = useToastStore((s) => s.show);
   const [ssePulse, setSsePulse] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const staticMode = isStaticMode();
 
-  const { data: workspace } = useQuery({
+  const {
+    data: workspace,
+    isError,
+    isRefetchError,
+  } = useQuery({
     queryKey: ["workspace"],
     queryFn: fetchWorkspace,
     staleTime: 60_000,
@@ -74,12 +77,22 @@ export function PlaqueTopbar() {
   const meta = surveyedAt
     ? `${traceCount} sessions · surveyed ${formatRelative(surveyedAt)}`
     : `${traceCount} sessions · surveyed just now`;
+  const disconnected = isError || isRefetchError;
 
   return (
-    <header className="plaque-topbar flex h-[60px] shrink-0 items-center gap-4 border-b border-t border-quartz-vein/80 bg-shale/90 px-6 backdrop-blur-xl">
+    <header className="plaque-topbar relative z-30 flex h-[60px] shrink-0 items-center gap-4 border-b border-t border-quartz-vein/80 bg-shale/90 px-6 backdrop-blur-xl">
       <div className="plaque-workspace flex min-w-0 items-baseline gap-3">
         <span className="display text-[15px] text-bone">{workspace?.name ?? "workspace"}</span>
         <span className="plaque-meta mono text-[11px] text-cinder">{meta}</span>
+        {disconnected ? (
+          <span
+            className="rounded-chip border border-cinnabar/50 bg-cinnabar/10 px-2 py-0.5 font-mono text-[10px] text-cinnabar"
+            role="status"
+            aria-live="polite"
+          >
+            Local server disconnected
+          </span>
+        ) : null}
         {watchEnabled ? (
           <span
             className={`inline-flex items-center gap-1.5 font-mono text-[10px] ${
@@ -100,25 +113,14 @@ export function PlaqueTopbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2.5">
-        <div
-          className="plaque-ranges flex rounded-sm border border-quartz-vein bg-slate p-0.5"
-          role="group"
-          aria-label="Time range"
-        >
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setTimeRange(r)}
-              className={`rounded-chip px-2.5 py-1 font-mono text-[11px] transition-colors ${
-                timeRange === r
-                  ? "bg-granite text-bone"
-                  : "text-cinder hover:text-bone"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
+        <div className="plaque-ranges">
+          <TimeRangePicker
+            value={timeRange}
+            custom={customTimeRange}
+            onPreset={selectPreset}
+            onCustom={selectCustom}
+            customDisabled={staticMode}
+          />
         </div>
 
         {!staticMode ? (
@@ -131,8 +133,9 @@ export function PlaqueTopbar() {
                 : "border-quartz-vein text-cinder hover:text-bone"
             }`}
             aria-pressed={watchEnabled}
+            title="Browser live updates (SSE). Does not start or stop backend auto-sync."
           >
-            Watch
+            Live updates
           </button>
         ) : null}
 
@@ -143,7 +146,10 @@ export function PlaqueTopbar() {
             onClick={() => syncMut.mutate()}
             className="rounded-sm border border-copper-dim px-3 py-1.5 text-xs font-medium text-copper hover:bg-granite disabled:opacity-50"
           >
-            <RefreshCw className={`mr-1.5 inline h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} aria-hidden="true" />
+            <RefreshCw
+              className={`mr-1.5 inline h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
             {syncing ? "Syncing…" : "Sync now"}
           </button>
         ) : null}

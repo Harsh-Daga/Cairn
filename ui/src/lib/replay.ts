@@ -7,8 +7,7 @@ export function interpolateReplayAtSeq(
   if (checkpoints.length === 0 || seq <= 0) {
     return { spans: [], summary: { turn: 0 } };
   }
-  const anchor =
-    checkpoints.find((cp) => cp.seq >= seq) ?? checkpoints[checkpoints.length - 1]!;
+  const anchor = checkpoints.find((cp) => cp.seq >= seq) ?? checkpoints[checkpoints.length - 1]!;
   const spans = anchor.spans.filter((s) => s.seq <= seq);
   const ctx = [...spans].reverse().find((s) => s.context_tokens_after)?.context_tokens_after;
   const files = new Set(spans.map((s) => s.path_rel).filter(Boolean)).size;

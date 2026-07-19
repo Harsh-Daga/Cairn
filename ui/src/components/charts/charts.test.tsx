@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import {
   Sparkline,
   StackedArea,
@@ -8,7 +8,9 @@ import {
   ControlChart,
   IntervalPlot,
   Gauge,
+  ChartFrame,
 } from "./index";
+import { aggregateOtherSeries } from "./chartTheme";
 
 describe("chart kit smoke renders", () => {
   it("Sparkline", () => {
@@ -30,6 +32,28 @@ describe("chart kit smoke renders", () => {
       />,
     );
     expect(container.querySelector("svg")).toBeTruthy();
+  });
+
+  it("inspects stacked-area points with the keyboard", () => {
+    const { container } = render(
+      <StackedArea
+        data={[
+          { day: "Mon", cost: 10 },
+          { day: "Tue", cost: 12 },
+        ]}
+        keys={["cost"]}
+        xKey="day"
+        width={200}
+        height={120}
+      />,
+    );
+    const chart = screen.getByRole("img", { name: /left and right arrow keys/i });
+    fireEvent.focus(chart);
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toContain("Mon");
+    fireEvent.keyDown(chart, { key: "ArrowRight" });
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toContain("Tue");
+    fireEvent.keyDown(chart, { key: "Home" });
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toContain("Mon");
   });
 
   it("HorizontalBars", () => {
@@ -70,11 +94,7 @@ describe("chart kit smoke renders", () => {
 
   it("IntervalPlot", () => {
     const { container } = render(
-      <IntervalPlot
-        points={[{ label: "A", value: 5, low: 3, high: 7 }]}
-        width={200}
-        height={80}
-      />,
+      <IntervalPlot points={[{ label: "A", value: 5, low: 3, high: 7 }]} width={200} height={80} />,
     );
     expect(container.querySelector("svg")).toBeTruthy();
   });
@@ -82,5 +102,36 @@ describe("chart kit smoke renders", () => {
   it("Gauge", () => {
     const { container } = render(<Gauge value={65} detail="650k / 1M" label="plan window · 5h" />);
     expect(container.querySelector('[role="meter"]')).toBeTruthy();
+  });
+
+  it("ChartFrame exposes a sentence and equivalent table", () => {
+    render(
+      <ChartFrame
+        title="Spend trend"
+        summary="Spend rose from 10 to 12 dollars."
+        rows={[
+          { day: "Mon", spend: 10 },
+          { day: "Tue", spend: 12 },
+        ]}
+        columns={[
+          { key: "day", label: "Day", value: (row) => row.day },
+          { key: "spend", label: "Spend", numeric: true, value: (row) => row.spend },
+        ]}
+      >
+        <div aria-hidden="true">visual</div>
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Spend rose from 10 to 12 dollars.")).toBeTruthy();
+    expect(screen.getByRole("table", { name: "Spend trend data" })).toBeTruthy();
+  });
+
+  it("deterministically aggregates excess series as other", () => {
+    const keys = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const aggregated = aggregateOtherSeries(
+      [{ day: "Mon", a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7, h: 8 }],
+      keys,
+    );
+    expect(aggregated.keys).toEqual(["a", "b", "c", "d", "e", "f", "other"]);
+    expect(aggregated.data[0]?.other).toBe(15);
   });
 });

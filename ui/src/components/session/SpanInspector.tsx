@@ -1,41 +1,55 @@
 import { useState } from "react";
-import type { Span } from "@/lib/types";
+import type { ContextRegion, Span, SpanLink } from "@/lib/types";
 import { Chip } from "@/components/common/Chip";
-import { formatTokens } from "@/lib/format";
+import { formatDuration, formatTokens } from "@/lib/format";
 
-type InspectorTab = "summary" | "text" | "waste";
+type InspectorTab = "summary" | "content" | "context" | "links";
 
 interface SpanInspectorProps {
   span: Span | null;
+  regions?: ContextRegion[];
+  links?: SpanLink[];
+  onSelectSpan?: (spanId: string) => void;
 }
 
-export function SpanInspector({ span }: SpanInspectorProps) {
+export function SpanInspector({
+  span,
+  regions = [],
+  links = [],
+  onSelectSpan,
+}: SpanInspectorProps) {
   const [tab, setTab] = useState<InspectorTab>("summary");
 
   if (!span) {
     return (
-      <div className="card flex h-full items-center justify-center p-4 text-sm text-cinder">
+      <aside className="card flex h-full items-center justify-center p-4 text-sm text-cinder">
         Select a span to inspect
-      </div>
+      </aside>
     );
   }
 
   const estimated = span.input_estimated > 0 || span.output_estimated > 0;
   const hasWaste = span.waste_tokens > 0 || span.waste_category != null;
+  const spanRegions = regions.filter((region) => region.span_id === span.span_id);
+  const spanLinks = links.filter(
+    (link) => link.from_span_id === span.span_id || link.to_span_id === span.span_id,
+  );
 
   return (
-    <div className="card flex h-full flex-col overflow-hidden">
-      <div className="flex border-b border-quartz-vein">
-        {(["summary", "text", "waste"] as const).map((t) => (
+    <aside className="card flex h-full flex-col overflow-hidden" aria-label="Span inspector">
+      <div className="flex border-b border-quartz-vein" role="tablist" aria-label="Inspector views">
+        {(["summary", "content", "context", "links"] as const).map((nextTab) => (
           <button
-            key={t}
+            key={nextTab}
             type="button"
-            className={`flex-1 px-3 py-2 font-mono text-[10px] uppercase tracking-wide ${
-              tab === t ? "border-b-2 border-copper text-bone" : "text-cinder hover:text-bone"
+            role="tab"
+            aria-selected={tab === nextTab}
+            className={`flex-1 px-2 py-2 font-mono text-[9px] uppercase tracking-wide ${
+              tab === nextTab ? "border-b-2 border-copper text-bone" : "text-cinder hover:text-bone"
             }`}
-            onClick={() => setTab(t)}
+            onClick={() => setTab(nextTab)}
           >
-            {t}
+            {nextTab}
           </button>
         ))}
       </div>
@@ -50,62 +64,98 @@ export function SpanInspector({ span }: SpanInspectorProps) {
             </div>
             <h3 className="mt-3 font-mono text-sm text-bone">{span.name ?? span.kind}</h3>
             <dl className="mt-4 space-y-2 font-mono text-[11px]">
-              <div className="flex justify-between">
-                <dt className="text-cinder">seq</dt>
-                <dd>{span.seq}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-cinder">tokens in/out</dt>
-                <dd className={estimated ? "estimated-chip" : ""}>
-                  {formatTokens(span.input_tokens ?? 0)} / {formatTokens(span.output_tokens ?? 0)}
-                </dd>
-              </div>
+              <Fact label="seq" value={String(span.seq)} />
+              <Fact
+                label="tokens in/out"
+                value={`${formatTokens(span.input_tokens ?? 0)} / ${formatTokens(
+                  span.output_tokens ?? 0,
+                )}`}
+                estimated={estimated}
+              />
+              <Fact label="duration" value={formatDuration(span.duration_ms)} />
               {span.context_tokens_after != null ? (
-                <div className="flex justify-between">
-                  <dt className="text-cinder">context after</dt>
-                  <dd>{formatTokens(span.context_tokens_after)}</dd>
-                </div>
+                <Fact label="context after" value={formatTokens(span.context_tokens_after)} />
               ) : null}
-              {span.path_rel ? (
-                <div className="flex justify-between gap-4">
-                  <dt className="text-cinder">path</dt>
-                  <dd className="truncate text-right">{span.path_rel}</dd>
-                </div>
-              ) : null}
+              {span.path_rel ? <Fact label="path" value={span.path_rel} /> : null}
             </dl>
+            {hasWaste ? (
+              <div className="mt-4 rounded-sm border border-ochre/40 p-3 text-xs text-cinder">
+                {span.waste_category ?? "Recorded waste"} · {formatTokens(span.waste_tokens)}{" "}
+                tokens. Waste attribution is recorded analysis, not a causal guarantee.
+              </div>
+            ) : null}
           </>
         ) : null}
-        {tab === "text" ? (
+        {tab === "content" ? (
           span.text_inline ? (
-            <pre className="max-h-full overflow-auto rounded-sm bg-granite/40 p-3 font-mono text-[10px] text-bone">
+            <pre className="max-h-full overflow-auto whitespace-pre-wrap rounded-sm bg-granite/40 p-3 font-mono text-[10px] text-bone">
               {span.text_inline.slice(0, 4000)}
             </pre>
           ) : (
             <p className="text-sm text-cinder">No inline text for this span.</p>
           )
         ) : null}
-        {tab === "waste" ? (
-          hasWaste ? (
+        {tab === "context" ? (
+          spanRegions.length > 0 ? (
             <dl className="space-y-3 font-mono text-[11px]">
-              {span.waste_category ? (
-                <div>
-                  <dt className="text-cinder">category</dt>
-                  <dd className="mt-1 text-ochre">{span.waste_category}</dd>
+              {spanRegions.map((region) => (
+                <div
+                  key={`${region.span_id}-${region.region}`}
+                  className="rounded-sm border border-quartz-vein p-3"
+                >
+                  <dt className="text-cinder">{region.region}</dt>
+                  <dd className="mt-1 text-bone">
+                    {formatTokens(region.tokens)} tokens ·{" "}
+                    {region.still_in_window ? "retained" : "left window"}
+                  </dd>
                 </div>
-              ) : null}
-              <div>
-                <dt className="text-cinder">waste tokens</dt>
-                <dd className="mt-1 text-bone">{formatTokens(span.waste_tokens)}</dd>
-              </div>
-              <p className="text-xs text-cinder">
-                Waste spans are re-billed on subsequent turns when context is retained.
-              </p>
+              ))}
             </dl>
           ) : (
-            <p className="text-sm text-cinder">No waste flagged on this span.</p>
+            <p className="text-sm text-cinder">No context-region evidence for this span.</p>
+          )
+        ) : null}
+        {tab === "links" ? (
+          spanLinks.length > 0 ? (
+            <ul className="space-y-2">
+              {spanLinks.map((link) => {
+                const target =
+                  link.from_span_id === span.span_id ? link.to_span_id : link.from_span_id;
+                return (
+                  <li key={`${link.from_span_id}-${link.to_span_id}-${link.link_type}`}>
+                    <button
+                      type="button"
+                      className="w-full rounded-sm border border-quartz-vein p-3 text-left font-mono text-[10px] text-copper"
+                      onClick={() => onSelectSpan?.(target)}
+                    >
+                      {link.link_type} → {target}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-cinder">No parent, retry, or handoff links were recorded.</p>
           )
         ) : null}
       </div>
+    </aside>
+  );
+}
+
+function Fact({
+  label,
+  value,
+  estimated = false,
+}: {
+  label: string;
+  value: string;
+  estimated?: boolean;
+}) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className="text-cinder">{label}</dt>
+      <dd className={`truncate text-right ${estimated ? "estimated-chip" : ""}`}>{value}</dd>
     </div>
   );
 }

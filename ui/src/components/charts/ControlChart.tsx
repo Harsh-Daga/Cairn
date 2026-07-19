@@ -47,9 +47,26 @@ export function ControlChart({
     <svg width={width} height={height} className={className} role="img" aria-label="Control chart">
       <Group left={margin.left} top={margin.top}>
         <GridRows scale={yScale} width={innerW} stroke={chartColors.grid} strokeOpacity={0.4} />
-        <Line from={{ x: 0, y: yScale(upper) ?? 0 }} to={{ x: innerW, y: yScale(upper) ?? 0 }} stroke={chartColors.fillWarn} strokeDasharray="4 4" strokeWidth={1} />
-        <Line from={{ x: 0, y: yScale(computedMean) ?? 0 }} to={{ x: innerW, y: yScale(computedMean) ?? 0 }} stroke={chartColors.muted} strokeWidth={1} />
-        <Line from={{ x: 0, y: yScale(lower) ?? 0 }} to={{ x: innerW, y: yScale(lower) ?? 0 }} stroke={chartColors.fillWarn} strokeDasharray="4 4" strokeWidth={1} />
+        <Line
+          from={{ x: 0, y: yScale(upper) ?? 0 }}
+          to={{ x: innerW, y: yScale(upper) ?? 0 }}
+          stroke={chartColors.fillWarn}
+          strokeDasharray="4 4"
+          strokeWidth={1}
+        />
+        <Line
+          from={{ x: 0, y: yScale(computedMean) ?? 0 }}
+          to={{ x: innerW, y: yScale(computedMean) ?? 0 }}
+          stroke={chartColors.muted}
+          strokeWidth={1}
+        />
+        <Line
+          from={{ x: 0, y: yScale(lower) ?? 0 }}
+          to={{ x: innerW, y: yScale(lower) ?? 0 }}
+          stroke={chartColors.fillWarn}
+          strokeDasharray="4 4"
+          strokeWidth={1}
+        />
         <LinePath
           data={data}
           x={(_, i) => xScale(i) ?? 0}
@@ -59,8 +76,29 @@ export function ControlChart({
           strokeWidth={1.5}
           fill="none"
         />
-        <AxisLeft scale={yScale} stroke={chartColors.axis} tickStroke={chartColors.axis} tickLabelProps={() => ({ fill: chartColors.muted, fontSize: 10, fontFamily: "var(--font-mono)" })} numTicks={4} />
-        <AxisBottom top={innerH} scale={xScale} stroke={chartColors.axis} tickStroke={chartColors.axis} tickLabelProps={() => ({ fill: chartColors.muted, fontSize: 10, fontFamily: "var(--font-mono)" })} numTicks={4} />
+        <AxisLeft
+          scale={yScale}
+          stroke={chartColors.axis}
+          tickStroke={chartColors.axis}
+          tickLabelProps={() => ({
+            fill: chartColors.muted,
+            fontSize: 10,
+            fontFamily: "var(--font-mono)",
+          })}
+          numTicks={4}
+        />
+        <AxisBottom
+          top={innerH}
+          scale={xScale}
+          stroke={chartColors.axis}
+          tickStroke={chartColors.axis}
+          tickLabelProps={() => ({
+            fill: chartColors.muted,
+            fontSize: 10,
+            fontFamily: "var(--font-mono)",
+          })}
+          numTicks={4}
+        />
       </Group>
     </svg>
   );

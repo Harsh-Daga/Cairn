@@ -1,15 +1,12 @@
 import { Link } from "react-router-dom";
+import { EmptyState, InlineError } from "@/components/ui";
 
 interface ErrorCardProps {
   message?: string;
 }
 
 export function ErrorCard({ message }: ErrorCardProps) {
-  return (
-    <div className="card p-6 text-cinnabar">
-      {message ?? "Couldn't reach the local server — is cairn running?"}
-    </div>
-  );
+  return <InlineError message={message ?? "Couldn't reach the local server — is cairn running?"} />;
 }
 
 interface EmptyCardProps {
@@ -19,13 +16,7 @@ interface EmptyCardProps {
 }
 
 export function EmptyCard({ title, detail, action }: EmptyCardProps) {
-  return (
-    <div className="card empty-state">
-      <h2>{title}</h2>
-      <p className="mt-2 text-sm">{detail}</p>
-      {action ? <div className="mt-4">{action}</div> : null}
-    </div>
-  );
+  return <EmptyState title={title} detail={detail} action={action} />;
 }
 
 interface HorizontalBarsProps {
@@ -46,10 +37,7 @@ export function HorizontalBars({ items, max }: HorizontalBarsProps) {
               <span>{item.value.toLocaleString()}</span>
             </div>
             <div className="h-2 rounded-sm bg-granite">
-              <div
-                className="h-2 rounded-sm bg-copper"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-2 rounded-sm bg-copper" style={{ width: `${pct}%` }} />
             </div>
           </>
         );
