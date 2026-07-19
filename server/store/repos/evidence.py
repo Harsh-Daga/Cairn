@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 from server.models.evidence import Evidence
+from server.store.pagination import bounded_page
 from server.store.repos._crud import delete_where, fetch_all, fetch_one, insert, update, upsert
 
 _TABLE = "evidence"
@@ -34,6 +35,7 @@ class EvidenceRepo:
         limit: int = 100,
         offset: int = 0,
     ) -> list[Evidence]:
+        limit, offset = bounded_page(limit, offset)
         return fetch_all(
             conn,
             f"SELECT * FROM {_TABLE} WHERE producer = ? ORDER BY produced_at DESC LIMIT ? OFFSET ?",
@@ -43,6 +45,7 @@ class EvidenceRepo:
 
     @staticmethod
     def list_all(conn: sqlite3.Connection, *, limit: int = 100, offset: int = 0) -> list[Evidence]:
+        limit, offset = bounded_page(limit, offset)
         return fetch_all(
             conn,
             f"SELECT * FROM {_TABLE} ORDER BY produced_at DESC LIMIT ? OFFSET ?",

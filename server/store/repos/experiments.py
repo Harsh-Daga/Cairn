@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 
 from server.models.experiment import Experiment, ExperimentStatus
+from server.store.pagination import bounded_page
 from server.store.repos._crud import delete_where, fetch_all, fetch_one, insert, update, upsert
 
 _TABLE = "experiments"
@@ -46,6 +48,7 @@ class ExperimentRepo:
         limit: int = 100,
         offset: int = 0,
     ) -> list[Experiment]:
+        limit, offset = bounded_page(limit, offset)
         if status is None:
             return fetch_all(
                 conn,
@@ -59,6 +62,28 @@ class ExperimentRepo:
             (status, limit, offset),
             Experiment,
         )
+
+    @staticmethod
+    def iter_all(
+        conn: sqlite3.Connection,
+        *,
+        status: ExperimentStatus | None = None,
+        page_size: int = 500,
+    ) -> Iterator[Experiment]:
+        """Yield experiments through bounded repository pages."""
+        page_size, _ = bounded_page(page_size)
+        offset = 0
+        while True:
+            page = ExperimentRepo.list_all(
+                conn,
+                status=status,
+                limit=page_size,
+                offset=offset,
+            )
+            yield from page
+            if len(page) < page_size:
+                return
+            offset += page_size
 
     @staticmethod
     def update(conn: sqlite3.Connection, experiment: Experiment) -> bool:

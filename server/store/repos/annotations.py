@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 from server.models.annotation import Annotation
+from server.store.pagination import bounded_page
 from server.store.repos._crud import delete_where, fetch_all, fetch_one, insert, update, upsert
 
 _TABLE = "annotations"
@@ -44,6 +45,7 @@ class AnnotationRepo:
     def list_all(
         conn: sqlite3.Connection, *, limit: int = 100, offset: int = 0
     ) -> list[Annotation]:
+        limit, offset = bounded_page(limit, offset)
         return fetch_all(
             conn,
             f"SELECT * FROM {_TABLE} ORDER BY created_at DESC LIMIT ? OFFSET ?",

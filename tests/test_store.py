@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -30,6 +32,7 @@ from server.models import (
 )
 from server.store.db import Database, connect
 from server.store.migrate import migrate
+from server.store.pagination import iter_rows
 from server.store.repos import (
     ActorRepo,
     AnnotationRepo,
@@ -69,6 +72,44 @@ def db(tmp_path: Path) -> Database:
     database.close()
 
 
+def test_database_storage_is_private_even_with_permissive_umask(tmp_path: Path) -> None:
+    previous = os.umask(0)
+    try:
+        db_path = tmp_path / "workspace" / ".cairn" / "cairn.db"
+        database = Database(db_path)
+        database.reader.execute("CREATE TABLE permission_probe (id INTEGER)")
+        database.reader.commit()
+        database.close()
+    finally:
+        os.umask(previous)
+
+    if os.name != "nt":
+        assert db_path.parent.stat().st_mode & 0o777 == 0o700
+        assert db_path.stat().st_mode & 0o777 == 0o600
+        for suffix in ("-wal", "-shm"):
+            sidecar = Path(f"{db_path}{suffix}")
+            if sidecar.exists():
+                assert sidecar.stat().st_mode & 0o777 == 0o600
+
+
+def test_private_text_replace_keeps_owner_only_mode(tmp_path: Path) -> None:
+    from server.util.private_files import write_private_text
+
+    target = tmp_path / "private" / "config.toml"
+    previous = os.umask(0)
+    try:
+        write_private_text(target, "token = 'first'\n")
+        write_private_text(target, "token = 'second'\n")
+    finally:
+        os.umask(previous)
+
+    assert target.read_text(encoding="utf-8") == "token = 'second'\n"
+    if os.name != "nt":
+        assert target.parent.stat().st_mode & 0o777 == 0o700
+        assert target.stat().st_mode & 0o777 == 0o600
+    assert not list(target.parent.glob("*.tmp"))
+
+
 def test_migration_idempotent(tmp_path: Path) -> None:
     db_path = tmp_path / "migrate.db"
     connection = connect(db_path)
@@ -76,6 +117,101 @@ def test_migration_idempotent(tmp_path: Path) -> None:
     second = migrate(connection)
     assert "0001_init" in first
     assert second == []
+    connection.close()
+
+
+def test_pre_1_2_database_is_backed_up_before_pending_migration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_migrations = Path(__file__).parents[1] / "server" / "store" / "migrations"
+    legacy_migrations = tmp_path / "legacy-migrations"
+    legacy_migrations.mkdir()
+    for source in sorted(source_migrations.glob("000[1-5]_*.sql")):
+        shutil.copy2(source, legacy_migrations / source.name)
+
+    db_path = tmp_path / "workspace" / ".cairn" / "cairn.db"
+    connection = connect(db_path)
+    monkeypatch.setattr("server.store.migrate._migrations_path", lambda: legacy_migrations)
+    migrate(connection)
+    fixture_sql = (Path(__file__).parent / "fixtures" / "db" / "pre_1_2_seed.sql").read_text(
+        encoding="utf-8"
+    )
+    connection.executescript(fixture_sql)
+    connection.commit()
+
+    assert (
+        connection.execute(
+            "SELECT text_inline FROM spans WHERE span_id = 'legacy-span'"
+        ).fetchone()[0]
+        == "preserved legacy content"
+    )
+
+    monkeypatch.setattr("server.store.migrate._migrations_path", lambda: source_migrations)
+    assert migrate(connection) == [
+        "0006_experiment_export_fields",
+        "0007_query_indexes_and_fts_retirement",
+        "0008_insight_snooze",
+        "0009_optimize_portfolio_decay",
+        "0010_guard_instruction_events",
+        "0011_optimize_eval_interval_history",
+        "0012_verification_receipts",
+        "0013_corrections_and_relabels",
+    ]
+    assert (
+        connection.execute(
+            "SELECT text_inline FROM spans WHERE span_id = 'legacy-span'"
+        ).fetchone()[0]
+        == "preserved legacy content"
+    )
+    backups = list((db_path.parent / "backups" / "migrations").glob("*.bak"))
+    assert len(backups) == 1
+    with sqlite3.connect(backups[0]) as backup:
+        assert backup.execute(
+            "SELECT name FROM workspaces WHERE workspace_id = 'legacy-workspace'"
+        ).fetchone() == ("legacy",)
+        assert backup.execute(
+            "SELECT text_inline FROM spans WHERE span_id = 'legacy-span'"
+        ).fetchone() == ("preserved legacy content",)
+        assert backup.execute("SELECT COUNT(*) FROM _migrations").fetchone() == (5,)
+    if os.name != "nt":
+        assert backups[0].parent.stat().st_mode & 0o777 == 0o700
+        assert backups[0].stat().st_mode & 0o777 == 0o600
+    connection.close()
+
+
+def test_failed_migration_rolls_back_its_schema_and_version(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    migrations = tmp_path / "migrations"
+    migrations.mkdir()
+    (migrations / "0001_good.sql").write_text(
+        "CREATE TABLE durable (id INTEGER PRIMARY KEY);",
+        encoding="utf-8",
+    )
+    (migrations / "0002_interrupted.sql").write_text(
+        "CREATE TABLE must_rollback (id INTEGER);\nINSERT INTO missing_table (id) VALUES (1);\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("server.store.migrate._migrations_path", lambda: migrations)
+    connection = connect(tmp_path / "interrupted.db")
+
+    with pytest.raises(sqlite3.OperationalError):
+        migrate(connection)
+
+    assert connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='durable'"
+    ).fetchone()
+    assert (
+        connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='must_rollback'"
+        ).fetchone()
+        is None
+    )
+    versions = [
+        str(row["version"])
+        for row in connection.execute("SELECT version FROM _migrations").fetchall()
+    ]
+    assert versions == ["0001_good"]
     connection.close()
 
 
@@ -104,12 +240,70 @@ def test_all_tables_exist(conn: sqlite3.Connection) -> None:
         "rollup_daily",
         "span_links",
         "spans",
-        "spans_fts",
         "traces",
         "view_state",
         "workspaces",
     }
     assert expected.issubset(tables)
+    assert "spans_fts" not in tables
+
+
+def test_query_indexes_match_workspace_filter_plans(conn: sqlite3.Connection) -> None:
+    trace_plan = " ".join(
+        str(column)
+        for row in conn.execute(
+            """
+            EXPLAIN QUERY PLAN
+            SELECT trace_id FROM traces
+            WHERE workspace_id = ? AND source = ? AND started_at >= ?
+            ORDER BY started_at DESC LIMIT 50
+            """,
+            ("workspace", "cursor", "2026-01-01"),
+        ).fetchall()
+        for column in row
+    )
+    agent_plan = " ".join(
+        str(column)
+        for row in conn.execute(
+            """
+            EXPLAIN QUERY PLAN
+            SELECT 1 FROM spans
+            WHERE agent_id = ? AND trace_id = ?
+            LIMIT 1
+            """,
+            ("agent-main", "trace"),
+        ).fetchall()
+        for column in row
+    )
+
+    assert "idx_traces_workspace_source_started" in trace_plan
+    assert "idx_spans_agent_trace" in agent_plan
+
+
+def test_repository_pagination_and_chunk_iteration_are_bounded(
+    conn: sqlite3.Connection,
+) -> None:
+    with pytest.raises(ValueError, match="limit must be between"):
+        TraceRepo.list(conn, TraceListFilters(limit=1_001))
+    with pytest.raises(ValueError, match="offset must be between"):
+        InsightRepo.list_all(conn, offset=1_000_001)
+
+    rows = list(
+        iter_rows(
+            conn,
+            """
+            WITH RECURSIVE numbers(value) AS (
+              SELECT 1 UNION ALL SELECT value + 1 FROM numbers WHERE value < 1200
+            )
+            SELECT value FROM numbers ORDER BY value
+            """,
+            chunk_size=200,
+        )
+    )
+    assert len(rows) == 1_200
+    assert int(rows[-1]["value"]) == 1_200
+    with pytest.raises(ValueError, match="limit must be between"):
+        list(iter_rows(conn, "SELECT 1", chunk_size=1_001))
 
 
 def test_survival_experiment_outcome(conn: sqlite3.Connection) -> None:
