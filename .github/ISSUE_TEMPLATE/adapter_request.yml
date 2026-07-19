@@ -23,7 +23,7 @@ body:
     id: sample
     attributes:
       label: Redacted sample log lines
-      description: Share 5-20 representative lines (with secrets removed).
+      description: Share 5-20 synthetic or scrubbed lines with prompts, content, paths, IDs, and secrets removed.
       render: json
     validations:
       required: true
@@ -43,3 +43,5 @@ body:
           required: true
         - label: I can provide a redacted fixture for tests.
           required: false
+        - label: The sample contains no private prompts, repository content, credentials, or personal data.
+          required: true
